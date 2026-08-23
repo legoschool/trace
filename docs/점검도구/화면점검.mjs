@@ -1000,8 +1000,8 @@ const pairs = ["capture", "image", "text", "draw"].map(k => (addbar.btns.find(b 
 check("헷갈리는 짝이 서로 다른 그림글자다", new Set(pairs.map(t => t.slice(0, 2))).size === 4,
   pairs.join(" / "));
 
-/* ---------- 10-3. 보는 축 셋이 서로 안 흔들리는가 ----------
-   모양 · 밝기 · 글자 크기는 따로 도는 축이다. 하나를 고쳐도 나머지가 그대로여야
+/* ---------- 10-3. 보는 축 넷이 서로 안 흔들리는가 ----------
+   모양 · 색감 · 밝기 · 글자 크기는 따로 도는 축이다. 하나를 고쳐도 나머지가 그대로여야
    «고른 것이 어긋나지 않는다». 여기서는 설정 화면에서 실제로 눌러 본다. */
 await evaluate(`(() => { document.querySelectorAll('.modal-bg').forEach(b => b.remove()); return true; })()`);
 const axes = JSON.parse(await evaluate(`(() => {
@@ -1031,7 +1031,7 @@ const axes = JSON.parse(await evaluate(`(() => {
   const okLight = press('밝게');    const d2 = now();
   return JSON.stringify({ labels, okDark, okHuge, okLight, a, b: b2, c: c2, d: d2 });
 })()`));
-check("모양 칸에 축 셋이 다 있다", !axes.err && axes.labels.length === 3,
+check("모양 칸에 축 넷이 다 있다", !axes.err && axes.labels.length === 4,
   axes.err || (axes.labels || []).join(" / "));
 check("밝기를 고르면 그 자리에서 바뀐다", axes.b && axes.b.mode === "dark", (axes.b || {}).mode || "안 바뀜");
 check("밝기를 바꿔도 모양은 그대로다", axes.b && axes.b.theme === axes.a.theme, `${axes.a.theme} → ${(axes.b||{}).theme}`);
@@ -1039,8 +1039,42 @@ check("글자를 키워도 밝기는 그대로다", axes.c && axes.c.mode === "d
   `${(axes.c||{}).mode} · 배율 ${(axes.c||{}).fs}`);
 check("밝게로 되돌려도 글자 크기는 그대로다", axes.d && axes.d.mode === "light" && axes.d.size === "huge",
   `${(axes.d||{}).mode} · ${(axes.d||{}).size}`);
-check("셋을 다 만져도 모양은 끝까지 그대로다", axes.d && axes.d.theme === axes.a.theme,
+check("넷을 다 만져도 모양은 끝까지 그대로다", axes.d && axes.d.theme === axes.a.theme,
   `${axes.a.theme} → ${(axes.d||{}).theme}`);
+
+/* ---- 색감이 모양과 안 얽히는가 ----
+   v7 전에는 색이 모양에 붙어 있어 「공책 모양에 청사진 색」 을 할 수 없었다.
+   이제 색은 색감이, 모양은 모양이 쥔다. 서로 안 넘어와야 한다. */
+const tone = JSON.parse(await evaluate(`(() => {
+  const now = () => {
+    const r = document.documentElement, cs = getComputedStyle(r);
+    return { theme: r.getAttribute('data-theme'), tone: r.getAttribute('data-tone'),
+             bg: cs.getPropertyValue('--bg').trim(), radius: cs.getPropertyValue('--radius').trim(),
+             bw: cs.getPropertyValue('--bw').trim() };
+  };
+  const pickTone = (name) => {
+    const b = Array.from(document.querySelectorAll('.tonebtn')).find(x => x.querySelector('strong').textContent === name);
+    if (b) b.click();
+    return !!b;
+  };
+  const names = Array.from(document.querySelectorAll('.tonebtn')).map(b => b.querySelector('strong').textContent);
+  const a = now();                       // 공책 + (태어날 때 색)
+  const okPick = pickTone('청사진');
+  const b2 = now();                      // 공책 + 청사진
+  // 「태어날 때의 색으로」 를 누르면 되돌아와야 한다
+  const back = Array.from(document.querySelectorAll('.mbody button')).find(x => (x.textContent||'').includes('태어날 때의 색'));
+  if (back) back.click();
+  const c2 = now();
+  return JSON.stringify({ names, okPick, a, b: b2, c: c2 });
+})()`));
+check("색감 여섯이 다 있다", (tone.names || []).length === 6, (tone.names || []).join(" · "));
+check("색감을 바꾸면 색이 바뀐다", tone.okPick && tone.b.tone === "blue" && tone.b.bg !== tone.a.bg,
+  `${tone.a.bg} → ${(tone.b||{}).bg}`);
+check("색감을 바꿔도 모양은 그대로다",
+  tone.b && tone.b.theme === tone.a.theme && tone.b.radius === tone.a.radius && tone.b.bw === tone.a.bw,
+  `모서리 ${tone.a.radius}→${(tone.b||{}).radius} · 테두리 ${tone.a.bw}→${(tone.b||{}).bw}`);
+check("«태어날 때의 색으로» 가 되돌린다", tone.c && tone.c.bg === tone.a.bg && tone.c.tone === tone.a.tone,
+  `${(tone.c||{}).tone} · ${(tone.c||{}).bg}`);
 await evaluate(`(() => { document.querySelectorAll('.modal-bg').forEach(b => b.remove()); return true; })()`);
 
 /* ---------- 11. 끝난 뒤에도 오류가 없어야 한다 ---------- */

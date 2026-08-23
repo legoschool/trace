@@ -41,6 +41,9 @@
     --bg: #f5f7fb; --panel: #fff; --ink: #1b2130; --ink-soft: #667085;
     --brand: #2f5fd6; --brand-dark: #24499f; --brand-soft: #eaf0ff;
     --line: #e3e8f2; --line-soft: #eef1f7;
+    /* 딱딱한 그림자(블록·블록놀이가 쓰는 «찍힌» 그림자)의 색.
+       모양이 이 값을 «가리키기만» 하므로, 색감을 바꾸면 그림자도 따라온다. */
+    --hard: #1b2130;
     --danger: #d64545; --ok: #1a9e5f; --warn: #b07a00;
     /* 알림 띠 — 뜻(주의/됨)은 그대로 두고 색만 프리셋이 고를 수 있게 한다 */
     --warn-bg: #fff8e6; --warn-line: #f0dca8; --warn-ink: #6b4e00;
@@ -84,118 +87,62 @@
     --t5: #2f5fd6; --t5s: #eaf0ff;
     --t6: #2f5fd6; --t6s: #eaf0ff;
   }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-mode="light"]) {
-      --bg: #12161f; --panel: #1b202b; --ink: #e8ecf4; --ink-soft: #98a2b3;
-      --brand: #7d9dff; --brand-dark: #5f83f0; --brand-soft: #232c44;
-      --line: #2b3242; --line-soft: #232936;
-      --shadow: 0 1px 3px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.25);
-      --warn-bg: #33291180; --warn-line: #5a4715; --warn-ink: #f0d78f;
-      --ok-bg: #10321f80; --ok-line: #1e5c3c; --ok-ink: #97e0bb;
-      --pin-bg: #3a2f12;
-      --t1: #7d9dff; --t1s: #232c44; --t2: #7d9dff; --t2s: #232c44;
-      --t3: #7d9dff; --t3s: #232c44; --t4: #7d9dff; --t4s: #232c44;
-      --t5: #7d9dff; --t5s: #232c44; --t6: #7d9dff; --t6s: #232c44;
-    }
-  }
-  /* ↑ 와 같은 색. 사람이 「어둡게」 를 고른 경우 (기기 설정과 무관하게) */
-  :root[data-mode="dark"] {
-    --bg: #12161f; --panel: #1b202b; --ink: #e8ecf4; --ink-soft: #98a2b3;
-    --brand: #7d9dff; --brand-dark: #5f83f0; --brand-soft: #232c44;
-    --line: #2b3242; --line-soft: #232936;
-    --shadow: 0 1px 3px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.25);
-    --warn-bg: #33291180; --warn-line: #5a4715; --warn-ink: #f0d78f;
-    --ok-bg: #10321f80; --ok-line: #1e5c3c; --ok-ink: #97e0bb;
-    --pin-bg: #3a2f12;
-    --t1: #7d9dff; --t1s: #232c44; --t2: #7d9dff; --t2s: #232c44;
-    --t3: #7d9dff; --t3s: #232c44; --t4: #7d9dff; --t4s: #232c44;
-    --t5: #7d9dff; --t5s: #232c44; --t6: #7d9dff; --t6s: #232c44;
-  }
 
-  /* ---------- 프리셋 A. 메모지 ---------- */
+  /* =========================================================
+     모양 일곱 — **색은 한 톨도 없다.**
+     색은 아래 «색감» 이 맡는다. 그래야 모양을 고쳐도 색이 안 흔들린다.
+     ⚠️ 여기에 색을 적고 싶어지면, 그건 색감에 적어야 하는 것이다.
+        딱 하나 예외 — 테두리를 «잉크색으로» 쓰는 모양은 --line: var(--ink) 로
+        «가리키기만» 한다. 색 자체를 적는 것이 아니다.
+     ========================================================= */
+  /* 메모지 — 손으로 그린 듯 삐뚤한 테두리 */
   [data-theme="memo"] {
-    --bg: #FBF6EE; --panel: #FFFDF8; --ink: #26221E; --ink-soft: #685F54;
-    --brand: #A8483C; --brand-dark: #7F352C; --brand-soft: #F6E2DC;
-    --line: #26221E; --line-soft: #E2D8C6;
     --shadow: none;
     --font-title: "Gaegu", var(--font-body); --title-spacing: -.5px;
     --bw: 2.5px;
+    --line: var(--ink);          /* 굵고 짙은 테두리가 이 모양의 얼굴이다 */
     --radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
     --r-btn: 225px 15px 255px 15px / 15px 255px 15px 225px;
     --r-btn-sm: 225px 15px 255px 15px / 15px 255px 15px 225px;
     --r-inp: 255px 15px 225px 15px / 15px 225px 15px 255px;
     --r-block: 15px 225px 15px 255px / 225px 15px 255px 15px;
-    --veil: transparent;
+    --veil: transparent;         /* 유형 색이 카드에 드러난다 */
     --accent-w: 0px;
-    --t1: #4A5B33; --t1s: #DFEAC8;
-    --t2: #2F5A7A; --t2s: #D6E6F2;
-    --t3: #75590F; --t3s: #FBE8BE;
-    --t4: #7A4D22; --t4s: #F7DFC4;
-    --t5: #8A4A60; --t5s: #F8DCE2;
-    --t6: #4C4370; --t6s: #E5DDF0;
   }
-  /* ---------- 프리셋 B. 블록 ---------- */
+  /* 블록 — 쌓아 올리는 조각 */
   [data-theme="brick"] {
-    --bg: #FBF6EE; --panel: #FFFDF8; --ink: #26221E; --ink-soft: #685F54;
-    --brand: #A8483C; --brand-dark: #7F352C; --brand-soft: #F6E2DC;
-    --line: #26221E; --line-soft: #DED5C4;
-    --shadow: 2.5px 2.5px 0 #26221E;
+    --shadow: 2.5px 2.5px 0 var(--hard);
     --font-title: "Gaegu", var(--font-body); --title-spacing: -.5px;
     --bw: 2.5px;
+    --line: var(--ink);
     --radius: 8px; --r-btn: 7px; --r-btn-sm: 6px; --r-inp: 7px; --r-pill: 5px; --r-block: 7px;
     --veil: transparent;
     --entry-pt: 26px;
     --accent-w: 0px;
     --stud: block;
-    --t1: #4F6B3E; --t1s: #DFEAC8;
-    --t2: #3A5D85; --t2s: #D6E6F2;
-    --t3: #7A5A12; --t3s: #FBE8BE;
-    --t4: #8F5626; --t4s: #F7DFC4;
-    --t5: #8E4A60; --t5s: #F8DCE2;
-    --t6: #4C4370; --t6s: #E5DDF0;
   }
-  /* ---------- 프리셋 C. 공책 ---------- */
+  /* 공책 — 한 권에 이어 적기 */
   [data-theme="note"] {
-    --bg: #EFE7DA; --panel: #FFFCF5; --ink: #26221E; --ink-soft: #685F54;
-    --brand: #A8483C; --brand-dark: #7F352C; --brand-soft: #F6E2DC;
-    --line: #DCD1BE; --line-soft: #EFE7DA;
     --shadow: none;
     --font-title: "Gaegu", var(--font-body); --title-spacing: -.5px;
     --bw: 1.5px;
     --radius: 4px; --r-btn: 6px; --r-btn-sm: 5px; --r-inp: 6px; --r-block: 5px;
-    --accent-w: 0px; --accent-l: 5px;
-    --t1: #4F6B3E; --t1s: #DFEAC8;
-    --t2: #3A5D85; --t2s: #D6E6F2;
-    --t3: #7A5A12; --t3s: #FBE8BE;
-    --t4: #8F5626; --t4s: #F7DFC4;
-    --t5: #8E4A60; --t5s: #F8DCE2;
-    --t6: #4C4370; --t6s: #E5DDF0;
+    --accent-w: 0px; --accent-l: 5px;   /* 왼쪽에 유형 색줄 */
   }
-  /* ---------- 프리셋 ①. 블록놀이 (가장 아이답게) ---------- */
+  /* 블록놀이 — 가장 아이답게 */
   [data-theme="play"] {
-    --bg: #FFF8E4; --panel: #FFFFFF; --ink: #2B2118; --ink-soft: #6C5D4B;
-    --brand: #D8402F; --brand-dark: #B22F21; --brand-soft: #FFE0DB;
-    --line: #2B2118; --line-soft: #F0E2C4;
-    --shadow: 0 5px 0 #2B2118;
+    --shadow: 0 5px 0 var(--hard);
     --font-title: "Jua", var(--font-body); --title-spacing: 0px;
     --bw: 3.5px;
+    --line: var(--ink);
     --radius: 18px; --r-btn: 14px; --r-btn-sm: 12px; --r-inp: 14px; --r-pill: 999px; --r-block: 14px;
     --veil: transparent;
     --entry-pt: 34px;
     --accent-w: 0px;
     --stud: block; --stud-w: 108px; --stud-h: 18px; --stud-step: 27px;
-    --t1: #2B6F2F; --t1s: #CDEBC6;
-    --t2: #1F63B8; --t2s: #CFE3F8;
-    --t3: #8C6300; --t3s: #FFEDB8;
-    --t4: #A34615; --t4s: #FFDDC2;
-    --t5: #A83567; --t5s: #FFD6E6;
-    --t6: #6B44B0; --t6s: #E4D8F8;
   }
-  /* ---------- 프리셋 ⑥. 문서 (인쇄물처럼) ---------- */
+  /* 문서 — 인쇄물처럼 */
   [data-theme="paper"] {
-    --bg: #F4F2ED; --panel: #FFFFFF; --ink: #1F1D1A; --ink-soft: #6B6660;
-    --brand: #3A4A5C; --brand-dark: #2A3745; --brand-soft: #E7EBF0;
-    --line: #DAD5CC; --line-soft: #EDEAE3;
     --shadow: none;
     --font-body: "Gowun Batang", "Apple SD Gothic Neo", "Malgun Gothic", serif;
     --font-title: "Gowun Batang", serif; --title-spacing: -.2px;
@@ -203,21 +150,9 @@
     --radius: 2px; --r-btn: 2px; --r-btn-sm: 2px; --r-inp: 2px; --r-pill: 2px; --r-block: 2px;
     --veil: var(--panel);
     --accent-w: 0px; --accent-l: 2px;
-    --t1: #4E6B4E; --t1s: #EAEFE9;
-    --t2: #43596F; --t2s: #E8EDF1;
-    --t3: #7A6636; --t3s: #F2EEE3;
-    --t4: #7A5540; --t4s: #F1EAE5;
-    --t5: #6E4A58; --t5s: #F0E9EC;
-    --t6: #55506E; --t6s: #EBEAF0;
-    --warn-bg: #F6F1E4; --warn-line: #E0D6BE; --warn-ink: #6B5A32;
-    --ok-bg: #EBF0EB; --ok-line: #CBD8CB; --ok-ink: #3E5540;
-    --pin-bg: #F2ECDC;
   }
-  /* ---------- 프리셋 ⑦. 설계도 (가장 정밀하게) ---------- */
+  /* 설계도 — 가장 정밀하게 */
   [data-theme="draft"] {
-    --bg: #EDF1F4; --panel: #FFFFFF; --ink: #16202B; --ink-soft: #5A6B7C;
-    --brand: #0E6FA8; --brand-dark: #0A5580; --brand-soft: #DCEDF8;
-    --line: #C6D2DC; --line-soft: #E6ECF1;
     --shadow: none;
     --font-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
     --font-title: "IBM Plex Sans KR", sans-serif; --title-spacing: -.2px;
@@ -225,77 +160,204 @@
     --radius: 0px; --r-btn: 0px; --r-btn-sm: 0px; --r-inp: 0px; --r-pill: 0px; --r-block: 0px;
     --veil: var(--panel);
     --accent-w: 2px; --accent-l: 0px;
-    --t1: #2B764A; --t1s: #E2F0E8;
-    --t2: #1B6FA8; --t2s: #DEEDF7;
-    --t3: #816613; --t3s: #F4EEDC;
-    --t4: #9C5328; --t4s: #F7E9DE;
-    --t5: #9C3F63; --t5s: #F6E3EA;
-    --t6: #55499B; --t6s: #E7E5F4;
-    --warn-bg: #EEF3F7; --warn-line: #C6D2DC; --warn-ink: #3E5468;
-    --ok-bg: #E9F2EC; --ok-line: #C2D8CA; --ok-ink: #2E5741;
-    --pin-bg: #E4EDF4;
   }
-  /* 종이 프리셋의 어두운 화면 — 종이색을 어둡게 낮추고 잉크를 밝힌다.
-     이걸 빼면 어두운 화면을 쓰는 사람에게 흰 종이가 그대로 번쩍인다. */
+
+  /* =========================================================
+     색감 여섯 — **모양은 한 톨도 없다.**
+     한 벌이 밝을 때와 어두울 때를 «같은 자리» 에 갖는다.
+     ⚠️ 어두울 때 값은 두 곳에 놓인다 (기기 따름 · 사람이 고름).
+        손으로 두 벌을 쓰지 말 것 — 찍어 낸 것이다 (scratchpad/tone.mjs).
+     ========================================================= */
+  /* 크래프트 — 크림 종이에 붉은 흙 */
+  [data-tone="craft"] {
+    --bg: #FBF6EE; --panel: #FFFDF8; --ink: #26221E; --ink-soft: #685F54;
+    --brand: #A8483C; --brand-dark: #7F352C; --brand-soft: #F6E2DC;
+    --line: #DCD1BE; --line-soft: #E2D8C6; --hard: #26221E;
+    --warn-bg: #FBF3E0; --warn-line: #E8D9B4; --warn-ink: #6B5320;
+    --ok-bg: #EDF3E8; --ok-line: #CFDDC2; --ok-ink: #3F5A33; --pin-bg: #F7EBD2;
+    --t1: #4F6B3E; --t1s: #DFEAC8; --t2: #3A5D85; --t2s: #D6E6F2;
+    --t3: #7A5A12; --t3s: #FBE8BE; --t4: #8F5626; --t4s: #F7DFC4;
+    --t5: #8E4A60; --t5s: #F8DCE2; --t6: #4C4370; --t6s: #E5DDF0;
+  }
+  /* 볕 — 노란 종이에 빨강 */
+  [data-tone="sunny"] {
+    --bg: #FFF8E4; --panel: #FFFFFF; --ink: #2B2118; --ink-soft: #6C5D4B;
+    --brand: #D8402F; --brand-dark: #B22F21; --brand-soft: #FFE0DB;
+    --line: #E7D8B4; --line-soft: #F0E2C4; --hard: #2B2118;
+    --warn-bg: #FFF3D4; --warn-line: #EFDCA6; --warn-ink: #6B5117;
+    --ok-bg: #E9F6E4; --ok-line: #C6E2BC; --ok-ink: #33612F; --pin-bg: #FFEFC2;
+    --t1: #2B6F2F; --t1s: #CDEBC6; --t2: #1F63B8; --t2s: #CFE3F8;
+    --t3: #8C6300; --t3s: #FFEDB8; --t4: #A34615; --t4s: #FFDDC2;
+    --t5: #A83567; --t5s: #FFD6E6; --t6: #6B44B0; --t6s: #E4D8F8;
+  }
+  /* 하늘 — 흰 종이에 파랑 */
+  [data-tone="sky"] {
+    --bg: #F5F7FB; --panel: #FFFFFF; --ink: #1B2130; --ink-soft: #5A6478;
+    --brand: #2F5FD6; --brand-dark: #24499F; --brand-soft: #EAF0FF;
+    --line: #E3E8F2; --line-soft: #EEF1F7; --hard: #1B2130;
+    --warn-bg: #FFF8E6; --warn-line: #F0DCA8; --warn-ink: #6B4E00;
+    --ok-bg: #EAF7F0; --ok-line: #B9E3CD; --ok-ink: #0F5C39; --pin-bg: #FFF4D6;
+    --t1: #2F6D4A; --t1s: #E3F1E8; --t2: #2F5FD6; --t2s: #EAF0FF;
+    --t3: #7A5A12; --t3s: #F7EEDA; --t4: #9A4E24; --t4s: #FBE9DE;
+    --t5: #94406A; --t5s: #FBE4EE; --t6: #4F45A8; --t6s: #EAE7FA;
+  }
+  /* 먹 — 회백 종이에 먹 */
+  [data-tone="ink"] {
+    --bg: #F4F2ED; --panel: #FFFFFF; --ink: #1F1D1A; --ink-soft: #65605A;
+    --brand: #3A4A5C; --brand-dark: #2A3745; --brand-soft: #E7EBF0;
+    --line: #DAD5CC; --line-soft: #EDEAE3; --hard: #1F1D1A;
+    --warn-bg: #F6F1E4; --warn-line: #E0D6BE; --warn-ink: #6B5A32;
+    --ok-bg: #EBF0EB; --ok-line: #CBD8CB; --ok-ink: #3E5540; --pin-bg: #F2ECDC;
+    --t1: #3F5C3F; --t1s: #E6EDE5; --t2: #37506A; --t2s: #E4EBF1;
+    --t3: #6B5828; --t3s: #F0EADC; --t4: #6B4633; --t4s: #EFE5DE;
+    --t5: #5E3B4A; --t5s: #EDE3E7; --t6: #454063; --t6s: #E7E5EF;
+  }
+  /* 청사진 — 청회 바탕에 청록 */
+  [data-tone="blue"] {
+    --bg: #EDF1F4; --panel: #FFFFFF; --ink: #16202B; --ink-soft: #54636F;
+    --brand: #0E6FA8; --brand-dark: #0A5580; --brand-soft: #DCEDF8;
+    --line: #C6D2DC; --line-soft: #E6ECF1; --hard: #16202B;
+    --warn-bg: #EEF3F7; --warn-line: #C6D2DC; --warn-ink: #3E5468;
+    --ok-bg: #E9F2EC; --ok-line: #C2D8CA; --ok-ink: #2E5741; --pin-bg: #E4EDF4;
+    --t1: #2B764A; --t1s: #E2F0E8; --t2: #1B6FA8; --t2s: #DEEDF7;
+    --t3: #816613; --t3s: #F4EEDC; --t4: #9C5328; --t4s: #F7E9DE;
+    --t5: #9C3F63; --t5s: #F6E3EA; --t6: #55499B; --t6s: #E7E5F4;
+  }
+  /* 숲 — 연둣 종이에 짙은 초록 */
+  [data-tone="forest"] {
+    --bg: #F2F5EC; --panel: #FFFFFF; --ink: #1D241B; --ink-soft: #5A6455;
+    --brand: #2F6B3C; --brand-dark: #22522D; --brand-soft: #E2EFE2;
+    --line: #D6DECC; --line-soft: #E8EEE0; --hard: #1D241B;
+    --warn-bg: #F7F2E0; --warn-line: #DFD6B4; --warn-ink: #63541F;
+    --ok-bg: #E7F2E7; --ok-line: #C4DCC4; --ok-ink: #2E5537; --pin-bg: #EFF1D6;
+    --t1: #2F6B3C; --t1s: #E0EFDF; --t2: #2F5F86; --t2s: #E2EDF5;
+    --t3: #75620F; --t3s: #F5EFD8; --t4: #8A4E22; --t4s: #F6E7DA;
+    --t5: #8A3D5E; --t5s: #F6E1EA; --t6: #4A4478; --t6s: #E8E5F3;
+  }
   @media (prefers-color-scheme: dark) {
-    :root[data-theme="memo"]:not([data-mode="light"]),
-    :root[data-theme="brick"]:not([data-mode="light"]),
-    :root[data-theme="note"]:not([data-mode="light"]),
-    :root[data-theme="play"]:not([data-mode="light"]) {
+    [data-tone="craft"]:not([data-mode="light"]) {
       --bg: #1C1917; --panel: #24201C; --ink: #F0E9DD; --ink-soft: #AEA394;
       --brand: #E08A7C; --brand-dark: #C4705F; --brand-soft: #3A2B26;
-      --line: #4A423A; --line-soft: #332D27;
+      --line: #4A423A; --line-soft: #332D27; --hard: #0F0D0B;
+      --warn-bg: #332911; --warn-line: #5A4715; --warn-ink: #F0D78F;
+      --ok-bg: #12301C; --ok-line: #1E5C3C; --ok-ink: #9AE0BB; --pin-bg: #3A2F12;
       --t1: #C5DBA6; --t1s: #313B26; --t2: #A9C9E4; --t2s: #24313D;
       --t3: #E8CE8C; --t3s: #3B3320; --t4: #E2B589; --t4s: #3B2C1E;
       --t5: #E3AFC0; --t5s: #3A252C; --t6: #C2B6E0; --t6s: #2C2740;
     }
-    :root[data-theme="brick"]:not([data-mode="light"]) { --shadow: 2.5px 2.5px 0 #0F0D0B; }
-    :root[data-theme="play"]:not([data-mode="light"]) { --shadow: 0 5px 0 #0F0D0B; --brand: #F07A6C; --brand-dark: #D4604F; --brand-soft: #3E2823;
-      --t1: #9FD69B; --t1s: #24331F; --t2: #96C2F0; --t2s: #1E2C3D; --t3: #F0D48C; --t3s: #3A3018;
-      --t4: #F0B48C; --t4s: #3B2A1B; --t5: #F0A8C4; --t5s: #3A2029; --t6: #C4AEEF; --t6s: #2B2440; }
-    /* 문서·설계도는 «차가운 회색» 쪽으로 어둡게. 종이 계열과 섞으면 둘 다 탁해진다. */
-    :root[data-theme="paper"]:not([data-mode="light"]) {
-      --bg: #17181A; --panel: #202225; --ink: #E8E6E1; --ink-soft: #9C978F;
-      --brand: #A8BBD0; --brand-dark: #8FA3BA; --brand-soft: #262B33; --line: #37393D; --line-soft: #2A2C2F;
-      --t1: #A9C4A9; --t1s: #232A23; --t2: #A5BACD; --t2s: #212830; --t3: #CDBB8C; --t3s: #2C2921;
-      --t4: #CDAE96; --t4s: #2C2622; --t5: #C4A2AF; --t5s: #2B2427; --t6: #ADA8C6; --t6s: #26242E;
+    [data-tone="sunny"]:not([data-mode="light"]) {
+      --bg: #1C1917; --panel: #24201C; --ink: #F0E9DD; --ink-soft: #AEA394;
+      --brand: #F07A6C; --brand-dark: #D4604F; --brand-soft: #3E2823;
+      --line: #4A423A; --line-soft: #332D27; --hard: #0F0D0B;
+      --warn-bg: #332911; --warn-line: #5A4715; --warn-ink: #F0D78F;
+      --ok-bg: #12301C; --ok-line: #1E5C3C; --ok-ink: #9AE0BB; --pin-bg: #3A2F12;
+      --t1: #9FD69B; --t1s: #24331F; --t2: #96C2F0; --t2s: #1E2C3D;
+      --t3: #F0D48C; --t3s: #3A3018; --t4: #F0B48C; --t4s: #3B2A1B;
+      --t5: #F0A8C4; --t5s: #3A2029; --t6: #C4AEEF; --t6s: #2B2440;
     }
-    :root[data-theme="draft"]:not([data-mode="light"]) {
+    [data-tone="sky"]:not([data-mode="light"]) {
+      --bg: #12161F; --panel: #1B202B; --ink: #E8ECF4; --ink-soft: #98A2B3;
+      --brand: #7D9DFF; --brand-dark: #5F83F0; --brand-soft: #232C44;
+      --line: #2B3242; --line-soft: #232936; --hard: #05070B;
+      --warn-bg: #332911; --warn-line: #5A4715; --warn-ink: #F0D78F;
+      --ok-bg: #10321F; --ok-line: #1E5C3C; --ok-ink: #97E0BB; --pin-bg: #3A2F12;
+      --t1: #86D0A6; --t1s: #17301F; --t2: #7D9DFF; --t2s: #232C44;
+      --t3: #DFC582; --t3s: #332C18; --t4: #EFA277; --t4s: #33241A;
+      --t5: #EC93B8; --t5s: #331F29; --t6: #A99BF0; --t6s: #26224A;
+    }
+    [data-tone="ink"]:not([data-mode="light"]) {
+      --bg: #17181A; --panel: #202225; --ink: #E8E6E1; --ink-soft: #9C978F;
+      --brand: #A8BBD0; --brand-dark: #8FA3BA; --brand-soft: #262B33;
+      --line: #37393D; --line-soft: #2A2C2F; --hard: #08090A;
+      --warn-bg: #2B2718; --warn-line: #4C4423; --warn-ink: #E0CE96;
+      --ok-bg: #1B2A20; --ok-line: #33513E; --ok-ink: #A8CDB4; --pin-bg: #2E2A1E;
+      --t1: #A9C4A9; --t1s: #232A23; --t2: #A5BACD; --t2s: #212830;
+      --t3: #CDBB8C; --t3s: #2C2921; --t4: #CDAE96; --t4s: #2C2622;
+      --t5: #C4A2AF; --t5s: #2B2427; --t6: #ADA8C6; --t6s: #26242E;
+    }
+    [data-tone="blue"]:not([data-mode="light"]) {
       --bg: #10161C; --panel: #182028; --ink: #DCE6EF; --ink-soft: #8FA2B3;
-      --brand: #5FB3E0; --brand-dark: #4593BC; --brand-soft: #1B2B37; --line: #2C3945; --line-soft: #1E2833;
-      --t1: #7CC49B; --t1s: #1A2B22; --t2: #6FB4DE; --t2s: #172833; --t3: #D2BB78; --t3s: #2B2718;
-      --t4: #DFA277; --t4s: #2F241B; --t5: #D28FAA; --t5s: #2D1F26; --t6: #A79BDC; --t6s: #232040;
+      --brand: #5FB3E0; --brand-dark: #4593BC; --brand-soft: #1B2B37;
+      --line: #2C3945; --line-soft: #1E2833; --hard: #05080B;
+      --warn-bg: #22303B; --warn-line: #3C5062; --warn-ink: #B9CFE0;
+      --ok-bg: #162C22; --ok-line: #2C513E; --ok-ink: #9CCBB0; --pin-bg: #1D2A34;
+      --t1: #7CC49B; --t1s: #1A2B22; --t2: #6FB4DE; --t2s: #172833;
+      --t3: #D2BB78; --t3s: #2B2718; --t4: #DFA277; --t4s: #2F241B;
+      --t5: #D28FAA; --t5s: #2D1F26; --t6: #A79BDC; --t6s: #232040;
+    }
+    [data-tone="forest"]:not([data-mode="light"]) {
+      --bg: #141812; --panel: #1C211A; --ink: #E6EDE2; --ink-soft: #9AA495;
+      --brand: #8FCB96; --brand-dark: #6EAE77; --brand-soft: #22301F;
+      --line: #3A422F; --line-soft: #272D22; --hard: #080A07;
+      --warn-bg: #2C2913; --warn-line: #4C4523; --warn-ink: #DECB92;
+      --ok-bg: #172B1C; --ok-line: #2E5238; --ok-ink: #A3CCA9; --pin-bg: #2C2E16;
+      --t1: #9FD6A6; --t1s: #1F2E20; --t2: #93BEDE; --t2s: #1C2833;
+      --t3: #DCC585; --t3s: #2D2818; --t4: #DFA57C; --t4s: #2F241B;
+      --t5: #DA94B2; --t5s: #2D1F27; --t6: #A79CDA; --t6s: #242140;
     }
   }
   /* ↑ 와 같은 색. 사람이 「어둡게」 를 고른 경우 (기기 설정과 무관하게) */
-  :root[data-theme="memo"][data-mode="dark"],
-  :root[data-theme="brick"][data-mode="dark"],
-  :root[data-theme="note"][data-mode="dark"],
-  :root[data-theme="play"][data-mode="dark"] {
+  [data-tone="craft"][data-mode="dark"] {
     --bg: #1C1917; --panel: #24201C; --ink: #F0E9DD; --ink-soft: #AEA394;
     --brand: #E08A7C; --brand-dark: #C4705F; --brand-soft: #3A2B26;
-    --line: #4A423A; --line-soft: #332D27;
+    --line: #4A423A; --line-soft: #332D27; --hard: #0F0D0B;
+    --warn-bg: #332911; --warn-line: #5A4715; --warn-ink: #F0D78F;
+    --ok-bg: #12301C; --ok-line: #1E5C3C; --ok-ink: #9AE0BB; --pin-bg: #3A2F12;
     --t1: #C5DBA6; --t1s: #313B26; --t2: #A9C9E4; --t2s: #24313D;
     --t3: #E8CE8C; --t3s: #3B3320; --t4: #E2B589; --t4s: #3B2C1E;
     --t5: #E3AFC0; --t5s: #3A252C; --t6: #C2B6E0; --t6s: #2C2740;
   }
-  :root[data-theme="brick"][data-mode="dark"] { --shadow: 2.5px 2.5px 0 #0F0D0B; }
-  :root[data-theme="play"][data-mode="dark"] { --shadow: 0 5px 0 #0F0D0B; --brand: #F07A6C; --brand-dark: #D4604F; --brand-soft: #3E2823;
-    --t1: #9FD69B; --t1s: #24331F; --t2: #96C2F0; --t2s: #1E2C3D; --t3: #F0D48C; --t3s: #3A3018;
-    --t4: #F0B48C; --t4s: #3B2A1B; --t5: #F0A8C4; --t5s: #3A2029; --t6: #C4AEEF; --t6s: #2B2440; }
-  /* 문서·설계도는 «차가운 회색» 쪽으로 어둡게. 종이 계열과 섞으면 둘 다 탁해진다. */
-    :root[data-theme="paper"][data-mode="dark"] {
+  [data-tone="sunny"][data-mode="dark"] {
+    --bg: #1C1917; --panel: #24201C; --ink: #F0E9DD; --ink-soft: #AEA394;
+    --brand: #F07A6C; --brand-dark: #D4604F; --brand-soft: #3E2823;
+    --line: #4A423A; --line-soft: #332D27; --hard: #0F0D0B;
+    --warn-bg: #332911; --warn-line: #5A4715; --warn-ink: #F0D78F;
+    --ok-bg: #12301C; --ok-line: #1E5C3C; --ok-ink: #9AE0BB; --pin-bg: #3A2F12;
+    --t1: #9FD69B; --t1s: #24331F; --t2: #96C2F0; --t2s: #1E2C3D;
+    --t3: #F0D48C; --t3s: #3A3018; --t4: #F0B48C; --t4s: #3B2A1B;
+    --t5: #F0A8C4; --t5s: #3A2029; --t6: #C4AEEF; --t6s: #2B2440;
+  }
+  [data-tone="sky"][data-mode="dark"] {
+    --bg: #12161F; --panel: #1B202B; --ink: #E8ECF4; --ink-soft: #98A2B3;
+    --brand: #7D9DFF; --brand-dark: #5F83F0; --brand-soft: #232C44;
+    --line: #2B3242; --line-soft: #232936; --hard: #05070B;
+    --warn-bg: #332911; --warn-line: #5A4715; --warn-ink: #F0D78F;
+    --ok-bg: #10321F; --ok-line: #1E5C3C; --ok-ink: #97E0BB; --pin-bg: #3A2F12;
+    --t1: #86D0A6; --t1s: #17301F; --t2: #7D9DFF; --t2s: #232C44;
+    --t3: #DFC582; --t3s: #332C18; --t4: #EFA277; --t4s: #33241A;
+    --t5: #EC93B8; --t5s: #331F29; --t6: #A99BF0; --t6s: #26224A;
+  }
+  [data-tone="ink"][data-mode="dark"] {
     --bg: #17181A; --panel: #202225; --ink: #E8E6E1; --ink-soft: #9C978F;
-    --brand: #A8BBD0; --brand-dark: #8FA3BA; --brand-soft: #262B33; --line: #37393D; --line-soft: #2A2C2F;
-    --t1: #A9C4A9; --t1s: #232A23; --t2: #A5BACD; --t2s: #212830; --t3: #CDBB8C; --t3s: #2C2921;
-    --t4: #CDAE96; --t4s: #2C2622; --t5: #C4A2AF; --t5s: #2B2427; --t6: #ADA8C6; --t6s: #26242E;
+    --brand: #A8BBD0; --brand-dark: #8FA3BA; --brand-soft: #262B33;
+    --line: #37393D; --line-soft: #2A2C2F; --hard: #08090A;
+    --warn-bg: #2B2718; --warn-line: #4C4423; --warn-ink: #E0CE96;
+    --ok-bg: #1B2A20; --ok-line: #33513E; --ok-ink: #A8CDB4; --pin-bg: #2E2A1E;
+    --t1: #A9C4A9; --t1s: #232A23; --t2: #A5BACD; --t2s: #212830;
+    --t3: #CDBB8C; --t3s: #2C2921; --t4: #CDAE96; --t4s: #2C2622;
+    --t5: #C4A2AF; --t5s: #2B2427; --t6: #ADA8C6; --t6s: #26242E;
   }
-    :root[data-theme="draft"][data-mode="dark"] {
+  [data-tone="blue"][data-mode="dark"] {
     --bg: #10161C; --panel: #182028; --ink: #DCE6EF; --ink-soft: #8FA2B3;
-    --brand: #5FB3E0; --brand-dark: #4593BC; --brand-soft: #1B2B37; --line: #2C3945; --line-soft: #1E2833;
-    --t1: #7CC49B; --t1s: #1A2B22; --t2: #6FB4DE; --t2s: #172833; --t3: #D2BB78; --t3s: #2B2718;
-    --t4: #DFA277; --t4s: #2F241B; --t5: #D28FAA; --t5s: #2D1F26; --t6: #A79BDC; --t6s: #232040;
+    --brand: #5FB3E0; --brand-dark: #4593BC; --brand-soft: #1B2B37;
+    --line: #2C3945; --line-soft: #1E2833; --hard: #05080B;
+    --warn-bg: #22303B; --warn-line: #3C5062; --warn-ink: #B9CFE0;
+    --ok-bg: #162C22; --ok-line: #2C513E; --ok-ink: #9CCBB0; --pin-bg: #1D2A34;
+    --t1: #7CC49B; --t1s: #1A2B22; --t2: #6FB4DE; --t2s: #172833;
+    --t3: #D2BB78; --t3s: #2B2718; --t4: #DFA277; --t4s: #2F241B;
+    --t5: #D28FAA; --t5s: #2D1F26; --t6: #A79BDC; --t6s: #232040;
   }
+  [data-tone="forest"][data-mode="dark"] {
+    --bg: #141812; --panel: #1C211A; --ink: #E6EDE2; --ink-soft: #9AA495;
+    --brand: #8FCB96; --brand-dark: #6EAE77; --brand-soft: #22301F;
+    --line: #3A422F; --line-soft: #272D22; --hard: #080A07;
+    --warn-bg: #2C2913; --warn-line: #4C4523; --warn-ink: #DECB92;
+    --ok-bg: #172B1C; --ok-line: #2E5238; --ok-ink: #A3CCA9; --pin-bg: #2C2E16;
+    --t1: #9FD6A6; --t1s: #1F2E20; --t2: #93BEDE; --t2s: #1C2833;
+    --t3: #DCC585; --t3s: #2D2818; --t4: #DFA57C; --t4s: #2F241B;
+    --t5: #DA94B2; --t5s: #2D1F27; --t6: #A79CDA; --t6s: #242140;
+  }
+
   /* ---------- 글자 크기 ----------
      디자인 시안들이 «본문 최소 20px» 를 말하는 것은 «멀리서 보는 슬라이드» 라서다.
      손에 든 화면은 그럴 필요가 없다. 대신 **눈이 편한 사람마다 다르다** 는 것이 사실이라,
@@ -315,6 +377,23 @@
   .picklabel { font-weight: 700; font-size: calc(13.5px * var(--fs)); }
   .pickwhy { font-size: calc(12px * var(--fs)); color: var(--ink-soft); line-height: 1.5; }
   @media (max-width: 560px) { .pickrow2 { grid-template-columns: 1fr; } }
+
+  /* 색감 고르기 — 견본이 «그 색감의 진짜 값» 으로 칠해진다.
+     단추마다 data-tone 이 붙어 있어서, 안쪽 var() 가 그 색감에서 풀린다. */
+  .tonerow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .tonebtn { display: flex; align-items: center; gap: 9px; padding: 9px 11px; text-align: left;
+             cursor: pointer; border: var(--bw) solid var(--line); border-radius: var(--r-btn);
+             background: var(--panel); color: var(--ink); }
+  .tonebtn:hover { border-color: var(--brand); }
+  .tonebtn.on { border-color: var(--brand); box-shadow: inset 0 0 0 1px var(--brand); }
+  .toneswatch { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; flex: 0 0 auto;
+                width: 30px; height: 30px; border-radius: 7px; overflow: hidden;
+                border: 1px solid var(--line-soft); }
+  .toneswatch i { display: block; }
+  .tonename { display: flex; flex-direction: column; min-width: 0; }
+  .tonename strong { font-size: calc(13px * var(--fs)); }
+  .tonename span { font-size: calc(12px * var(--fs)); color: var(--ink-soft); line-height: 1.45; }
+  @media (max-width: 560px) { .tonerow { grid-template-columns: 1fr 1fr; } }
 
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; }
@@ -1284,6 +1363,7 @@
     materialsFolderName: "자료",
     viewMode: "stream",   // stream(나열) | grid(바둑판) | list(목록)
     theme: "",           // 모양 프리셋. 빈 값이면 «아직 안 골랐다» — 첫 실행에 물어본다
+    tone: "",            // 색감. 빈 값이면 «모양이 태어날 때의 색»
     mode: "",            // 밝기. "" 기기 따름 · "light" 밝게 · "dark" 어둡게
     fontSize: "",        // 글자 크기. "" 보통 · "big" 크게 · "huge" 아주 크게
     maskGrain: 1,        // 모자이크 칸 크기 0 곱게 · 1 보통 · 2 굵게
@@ -1310,6 +1390,25 @@
     { key: "draft", label: "설계도",   sub: "가장 정밀하게", tone: 7, font: "IBM+Plex+Sans+KR:wght@400;500;600",
       desc: "모서리를 깎지 않고, 선을 머리카락만큼 얇게. 군더더기 없이 빽빽하게 봅니다." }
   ];
+  /* 색감 여섯 — 모양과 «따로» 도는 축.
+     모양을 고르면 그 모양에 어울리는 색감이 먼저 걸리고, 그 뒤에 마음대로 바꿀 수 있다. */
+  var TONES = [
+    { key: "craft",  label: "크래프트", sub: "크림 종이에 붉은 흙" },
+    { key: "sunny",  label: "볕",       sub: "노란 종이에 빨강" },
+    { key: "sky",    label: "하늘",     sub: "흰 종이에 파랑" },
+    { key: "forest", label: "숲",       sub: "연둣 종이에 짙은 초록" },
+    { key: "ink",    label: "먹",       sub: "회백 종이에 먹" },
+    { key: "blue",   label: "청사진",   sub: "청회 바탕에 청록" }
+  ];
+  /* 모양마다 «태어날 때의 색». 색감을 따로 안 고르면 이 색으로 선다.
+     이 짝이 곧 v6 까지의 프리셋 일곱이라, 쓰던 사람에게는 아무것도 안 바뀐 것처럼 보인다. */
+  var TONE_OF = { play: "sunny", memo: "craft", brick: "craft", note: "craft",
+                  base: "sky", paper: "ink", draft: "blue" };
+  function toneOf(shapeKey, picked) {
+    if (picked && TONES.some(function (t) { return t.key === picked; })) return picked;
+    return TONE_OF[shapeKey] || "sky";
+  }
+
   var FOLDER_MODES = [
     { key: "perEntry", label: "기록마다 폴더 하나", desc: "2026-08-16_경험_수업회고/ 안에 .md 와 자료를 함께" },
     { key: "materials", label: "글과 자료를 분리", desc: ".md 는 맨 위, 사진·파일은 자료/ 폴더에" },
@@ -1530,6 +1629,7 @@
     // 관계망(modal)은 «골라 두는 보기» 가 아니라서 저장된 값으로 받아들이지 않는다
     if (VIEW_MODES.some(function (v) { return !v.modal && v.key === s.viewMode; })) out.viewMode = s.viewMode;
     if (typeof s.theme === "string" && (s.theme === "" || THEMES.some(function (t) { return t.key === s.theme; }))) out.theme = s.theme;
+    if (s.tone === "" || TONES.some(function (t) { return t.key === s.tone; })) out.tone = s.tone;
     if (s.mode === "" || s.mode === "light" || s.mode === "dark") out.mode = s.mode;
     if (s.fontSize === "" || s.fontSize === "big" || s.fontSize === "huge") out.fontSize = s.fontSize;
     if (typeof s.maskGrain === "number" && s.maskGrain >= 0 && s.maskGrain <= 2) out.maskGrain = s.maskGrain | 0;
@@ -1576,6 +1676,9 @@
     if (t.key === "base") root.removeAttribute("data-theme");
     else root.setAttribute("data-theme", t.key);
     ensureThemeFont(t.key);
+
+    // 색감 — 안 고르면 그 모양이 태어날 때의 색
+    root.setAttribute("data-tone", toneOf(t.key, opt.tone));
 
     // 밝기 — 빈 값이면 «기기 따름» 이라 아무것도 안 건다
     if (opt.mode === "light" || opt.mode === "dark") root.setAttribute("data-mode", opt.mode);
@@ -9019,12 +9122,51 @@
         body.appendChild(g);
       }
 
-      axis("② 밝기", "모양은 그대로 두고 밝기만 뒤집습니다. 어느 모양이든 어둡게 볼 수 있습니다.", "mode", [
+      /* ② 색감 — 모양과 따로 도는 축.
+         전에는 색이 모양에 붙어 있어서 「공책 모양에 청사진 색」 을 할 수 없었다. */
+      var gT = el("div", "field");
+      gT.appendChild(el("label", null, "② 색감"));
+      gT.appendChild(el("p", "desc",
+        "모양은 그대로 두고 색만 갈아입힙니다. 안 고르면 그 모양이 태어날 때의 색으로 섭니다."));
+      var tRow = el("div", "tonerow");
+      var pickedTone = toneOf(draft.theme || "base", draft.tone);
+      TONES.forEach(function (tn) {
+        var b = el("button", "tonebtn" + (pickedTone === tn.key ? " on" : ""));
+        b.type = "button";
+        b.setAttribute("data-tone", tn.key);          // 견본이 그 색감의 진짜 값을 쓰게
+        var sw = el("span", "toneswatch");
+        ["--panel", "--brand", "--t1", "--t3"].forEach(function (v) {
+          var d = el("i"); d.style.background = "var(" + v + ")"; sw.appendChild(d);
+        });
+        b.appendChild(sw);
+        var nm = el("span", "tonename");
+        nm.appendChild(el("strong", null, tn.label));
+        nm.appendChild(el("span", null, tn.sub));
+        b.appendChild(nm);
+        b.addEventListener("click", function () {
+          draft.tone = tn.key;
+          applyTheme(draft.theme || "base", draft);
+          paint();
+        });
+        tRow.appendChild(b);
+      });
+      gT.appendChild(tRow);
+      var reset = el("button", "btn sm", "↩ 모양이 태어날 때의 색으로");
+      reset.style.marginTop = "8px";
+      reset.addEventListener("click", function () {
+        draft.tone = "";
+        applyTheme(draft.theme || "base", draft);
+        paint();
+      });
+      gT.appendChild(reset);
+      body.appendChild(gT);
+
+      axis("③ 밝기", "모양은 그대로 두고 밝기만 뒤집습니다. 어느 모양이든 어둡게 볼 수 있습니다.", "mode", [
         ["", "🖥️", "기기 따름", "기기가 어두우면 어둡게"],
         ["light", "☀️", "밝게", "언제나 밝은 종이"],
         ["dark", "🌙", "어둡게", "밤·강당·눈이 부실 때"]
       ]);
-      axis("③ 글자 크기", "모양과 색은 그대로고 크기만 커집니다. 화면이 좁으면 줄이 늘어납니다.", "fontSize", [
+      axis("④ 글자 크기", "모양과 색은 그대로고 크기만 커집니다. 화면이 좁으면 줄이 늘어납니다.", "fontSize", [
         ["", "가", "보통", "기본 15px"],
         ["big", "가", "크게", "약 17px"],
         ["huge", "가", "아주 크게", "약 19px"]

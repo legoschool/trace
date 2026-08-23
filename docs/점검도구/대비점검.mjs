@@ -112,6 +112,9 @@ const MEASURE = `(() => {
 })()`;
 
 const THEMES = ["play", "memo", "brick", "note", "base", "paper", "draft"];
+/* 색감 여섯. 색은 이제 «모양» 이 아니라 «색감» 이 쥐고 있다.
+   그래서 색 대비는 색감마다 한 번씩만 재면 된다 — 모양은 색을 안 건드리므로. */
+const TONES = ["craft", "sunny", "sky", "forest", "ink", "blue"];
 const rows = [];
 for (const th of THEMES) {
   for (const dark of [false, true]) {
@@ -158,6 +161,40 @@ for (const r of rows) {
   if (r.overflow || r.폰넘침) LOW.push(`${NAME[r.th]} ${r.dark ? "어두움" : "밝음"} · 가로 넘침 ${r.overflow}/${r.폰넘침}px`);
   if (r.cards !== 5) LOW.push(`${NAME[r.th]} ${r.dark ? "어두움" : "밝음"} · 카드가 ${r.cards}장`);
 }
+/* ───────────────────────────────────────────────────────────
+   색감 여섯 — 모양과 짝이 안 맞아도 읽히는가
+
+   색감을 모양에서 뗐으므로 「메모지 모양 + 청사진 색」 같은 짝이 생긴다.
+   여기서는 **가장 험한 모양** 하나에 색감 여섯을 차례로 입혀 본다.
+   메모지가 험한 이유 — 덮개(--veil)가 투명이라 카드 바탕에 «유형 색» 이 그대로 드러난다.
+   글자가 그 위에 얹히므로, 대비가 깨진다면 여기서 먼저 깨진다.
+   ─────────────────────────────────────────────────────────── */
+console.log("\n[색감 여섯 × 밝기 — 가장 험한 모양(메모지)에서]");
+console.log("색감        화면   카드 넘침 | 본문  제목  배지  날짜  태그  길찾기 단추  칩");
+const TNAME = { craft: "크래프트", sunny: "볕", sky: "하늘", forest: "숲", ink: "먹", blue: "청사진" };
+for (const tn of TONES) {
+  for (const dark of [false, true]) {
+    await send("Emulation.clearDeviceMetricsOverride");
+    await send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-color-scheme", value: dark ? "dark" : "light" }] });
+    await ev(SEED);
+    await ev(`localStorage.setItem('trace.settings.v1', JSON.stringify({version:1, theme:'memo', tone:'${tn}', viewMode:'stream', folderMode:'perEntry'})); true`);
+    await send("Page.reload", { ignoreCache: true });
+    await wait(2400);
+    await ev(`(() => { const c=document.querySelector('.composer'); if(c) c.style.display='none'; return true; })()`);
+    const m = JSON.parse(await ev(`JSON.stringify(${MEASURE})`));
+    const f = v => (v == null ? " --- " : String(v).padStart(5));
+    console.log(
+      (TNAME[tn] || tn).padEnd(7) + (dark ? " 어두움" : " 밝음 ") +
+      String(m.cards).padStart(5) + String(m.overflow).padStart(5) + " |" +
+      f(m.본문) + f(m.제목) + f(m.배지) + f(m.날짜) + f(m.태그) + f(m.길찾기) + f(m.단추) + f(m.유형칩));
+    for (const k of ["본문", "제목", "배지", "날짜", "태그", "길찾기", "단추", "유형칩", "띠"]) {
+      if (m[k] != null && m[k] < 4.5) LOW.push(`${TNAME[tn]} ${dark ? "어두움" : "밝음"} · ${k} ${m[k]}:1`);
+    }
+    if (m.overflow) LOW.push(`${TNAME[tn]} ${dark ? "어두움" : "밝음"} · 가로 넘침 ${m.overflow}px`);
+    if (m.cards !== 5) LOW.push(`${TNAME[tn]} ${dark ? "어두움" : "밝음"} · 카드가 ${m.cards}장`);
+  }
+}
+
 /* ───────────────────────────────────────────────────────────
    축이 서로 안 흔들리는가 — 밝기 · 글자 크기
 
