@@ -544,10 +544,15 @@
   .modal-bg { position: fixed; inset: 0; background: rgba(15,20,35,.55); z-index: 90;
               display: flex; align-items: center; justify-content: center; padding: 16px; }
   .modal { max-width: 620px; width: 100%; max-height: 88vh; display: flex; flex-direction: column; }
-  .modal .mhead { display: flex; align-items: center; gap: 8px; padding: 15px 18px; border-bottom: 1px solid var(--line); }
+  .modal .mhead { display: flex; align-items: center; gap: 8px; padding: 15px 18px; border-bottom: 1px solid var(--line);
+                  flex: 0 0 auto; }
   .modal .mhead h3 { margin: 0; font-size: 17px; }
-  .modal .mbody { padding: 18px; overflow: auto; }
-  .modal .mfoot { display: flex; gap: 8px; padding: 13px 18px; border-top: 1px solid var(--line); align-items: center; }
+  /* ⚠️ min-height: 0 이 없으면 몸통이 «내용만큼» 자리를 차지하겠다고 버틴다.
+     그러면 바닥줄이 창 밖으로 밀려나 목록 위에 겹쳐 보인다 (엮어내기 창이 그랬다).
+     flex 안에서 스크롤 되는 칸은 반드시 이 둘을 함께 줘야 한다. */
+  .modal .mbody { padding: 18px; overflow: auto; flex: 1 1 auto; min-height: 0; }
+  .modal .mfoot { display: flex; gap: 8px; padding: 13px 18px; border-top: 1px solid var(--line); align-items: center;
+                  flex: 0 0 auto; flex-wrap: wrap; }
   .tabs { display: flex; gap: 4px; padding: 10px 18px 0; flex-wrap: wrap; }
   .tab { border: none; background: transparent; color: var(--ink-soft); font-weight: 700; font-size: 13.5px;
          padding: 7px 12px; border-radius: 9px 9px 0 0; border-bottom: 2px solid transparent; }
@@ -2969,15 +2974,38 @@
   }
   // 브라우저로 바로 열어 읽을 수 있게 서식을 입힌 한 장짜리 HTML
   // book = true 면 여러 편을 엮은 «책» 서식(표지·목차·장)이 더 붙는다
+  /* ⚠️ 내보내는 쪽(.html)의 «모양 토큰».
+     화면에서 고른 프리셋이 여기까지 따라와야 한다. 안 그러면 앱은 공책인데
+     뽑아낸 자료만 파란 업무 문서로 나와, 같은 데서 나온 것으로 안 보인다.
+     여기 값은 view.html 의 것과 «같은 팔레트» 다. 한쪽을 고치면 저쪽도 맞춰야 한다. */
+  var EXPORT_TOKENS = [
+    ":root{--ink:#1c2333;--soft:#5b6479;--line:#e3e7ef;--brand:#3f5bd9;--bg:#f6f7fb;--panel:#fff;--radius:14px;--bw:1px;",
+    "--font-body:'Pretendard','Apple SD Gothic Neo','Malgun Gothic',system-ui,-apple-system,'Segoe UI',sans-serif;",
+    "--font-title:var(--font-body)}",
+    '[data-theme="memo"],[data-theme="brick"],[data-theme="play"]{--bg:#FBF6EE;--panel:#FFFDF8;--ink:#26221E;',
+    "--soft:#6E6459;--brand:#A8483C;--line:#26221E;--font-title:'Gaegu',var(--font-body);--bw:2.5px}",
+    '[data-theme="brick"]{--radius:8px}',
+    '[data-theme="play"]{--radius:18px;--bw:3.5px;--font-title:"Jua",var(--font-body)}',
+    '[data-theme="note"]{--bg:#EFE7DA;--panel:#FFFCF5;--ink:#26221E;--soft:#6E6459;--brand:#A8483C;',
+    "--line:#DCD1BE;--font-title:'Gaegu',var(--font-body);--radius:4px;--bw:1.5px}",
+    '[data-theme="paper"]{--bg:#F4F2ED;--panel:#fff;--ink:#1F1D1A;--soft:#6B6660;--brand:#3A4A5C;',
+    "--line:#DAD5CC;--font-body:'Gowun Batang',serif;--font-title:'Gowun Batang',serif;--radius:2px}",
+    '[data-theme="draft"]{--bg:#EDF1F4;--panel:#fff;--ink:#16202B;--soft:#5A6B7C;--brand:#0E6FA8;',
+    "--line:#C6D2DC;--font-body:'IBM Plex Sans KR',sans-serif;--font-title:'IBM Plex Sans KR',sans-serif;--radius:0px}"
+  ].join("");
+
   function htmlPage(titleEsc, inner, book) {
+    var th = settings.theme || "base";
+    var tm = themeOf(th);
     var css = [
-      ":root{--ink:#1c2333;--soft:#5b6479;--line:#e3e7ef;--brand:#3f5bd9;--bg:#f6f7fb}",
+      EXPORT_TOKENS,
       "*{box-sizing:border-box}",
       "body{margin:0;padding:36px 18px 72px;background:var(--bg);color:var(--ink);line-height:1.75;",
-      "font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic',system-ui,-apple-system,'Segoe UI',sans-serif;",
+      "font-family:var(--font-body);",
       "font-size:16px;word-break:keep-all}",
-      "main{max-width:760px;margin:0 auto;background:#fff;border:1px solid var(--line);",
-      "border-radius:14px;padding:40px 44px;box-shadow:0 6px 24px rgba(20,30,60,.06)}",
+      "h1,h2,h3{font-family:var(--font-title)}",
+      "main{max-width:760px;margin:0 auto;background:var(--panel);border:var(--bw) solid var(--line);",
+      "border-radius:var(--radius);padding:40px 44px;box-shadow:0 6px 24px rgba(20,30,60,.06)}",
       "h1{font-size:27px;line-height:1.35;margin:0 0 10px}",
       "h2{font-size:19px;margin:32px 0 10px;padding-top:4px}",
       "p{margin:0 0 14px}",
@@ -2996,23 +3024,29 @@
     var bookCss = !book ? "" : [
       "h1.booktitle{font-size:34px;margin:8px 0 6px;line-height:1.3}",
       "p.booksub{color:var(--soft);font-size:14px;margin:0 0 26px;padding-bottom:22px;border-bottom:2px solid var(--line)}",
-      "nav.toc{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:18px 22px;margin:0 0 34px}",
+      "nav.toc{background:var(--bg);border:var(--bw) solid var(--line);border-radius:var(--radius);padding:18px 22px;margin:0 0 34px}",
       "nav.toc h2{margin:0 0 10px;font-size:17px}",
       "nav.toc ol{margin:0;padding-left:20px}",
       "nav.toc li{margin:6px 0}",
       "nav.toc a{font-weight:600}",
       "nav.toc .tocmeta{display:block;font-size:12px;color:var(--soft);border:0}",
-      "section.chapter{margin:0 0 10px;padding:26px 0 6px;border-top:1px solid var(--line)}",
+      "section.chapter{margin:0 0 10px;padding:26px 0 6px;border-top:var(--bw) solid var(--line)}",
       "section.chapter:first-of-type{border-top:0}",
       "section.chapter h2{font-size:23px;margin:0 0 6px}",
       "p.chmeta{color:var(--soft);font-size:13px;margin:0 0 16px}",
-      ".chlinks{margin:18px 0 0;padding:11px 14px;background:var(--bg);border-radius:10px;font-size:13.5px;color:#333c52}",
+      ".chlinks{margin:18px 0 0;padding:11px 14px;background:var(--bg);border-radius:var(--radius);font-size:13.5px;color:var(--ink)}",
       "@media print{section.chapter{break-before:page;page-break-before:always}",
       "section.chapter:first-of-type{break-before:auto;page-break-before:auto}",
       "nav.toc{break-after:page;page-break-after:always}}"
     ].join("");
-    return '<!doctype html>\n<html lang="ko">\n<head>\n<meta charset="utf-8" />\n' +
-      '<meta name="viewport" content="width=device-width, initial-scale=1" />\n' +
+    /* 고른 프리셋이 손글씨·명조 글꼴을 쓰면 그 글꼴도 함께 불러온다.
+       기본(base)은 글꼴을 안 받는다 — 안 쓰는 사람까지 기다리게 할 이유가 없다. */
+    var fontLink = tm.font
+      ? '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=' + tm.font + '&display=swap" />\n'
+      : "";
+    var themeAttr = (th && th !== "base") ? ' data-theme="' + th + '"' : "";
+    return '<!doctype html>\n<html lang="ko"' + themeAttr + '>\n<head>\n<meta charset="utf-8" />\n' +
+      '<meta name="viewport" content="width=device-width, initial-scale=1" />\n' + fontLink +
       "<title>" + titleEsc + "</title>\n<style>" + css + bookCss + "</style>\n</head>\n<body>\n<main>\n" +
       inner + "\n</main>\n</body>\n</html>";
   }
@@ -6172,7 +6206,9 @@
               "영상과 녹음은 그 자리에서 바로 재생됩니다. 받는 사람은 로그인도 앱도 필요 없습니다. " +
               "⚠️ 링크는 «만든 그 순간» 이 담긴 사진입니다 — 뒤에 기록을 고치면 다시 만들어야 반영됩니다. " +
               "⚠️ 이 기록에 딸린 사진·영상·파일이 «링크가 있는 사람 = 읽기» 로 열립니다.",
-        button: "🔗 웹 쪽 링크 만들기",
+        /* 「쪽 링크」 라는 말이 낯설다는 이야기를 들었다. 사람들이 익숙한 말은 «URL» 이다.
+           줄 제목(① 🌐 웹 쪽으로)은 넷을 갈라 주는 이름이라 그대로 두고, 누르는 단추만 바꾼다. */
+        button: "🔗 URL 링크 만들기",
         allowed: true,
         getUrl: function () { return n.shareWebUrl; },
         setUrl: function (u) { n.shareWebUrl = u; },
@@ -6212,7 +6248,7 @@
         desc: "①과 달리 «고친 것이 저절로 따라갑니다» — 한 번 보낸 링크를 다시 만들 필요가 없습니다. 링크도 짧습니다. " +
               "다만 사진까지만 실립니다 — 영상·녹음은 안 들어갑니다. 자주 고치는 글을 계속 같은 링크로 보여 줄 때 좋습니다. " +
               "⚠️ ③과는 따로 도는 스위치입니다 — 이쪽을 끄려면 이 줄의 «공유 끄기» 를 눌러야 합니다.",
-        button: "🔗 문서 쪽 링크 만들기",
+        button: "🔗 문서 URL 링크 만들기",
         allowed: true,
         getUrl: function () { return n.sharePubUrl; },
         setUrl: function (u) { n.sharePubUrl = u; },
@@ -6227,7 +6263,7 @@
       shareRow({
         title: "③ 📄 구글 문서 파일 그대로",
         desc: "받는 사람이 «구글 문서» 를 그대로 엽니다. 구글 계정이 있으면 복사해 가거나 자기 드라이브에 담을 수 있습니다. 문서로 넘겨야 할 때 쓰세요.",
-        button: "🔗 글 공유 링크 만들기",
+        button: "🔗 문서 파일 URL 만들기",
         allowed: true,
         getUrl: function () { return n.shareUrl; },
         setUrl: function (u) { n.shareUrl = u; },
@@ -6242,7 +6278,7 @@
       shareRow({
         title: "④ 📁 폴더 통째로 — 원본 파일까지",
         desc: "이 기록의 드라이브 폴더를 통째로 엽니다. 원본 사진, 학습지, .md, HTML 파일까지 받는 사람이 내려받을 수 있습니다. 폴더는 지금 비공개이고, 누르는 순간 «링크가 있는 사람 = 읽기» 로 바뀝니다.",
-        button: "🔗 폴더 공유 링크 만들기",
+        button: "🔗 폴더 URL 만들기",
         allowed: folderCheck.ok,
         blockedWhy: folderCheck.why,
         getUrl: function () { return n.shareFolderUrl; },
@@ -7470,7 +7506,10 @@
     });
   }
 
-  // 설정 화면에 붙일 «즐겨찾기 한 줄». 지금 이 앱 주소가 그대로 박힌다.
+  /* «즐겨찾기 한 줄». 지금 이 앱 주소가 그대로 박힌다.
+     ⚠️ 지금은 아무 데서도 안 부른다 — 설정의 「웹 캡처」 칸을 뻐기 때문이다.
+        받는 쪽(intakeShared)은 그대로 살아 있으므로, 이 한 줄만 다시 어딘가에 내주면
+        그날로 되살아난다. 그래서 지우지 않고 둔다. */
   function bookmarkletCode() {
     var appUrl = location.origin + location.pathname;
     return "javascript:(function(){" +
@@ -8717,8 +8756,11 @@
 
     var tabs = el("div", "tabs");
     var body = el("div", "mbody");
+    /* ⚠️ 「웹 캡처」 칸을 뺐습니다. 설명이 길어 «무엇을 하라는 것인지» 가 안 잡혔습니다.
+       폰의 공유 시트로 보내는 길은 manifest 가 담당하므로 그대로 살아 있습니다.
+       함께 사라진 것은 «컴퓨터용 즐겨찾기 딱지(북마클릿)» 뿐입니다. */
     var TABS = [["look", "모양"], ["storage", "저장 위치"], ["types", "기록 유형"], ["naming", "파일 이름"],
-                ["capture", "웹 캡처"], ["advanced", "고급"]];
+                ["advanced", "고급"]];
     TABS.forEach(function (t) {
       var b = el("button", "tab" + (active === t[0] ? " on" : ""), t[1]);
       b.addEventListener("click", function () { active = t[0]; paint(); });
@@ -8762,7 +8804,6 @@
       else if (active === "storage") paintStorage();
       else if (active === "types") paintTypes();
       else if (active === "naming") paintNaming();
-      else if (active === "capture") paintCapture();
       else paintAdvanced();
     }
 
@@ -8799,64 +8840,6 @@
     }
 
     /* 웹에서 본 것을 바로 이 기록장으로 보내는 두 갈래 */
-    function paintCapture() {
-      var mobile = isTouchDevice();
-      var installed = window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
-
-      var f1 = el("div", "field");
-      f1.appendChild(el("label", null, "📱 폰 · 태블릿 — 공유 시트에서 바로 보내기"));
-      f1.appendChild(el("div", "desc",
-        "인터넷·유튜브·사진첩 어디서든 «공유» 를 누르고 목록에서 «기록장» 을 고르면, " +
-        "제목·주소·사진이 이 화면에 그대로 들어옵니다."));
-      var stateLine = el("div", "desc");
-      stateLine.innerHTML = installed
-        ? "<b>지금 앱으로 열려 있습니다.</b> 공유 목록에 «기록장» 이 이미 있을 겁니다."
-        : "먼저 <b>앱으로 설치</b>해야 공유 목록에 나타납니다. " +
-          (mobile ? "브라우저 메뉴에서 «홈 화면에 추가» 를 누르세요."
-                  : "폰에서 이 주소를 열고 «홈 화면에 추가» 를 누르면 됩니다.");
-      f1.appendChild(stateLine);
-      f1.appendChild(el("div", "crophint",
-        "⚠️ 아이폰은 이 방식을 지원하지 않습니다. 아이폰에서는 주소를 복사해 붙여넣거나, 사진첩에서 골라 넣으세요."));
-      body.appendChild(f1);
-
-      var f2 = el("div", "field");
-      f2.appendChild(el("label", null, "💻 컴퓨터 — 즐겨찾기 한 줄"));
-      f2.appendChild(el("div", "desc",
-        "아래 파란 딱지를 브라우저 <b>즐겨찾기 막대로 끌어다 놓으세요.</b> " +
-        "그다음부터는 아무 웹페이지에서나 그것을 누르면, 그 페이지의 제목·주소와 " +
-        "<b>드래그해 둔 글</b>이 새 창의 기록장으로 넘어옵니다."));
-      var drag = el("a", "btn primary", "📥 기록장에 담기");
-      drag.href = bookmarkletCode();
-      drag.draggable = true;
-      drag.style.textDecoration = "none";
-      drag.style.display = "inline-block";
-      drag.addEventListener("click", function (e) {
-        e.preventDefault();
-        toast("이 딱지는 «누르는» 것이 아니라 즐겨찾기 막대로 «끌어다 놓는» 것입니다.");
-      });
-      var row = el("div", "row"); row.appendChild(drag);
-      f2.appendChild(row);
-
-      var cp = el("button", "btn sm", "📋 주소 대신 복사하기");
-      cp.style.marginTop = "8px";
-      cp.addEventListener("click", function () {
-        copyText(bookmarkletCode())
-          .then(function () { toast("복사했습니다. 즐겨찾기를 새로 만들고 «URL» 칸에 붙여넣으세요."); })
-          .catch(function () { toast("복사하지 못했습니다."); });
-      });
-      f2.appendChild(cp);
-      f2.appendChild(el("div", "crophint",
-        "끌어다 놓기가 안 되면 이 단추로 복사한 뒤, 즐겨찾기를 하나 새로 만들어 주소 칸에 붙여넣으면 됩니다."));
-      body.appendChild(f2);
-
-      var f3 = el("div", "field");
-      f3.appendChild(el("label", null, "무엇이 들어오나"));
-      f3.appendChild(el("div", "desc",
-        "🔗 페이지 주소는 «링크» 블록으로, 드래그해 둔 글은 «인용» 블록으로, " +
-        "사진·파일은 그대로 첨부로 들어옵니다. 제목 칸이 비어 있으면 페이지 제목이 채워집니다. " +
-        "쓰던 글이 있으면 지우지 않고 그 뒤에 이어 붙습니다."));
-      body.appendChild(f3);
-    }
 
     function paintStorage() {
       var f1 = el("div", "field");
@@ -9080,6 +9063,15 @@
     }
 
     function paintAdvanced() {
+      /* ⚠️ 이 칸에는 «서로 다른 두 사람» 의 것이 섞여 있었다.
+         가져오기·백업·연결 해제는 «쓰는 사람» 의 것이고,
+         클라이언트 ID 와 앱 주소는 «사본을 지은 사람» 이 SETUP 할 때 한 번 쓰고 다시 볼 일이 없다.
+         섮여 있으면 사본을 받은 사람이 「내가 뭐를 잘못했나」 싶어진다. 그래서 갈라 놓는다. */
+      var whoUse = el("p", "desc");
+      whoUse.style.margin = "0 0 10px";
+      whoUse.innerHTML = "<b>여기부터는 쓰는 사람의 것입니다.</b> 마음대로 눌러 보셔도 됩니다.";
+      body.appendChild(whoUse);
+
       var fImp = el("div", "field");
       fImp.appendChild(el("label", null, "폴더에 있는데 목록에 없는 것 가져오기"));
       fImp.appendChild(el("p", "desc",
@@ -9119,9 +9111,26 @@
       fImp.appendChild(rImp);
       body.appendChild(fImp);
 
+      /* 관리자용 둘은 접어 둔다. 필요한 사람만 열어 보면 된다. */
+      var adminBox = el("div", "field");
+      adminBox.style.borderTop = "1px solid var(--line)";
+      adminBox.style.paddingTop = "14px";
+      var adminBtn = el("button", "btn sm", "▸ 사본을 지은 사람용 설정");
+      adminBtn.type = "button";
+      adminBox.appendChild(adminBtn);
+      adminBox.appendChild(el("p", "crophint",
+        "SETUP 을 따라 한 번 넣어 둔 값입니다. 쓰는 데는 볼 일이 없습니다."));
+      var adminWrap = el("div");
+      adminWrap.style.display = "none";
+      adminBox.appendChild(adminWrap);
+      // ↓ 붙이는 것은 맨 끝에. 쓰는 사람의 칸들이 먼저 서야 한다
+      adminBtn.addEventListener("click", function () {
+        var on = adminWrap.style.display === "none";
+        adminWrap.style.display = on ? "" : "none";
+        adminBtn.textContent = (on ? "▾" : "▸") + " 사본을 지은 사람용 설정";
+      });
+
       var f = el("div", "field");
-      f.style.borderTop = "1px solid var(--line)";
-      f.style.paddingTop = "14px";
       f.appendChild(el("label", null, "구글 OAuth 클라이언트 ID (관리자용)"));
       var r = el("div", "row");
       var inp = el("input", "inp mono");
@@ -9138,12 +9147,12 @@
       r.appendChild(inp); r.appendChild(b);
       f.appendChild(r);
       f.appendChild(el("p", "desc", "보통은 건드릴 필요가 없습니다. 앱에 이미 심어져 있습니다."));
-      body.appendChild(f);
+      adminWrap.appendChild(f);
 
       var f2 = el("div", "field");
       f2.appendChild(el("label", null, "이 앱 주소 (구글 콘솔의 '승인된 자바스크립트 원본'에 등록해야 하는 값)"));
       f2.appendChild(el("div", "preview", location.origin));
-      body.appendChild(f2);
+      adminWrap.appendChild(f2);
 
       var f3 = el("div", "field");
       f3.appendChild(el("label", null, "내보내기"));
@@ -9174,6 +9183,8 @@
       });
       f4.appendChild(lo);
       body.appendChild(f4);
+
+      body.appendChild(adminBox);   // 관리자용은 맨 아래에 접혀 있다
     }
 
     paint();

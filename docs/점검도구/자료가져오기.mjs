@@ -649,6 +649,12 @@ const rows = ["① 🌐 웹 쪽으로", "② 📰 구글 문서 쪽으로", "③
 check("공유하는 길 넷이 이름으로 갈려 있다",
   rows.every(r => String(shareUi).indexOf(r) >= 0),
   rows.filter(r => String(shareUi).indexOf(r) < 0).join(" / ") || "넷 다 있음");
+/* 「쪽 링크 만들기」 라는 말이 낯설다는 이야기를 들었다. 익숙한 말은 «URL» 이다.
+   넷이 여전히 서로 갈려 있어야 한다 — 다 같은 이름이면 고를 수가 없다. */
+const btnNames = ["🔗 URL 링크 만들기", "🔗 문서 URL 링크 만들기", "🔗 문서 파일 URL 만들기", "🔗 폴더 URL 만들기"];
+check("누르는 단추가 «URL» 이라는 익숙한 말을 쓴다",
+  btnNames.every(b => String(shareUi).indexOf(b) >= 0) && String(shareUi).indexOf("쪽 링크 만들기") < 0,
+  btnNames.filter(b => String(shareUi).indexOf(b) < 0).join(" / ") || "넷 다 URL");
 check("무엇을 고를지 한 줄로 알려 준다", /고르는 잣대/.test(String(shareUi)));
 await ev(`(() => { document.querySelectorAll('.modal-bg').forEach(b => b.remove()); return true; })()`);
 await wait(300);

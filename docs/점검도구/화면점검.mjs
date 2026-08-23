@@ -683,8 +683,10 @@ const capUi = await evaluate(`(() => {
   });
 })()`);
 const cu = JSON.parse(capUi);
-check("설정에 «웹 캡처» 칸이 있다", cu.found, capTab ? "" : "설정 단추를 못 찾음");
-check("즐겨찾기 한 줄이 만들어진다", cu.hasAppUrl && cu.href.startsWith("javascript:"), cu.href);
+/* ⚠️ 「웹 캡처」 칸은 뺐다 — 설명이 길어 «무엇을 하라는 것인지» 가 안 잡혔다.
+   그래서 여기서는 «없어야 한다» 를 본다. 다시 생기면 그때 이 줄을 뒤집으면 된다.
+   폰의 공유 시트로 받는 길은 manifest 가 담당하므로 그대로 살아 있다 (아래 6번에서 본다). */
+check("설정에서 «웹 캡처» 칸을 뺐다 (설정 화면)", !cu.found, cu.found ? "아직 있다" : "없음");
 
 /* ---------- 6. 웹 캡처가 실제로 블록이 되는가 ----------
    ⚠️ 앞 시험들이 제목 칸을 채워 놓았다. 웹 캡처는 «제목이 비어 있을 때만» 채우므로
@@ -896,7 +898,82 @@ check("연결 전에는 공유가 막히고 이유를 말해 준다", /연결|�
 await evaluate(`(() => { const v = document.querySelector('.viewer'); if (v) v.remove();
   document.body.style.overflow = ''; return true; })()`);
 
-/* ---------- 9. 끝난 뒤에도 오류가 없어야 한다 ---------- */
+/* ---------- 9. 엮어내기 — 창이 안 깨지고, 뽑은 것이 고른 모양을 따라가는가 ---------- */
+await evaluate(`(() => { document.querySelectorAll('.modal-bg').forEach(b => b.remove()); return true; })()`);
+// 고른 프리셋이 «뽑아낸 파일» 까지 따라오는지 보려면 기본이 아닌 것으로 골라 둬야 한다
+await evaluate(`(() => {
+  const s = JSON.parse(localStorage.getItem('trace.settings.v1') || '{}');
+  s.theme = 'note';
+  localStorage.setItem('trace.settings.v1', JSON.stringify(s));
+  return true;
+})()`);
+await send("Page.reload", { ignoreCache: true });
+await wait(2500);
+
+const compiled = JSON.parse(await evaluate(`(() => {
+  const b = Array.from(document.querySelectorAll('button')).find(x => (x.textContent||'').includes('엮어내기'));
+  if (!b) return JSON.stringify({ err: 'NO_BUTTON' });
+  b.click();
+  const m = document.querySelector('.modal-bg .card.modal');
+  if (!m) return JSON.stringify({ err: 'NO_MODAL' });
+  const foot = m.querySelector('.mfoot').getBoundingClientRect();
+  const body = m.querySelector('.mbody').getBoundingClientRect();
+  return JSON.stringify({
+    overlap: Math.round(body.bottom - foot.top),      // 0 이하라야 한다
+    outside: Math.round(foot.bottom - window.innerHeight)
+  });
+})()`));
+/* ⚠️ 바닥줄이 목록 위에 겹쳐 보이던 자리다. flex 안에서 스크롤 되는 칸에
+   min-height:0 이 없으면 몸통이 «내용만큼» 버텨 바닥줄을 창 밖으로 밀어낸다. */
+check("엮어내기 창의 바닥줄이 목록을 안 가린다", !compiled.err && compiled.overlap <= 0,
+  compiled.err || `겹침 ${compiled.overlap}px`);
+check("엮어내기 창이 화면 안에 들어온다", !compiled.err && compiled.outside <= 0,
+  compiled.err || `화면 밖 ${compiled.outside}px`);
+
+const book = JSON.parse(await evaluate(`(async () => {
+  let got = null;
+  const real = URL.createObjectURL.bind(URL);
+  URL.createObjectURL = function (b) { got = b; return real(b); };
+  const btn = Array.from(document.querySelectorAll('.card.modal .mfoot button')).find(x => (x.textContent||'').includes('.html'));
+  if (!btn) { URL.createObjectURL = real; return JSON.stringify({ err: 'NO_HTML_BUTTON' }); }
+  btn.click();
+  await new Promise(r => setTimeout(r, 600));
+  URL.createObjectURL = real;
+  if (!got) return JSON.stringify({ err: 'NO_BLOB' });
+  const t = await got.text();
+  return JSON.stringify({
+    theme: /data-theme="note"/.test(t),
+    font: /Gaegu/.test(t),
+    token: /--panel:#FFFCF5/.test(t),
+    leak: /EduCreator|>홈</.test(t)
+  });
+})()`));
+check("뽑아낸 .html 이 고른 모양을 따라간다", !book.err && book.theme && book.token,
+  book.err || `data-theme ${book.theme ? "있음" : "없음"} · 토큰 ${book.token ? "있음" : "없음"}`);
+check("프리셋 글꼴까지 함께 불러온다", !!book.font, book.font ? "Gaegu" : "글꼴 링크 없음");
+check("뽑아낸 파일에 군더더기 머리줄이 없다", !book.leak, book.leak ? "무언가 끼어 있다" : "깨끗함");
+await evaluate(`(() => { document.querySelectorAll('.modal-bg').forEach(b => b.remove()); return true; })()`);
+
+/* ---------- 10. 설정 — 「웹 캡처」 를 빼고, 관리자용은 접어 두었는가 ---------- */
+const setTabs = JSON.parse(await evaluate(`(() => {
+  document.getElementById('btnSettings').click();
+  const tabs = Array.from(document.querySelectorAll('.tabs .tab')).map(t => t.textContent);
+  const adv = Array.from(document.querySelectorAll('.tabs .tab')).find(t => t.textContent === '고급');
+  if (adv) adv.click();
+  const toggle = Array.from(document.querySelectorAll('.mbody button')).find(b => (b.textContent||'').includes('사본을 지은 사람용'));
+  const box = toggle ? toggle.parentElement.querySelector('div') : null;
+  const before = box ? box.style.display : 'NO_BOX';
+  if (toggle) toggle.click();
+  const after = box ? box.style.display : 'NO_BOX';
+  return JSON.stringify({ tabs, hasToggle: !!toggle, before, after });
+})()`));
+check("설정에서 «웹 캡처» 칸을 뺐다", setTabs.tabs.indexOf("웹 캡처") < 0, setTabs.tabs.join(" · "));
+check("고급 — 관리자용은 접혀 있다", setTabs.hasToggle && setTabs.before === "none",
+  setTabs.hasToggle ? `처음 ${setTabs.before}` : "여닫는 단추 없음");
+check("고급 — 눌러야 펴진다", setTabs.after === "", `누른 뒤 ${setTabs.after || "(펴짐)"}`);
+await evaluate(`(() => { document.querySelectorAll('.modal-bg').forEach(b => b.remove()); return true; })()`);
+
+/* ---------- 11. 끝난 뒤에도 오류가 없어야 한다 ---------- */
 check("끝까지 오류 없음", errors.length === 0 && logs.length === 0, [...errors, ...logs][0] || "");
 
 const failed = results.filter((r) => !r.ok);
