@@ -251,9 +251,12 @@ const modeUi = await evaluate(`(() => {
   });
 })()`);
 const mu = JSON.parse(modeUi);
-check("정리 방식 다섯이 한눈에 펼쳐진다", mu.cards === 5, `카드 ${mu.cards}개`);
+/* 다섯이었던 것을 둘로 줄였다. 고르는 자리에서 다섯을 견주면 무엇을 골라도
+   «다른 넷이 나았을까» 가 남는다. 이 앱이 정말 묻는 것은 하나다 ·
+   한 편을 한 폴더에 담을까, 말까. 옛 방식 셋은 쓰던 사람에게만 한 칸으로 보인다. */
+check("정리 방식은 둘뿐이다", mu.cards === 2, `카드 ${mu.cards}개`);
 check("고르는 목록(select)이 그림을 덮지 않는다", mu.selects === 0, `select ${mu.selects}개`);
-check("방식마다 폴더 그림이 붙는다", mu.trees === 5 && mu.icons >= 15, `그림 ${mu.trees}개 · 아이콘 ${mu.icons}개`);
+check("방식마다 폴더 그림이 붙는다", mu.trees === 2 && mu.icons >= 6, `그림 ${mu.trees}개 · 아이콘 ${mu.icons}개`);
 check("«폴더 구조» 로 가는 길이 있다", mu.browse === true);
 
 // 눌러서 바꾸면 그 카드로 «고름» 이 옮겨가야 한다

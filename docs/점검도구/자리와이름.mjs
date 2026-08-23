@@ -516,6 +516,50 @@ const finalTrashed = await ev(`JSON.stringify(window.__drive.trashed)`);
 check("내내 앱이 제멋대로 옮기지 않았다", finalMoved === "[]", finalMoved);
 check("내내 앱이 제멋대로 버리지 않았다", finalTrashed === "[]", finalTrashed);
 
+/* =========================================================
+   상황 ⑫ · 옛 정리 방식을 쓰던 사람
+   고르는 목록에서는 뺐지만, 쓰던 사람의 설정은 그대로 돌아야 한다.
+   여기서 기본값으로 되돌아가면 다음 저장부터 파일이 딴 곳에 쌓인다. 자료 사고다.
+   ========================================================= */
+await ev(`(() => {
+  sessionStorage.setItem('keep', '1');   // 가짜 드라이브가 다시 비우지 않게
+  var s = JSON.parse(localStorage.getItem('trace.settings.v1') || '{}');
+  s.folderMode = 'monthly';
+  localStorage.setItem('trace.settings.v1', JSON.stringify(s));
+  return true;
+})()`);
+await send("Page.reload");
+await wait(3000);
+const kept = await ev(`(() => {
+  var s = JSON.parse(localStorage.getItem('trace.settings.v1') || '{}');
+  return s.folderMode || '';
+})()`);
+check("⑫ 옛 방식을 쓰던 설정이 그대로 남는다", kept === "monthly", `지금 방식: ${kept || "비어 있음"}`);
+
+await closeModals();
+await ev(`document.getElementById('btnSettings').click(); true`);
+await wait(500);
+await ev(`(() => {
+  const t = Array.from(document.querySelectorAll('.tabs .tab')).find(x => x.textContent === '저장 위치');
+  if (t) t.click(); return true;
+})()`);
+await wait(600);
+const shown = await ev(`(() => {
+  const cards = Array.from(document.querySelectorAll('.modecard'));
+  return JSON.stringify({
+    n: cards.length,
+    names: cards.map(c => (c.querySelector('strong') || {}).textContent || ''),
+    badge: cards.some(c => /지금 쓰는 방식/.test(c.textContent || '')),
+    warn: cards.some(c => /목록에서 사라집니다/.test(c.textContent || ''))
+  });
+})()`).then((x) => JSON.parse(x));
+check("⑫ 쓰던 옛 방식은 그 사람에게만 한 칸으로 보인다",
+  shown.n === 3 && shown.names.indexOf("월별 폴더") >= 0 && shown.badge,
+  `칸 ${shown.n}개 · ${shown.names.join(" / ")}`);
+check("⑫ 떠나면 못 돌아온다고 미리 말해 준다", shown.warn, shown.warn ? "적혀 있음" : "말이 없다");
+await closeModals();
+await wait(300);
+
 const realErrors = errors.filter((e) => !/GSI_LOGGER|popup|ERR_INTERNET|ERR_NAME|gsi\/client|404/i.test(String(e)));
 check("옮기고 바꾸고 버리는 내내 오류 없음", realErrors.length === 0, realErrors[0] || "");
 
