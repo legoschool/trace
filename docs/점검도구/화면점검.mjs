@@ -973,6 +973,33 @@ check("고급 — 관리자용은 접혀 있다", setTabs.hasToggle && setTabs.b
 check("고급 — 눌러야 펴진다", setTabs.after === "", `누른 뒤 ${setTabs.after || "(펴짐)"}`);
 await evaluate(`(() => { document.querySelectorAll('.modal-bg').forEach(b => b.remove()); return true; })()`);
 
+/* ---------- 10-2. 넣기 줄 — ＋ 는 앞에 하나, 단추마다 그림글자 ---------- */
+const addbar = JSON.parse(await evaluate(`(() => {
+  const lead = document.querySelector('.addlead .addplus');
+  const btns = Array.from(document.querySelectorAll('#addbar button[data-add]'))
+    .map(b => ({ kind: b.getAttribute('data-add'), t: b.textContent.trim() }));
+  return JSON.stringify({
+    plus: lead ? lead.textContent.trim() : '',
+    plusPx: lead ? Math.round(parseFloat(getComputedStyle(lead).fontSize)) : 0,
+    btns: btns,
+    withPlus: btns.filter(b => b.t.indexOf('＋') >= 0).length,
+    // 그림글자로 시작하지 않는 단추 (❝ 는 따옴표라 이모지 판정에 안 걸린다)
+    noIcon: btns.filter(b => /^[가-힣A-Za-z]/.test(b.t)).map(b => b.kind)
+  });
+})()`));
+/* ＋ 를 단추마다 붙이면 열한 번 되풀이된다. 앞에 크게 하나만 세우면
+   «이 아래는 다 넣는 것» 이라고 한 번에 읽히고, 단추 자리도 그만큼 넓어진다. */
+check("넣기 줄 앞에 큰 ＋ 가 하나 선다", addbar.plus === "＋" && addbar.plusPx >= 20,
+  `${addbar.plus || "없음"} · ${addbar.plusPx}px`);
+check("단추마다 ＋ 를 되풀이하지 않는다", addbar.withPlus === 0, `＋ 붙은 단추 ${addbar.withPlus}개`);
+check("단추마다 그림글자가 앞에 붙는다", addbar.noIcon.length === 0,
+  addbar.noIcon.join(",") || `${addbar.btns.length}개 다 붙음`);
+/* 헷갈리기 쉬운 두 쌍이 서로 다른 그림글자여야 한다 —
+   📸 캡처(찍는 것) / 🖼️ 사진(이미 있는 것), ✍️ 글(치는 것) / 🖌️ 손 메모(긋는 것) */
+const pairs = ["capture", "image", "text", "draw"].map(k => (addbar.btns.find(b => b.kind === k) || {}).t || "");
+check("헷갈리는 짝이 서로 다른 그림글자다", new Set(pairs.map(t => t.slice(0, 2))).size === 4,
+  pairs.join(" / "));
+
 /* ---------- 11. 끝난 뒤에도 오류가 없어야 한다 ---------- */
 check("끝까지 오류 없음", errors.length === 0 && logs.length === 0, [...errors, ...logs][0] || "");
 

@@ -445,6 +445,17 @@
 
   .addbar { display: flex; gap: 6px; flex-wrap: wrap; padding: 10px; border: 1px dashed var(--line); border-radius: 12px; background: var(--bg); }
   .addbar .btn { background: var(--panel); }
+  /* 단추마다 ＋ 를 붙이는 대신, 앞에 크게 하나만 세운다.
+     ＋ 는 «누를 것» 이 아니라 «이 아래가 다 넣는 것» 이라는 표지라 단추로 만들지 않는다. */
+  .addlead { display: flex; align-items: center; gap: 5px; padding: 0 8px 0 2px; margin-right: 2px;
+             align-self: stretch; border-right: 1px solid var(--line); user-select: none; }
+  .addplus { font-size: 26px; line-height: 1; font-weight: 800; color: var(--brand); }
+  .addlabel { font-size: 12.5px; font-weight: 700; color: var(--ink-soft); }
+  @media (max-width: 560px) {
+    /* 좁은 화면에서는 ＋ 만 남기고 글자를 뺀다. 한 줄이라도 더 단추가 서야 한다. */
+    .addlead { border-right: 0; padding-right: 2px; }
+    .addlabel { display: none; }
+  }
   .addbar.hover { border-color: var(--brand); background: var(--brand-soft); }
   .addhint { width: 100%; font-size: 12px; color: var(--ink-soft); margin-top: 2px; }
 
@@ -1052,21 +1063,24 @@
         <span class="addhint" id="maskBarHint"></span>
       </div>
       <div id="blocks"></div>
+      <!-- ＋ 를 단추마다 붙이면 열한 번 되풀이된다. 앞에 크게 하나만 세우면
+           «이 아래는 다 넣는 것» 이라고 한 번에 읽힌다. 자리도 그만큼 넓어진다. -->
       <div class="addbar" id="addbar">
-        <button class="btn sm" data-add="heading">＋ 소제목</button>
-        <button class="btn sm" data-add="text">＋ 글</button>
-        <button class="btn sm" data-add="quote">＋ 인용</button>
-        <button class="btn sm" data-add="capture">＋ 캡처</button>
-        <button class="btn sm" data-add="image">＋ 사진</button>
-        <button class="btn sm" data-add="draw">＋ 손 메모</button>
-        <button class="btn sm" data-add="voice">＋ 녹음</button>
-        <button class="btn sm" data-add="file">＋ 파일·영상</button>
-        <button class="btn sm" data-add="link">＋ 링크</button>
-        <button class="btn sm" data-add="embed">＋ 코드 삽입</button>
-        <button class="btn sm" data-add="divider">＋ 구분선</button>
+        <div class="addlead"><span class="addplus">＋</span><span class="addlabel">넣기</span></div>
+        <button class="btn sm" data-add="heading">🔠 소제목</button>
+        <button class="btn sm" data-add="text">✍️ 글</button>
+        <button class="btn sm" data-add="quote">❝ 인용</button>
+        <button class="btn sm" data-add="capture">📸 캡처</button>
+        <button class="btn sm" data-add="image">🖼️ 사진</button>
+        <button class="btn sm" data-add="draw">🖌️ 손 메모</button>
+        <button class="btn sm" data-add="voice">🎙️ 녹음</button>
+        <button class="btn sm" data-add="file">📁 파일·영상</button>
+        <button class="btn sm" data-add="link">🔗 링크</button>
+        <button class="btn sm" data-add="embed">🧩 코드 삽입</button>
+        <button class="btn sm" data-add="divider">➖ 구분선</button>
         <div class="addhint">
           파일은 <b>화면 아무 곳에나 끌어다 놓으면</b> 추가됩니다. 글 칸에 이미지 붙여넣기(Ctrl+V)도 됩니다.
-          영상은 <b>200MB(1080p 기준 약 10~15분)</b> 까지 — 더 길면 유튜브에 «일부공개»로 올리고 <b>＋코드 삽입</b> 에 주소를 붙여넣으세요.
+          영상은 <b>200MB(1080p 기준 약 10~15분)</b> 까지 — 더 길면 유튜브에 «일부공개»로 올리고 <b>🧩 코드 삽입</b> 에 주소를 붙여넣으세요.
         </div>
       </div>
       <input type="file" id="fileInput" multiple class="hidden" />
@@ -5294,7 +5308,7 @@
       if (f.size > MAX_FILE_MB * 1024 * 1024) {
         toast("「" + f.name + "」 은 " + MAX_FILE_MB + "MB 를 넘어 건너뜁니다. (" + humanSize(f.size) + ")");
         if (/^video\//.test(f.type || "")) {
-          toast2("긴 영상은 유튜브에 «일부공개»로 올리고, ＋코드 삽입 에 주소를 붙여넣는 편이 낫습니다.");
+          toast2("긴 영상은 유튜브에 «일부공개»로 올리고, 🧩 코드 삽입 에 주소를 붙여넣는 편이 낫습니다.");
         }
         return;
       }
