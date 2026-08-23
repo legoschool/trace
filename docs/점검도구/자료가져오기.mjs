@@ -205,8 +205,10 @@ async function pressImport() {
   await ev(`(() => { document.querySelectorAll('.modal-bg').forEach(b => b.remove()); return true; })()`);
   await ev(`document.getElementById('btnSettings').click(); true`);
   await wait(500);
+  // 「📥 가져오기」 는 이제 제 칸이다. «고급» 에 묻혀 있던 것을 꺼냈다.
   await ev(`(() => {
-    const t = Array.from(document.querySelectorAll('.tabs .tab')).find(x => x.textContent === '고급');
+    const t = Array.from(document.querySelectorAll('.tabs .tab')).find(x => (x.textContent||'').includes('가져오기'));
+    if (!t) return false;
     t.click(); return true;
   })()`);
   await wait(400);

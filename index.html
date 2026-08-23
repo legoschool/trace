@@ -978,6 +978,22 @@
 
   footer.site { text-align: center; color: var(--ink-soft); font-size: 12.5px; padding: 30px 0 10px; }
   footer.site a { color: var(--ink-soft); }
+  /* 태그가 «나중에 이어 주는 실» 이라는 것을 적는 자리 */
+  .taghint { margin: 7px 0 0; font-size: 12.5px; line-height: 1.7; color: var(--ink-soft); }
+  .taghint b { color: var(--ink); }
+  /* 바닥의 TRACE 설명 — 도구(구글 기록장)와 체계(TRACE)를 갈라 적는다 */
+  .tracebox { max-width: 620px; margin: 0 auto 18px; padding: 20px 22px; text-align: left;
+              background: var(--panel); border: var(--bw) solid var(--line); border-radius: var(--radius); }
+  .tracename { font-family: var(--font-title); font-size: 15px; color: var(--ink); margin-bottom: 8px; }
+  .tracewords { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-bottom: 10px; font-size: 12.5px; }
+  .tracewords span { color: var(--ink-soft); }
+  .tracewords b { color: var(--brand); font-size: 14px; }
+  .tracedesc { margin: 0 0 10px; font-size: 13px; line-height: 1.8; color: var(--ink-soft); }
+  .tracedesc b, .tracetool b { color: var(--ink); }
+  .tracetool { margin: 0; font-size: 13px; line-height: 1.8; color: var(--ink-soft);
+               padding-top: 10px; border-top: 1px solid var(--line-soft, var(--line)); }
+  .tracetool .quiet { display: block; margin-top: 3px; opacity: .8; }
+  @media (max-width: 560px) { .tracebox { padding: 15px 15px; } }
 </style>
 </head>
 <body>
@@ -1019,6 +1035,13 @@
       <div class="field" style="margin-bottom:12px;">
         <label for="tags">태그 <span style="font-weight:400;color:var(--ink-soft)">(쉼표로 구분)</span></label>
         <input id="tags" class="inp" placeholder="수업, 에듀테크, 회고" />
+        <!-- 태그를 «지금 나누는 일» 로만 여기면 대충 적게 된다.
+             나중에 그것이 «이어 주는 실» 이 된다는 것을 여기서 한 줄로 알려 준다. -->
+        <p class="taghint">
+          🏷️ <b>태그는 나중에 서로를 이어 줍니다.</b>
+          같은 태그를 단 기록끼리 <b>한 번에 모아 보고</b>, 🕸️ 관계망에서 <b>한 덩어리로 묶여</b> 보입니다.
+          태그 이름이 <b>드라이브 폴더 이름</b>이 되게 할 수도 있습니다 (설정 → 저장 위치).
+        </p>
       </div>
     </div>
 
@@ -1073,8 +1096,26 @@
   <div class="chips filters tagfilters" id="tagFilters"></div>
   <div id="list"></div>
 
+  <!-- 도구 이름과 체계 이름을 갈라 적는다.
+       사람이 쓰는 도구는 「구글 기록장」이고, TRACE 는 그 도구가 속한 체계다.
+       앞으로 TRACE 아래에 다른 도구가 더 붙을 자리라, 여기서 미리 갈라 둔다. -->
   <footer class="site">
-    구글 기록장 · TRACE — Teaching · Record · Archive · Connection · Experience &nbsp;|&nbsp; <a href="privacy.html">개인정보처리방침</a>
+    <div class="tracebox">
+      <div class="tracename"><b>TRACE</b> — 개인 지식·경험 관리 체계</div>
+      <div class="tracewords">
+        <span><b>T</b>eaching</span><span><b>R</b>ecord</span><span><b>A</b>rchive</span><span><b>C</b>onnection</span><span><b>E</b>xperience</span>
+      </div>
+      <p class="tracedesc">
+        가르친 것을 <b>남기고</b>, 남긴 것을 <b>모아 두고</b>, 모아 둔 것을 <b>이어</b>,
+        그 사람의 <b>경험</b>이 되게 하는 체계입니다.
+        <b>쌓여만 있고 쓰이지 않는 기록은, 아예 없는 것과 같습니다.</b>
+      </p>
+      <p class="tracetool">
+        지금 쓰고 계신 도구는 <b>「구글 기록장」</b> — TRACE 를 구글 드라이브 위에서 쓰는 도구입니다.
+        <span class="quiet">앞으로 TRACE 아래에 다른 도구가 더 놓일 예정입니다.</span>
+      </p>
+    </div>
+    구글 기록장 · TRACE &nbsp;|&nbsp; <a href="privacy.html">개인정보처리방침</a>
   </footer>
 </div>
 
@@ -8759,8 +8800,10 @@
     /* ⚠️ 「웹 캡처」 칸을 뺐습니다. 설명이 길어 «무엇을 하라는 것인지» 가 안 잡혔습니다.
        폰의 공유 시트로 보내는 길은 manifest 가 담당하므로 그대로 살아 있습니다.
        함께 사라진 것은 «컴퓨터용 즐겨찾기 딱지(북마클릿)» 뿐입니다. */
-    var TABS = [["look", "모양"], ["storage", "저장 위치"], ["types", "기록 유형"], ["naming", "파일 이름"],
-                ["advanced", "고급"]];
+    /* ⚠️ 「📥 가져오기」 는 «고급» 에 묻혀 있었다. 그런데 그것이 이 도구를 만든 진짜 목적이다 —
+       십삼 년치를 끌어오는 길. 묻어 두면 그 길이 있는 줄도 모른다. 그래서 제 칸으로 꺼냈다. */
+    var TABS = [["look", "모양"], ["storage", "저장 위치"], ["import", "📥 가져오기"],
+                ["types", "기록 유형"], ["naming", "파일 이름"], ["advanced", "고급"]];
     TABS.forEach(function (t) {
       var b = el("button", "tab" + (active === t[0] ? " on" : ""), t[1]);
       b.addEventListener("click", function () { active = t[0]; paint(); });
@@ -8804,6 +8847,7 @@
       else if (active === "storage") paintStorage();
       else if (active === "types") paintTypes();
       else if (active === "naming") paintNaming();
+      else if (active === "import") paintImport();
       else paintAdvanced();
     }
 
@@ -9062,16 +9106,10 @@
       body.appendChild(note);
     }
 
-    function paintAdvanced() {
-      /* ⚠️ 이 칸에는 «서로 다른 두 사람» 의 것이 섞여 있었다.
-         가져오기·백업·연결 해제는 «쓰는 사람» 의 것이고,
-         클라이언트 ID 와 앱 주소는 «사본을 지은 사람» 이 SETUP 할 때 한 번 쓰고 다시 볼 일이 없다.
-         섮여 있으면 사본을 받은 사람이 「내가 뭐를 잘못했나」 싶어진다. 그래서 갈라 놓는다. */
-      var whoUse = el("p", "desc");
-      whoUse.style.margin = "0 0 10px";
-      whoUse.innerHTML = "<b>여기부터는 쓰는 사람의 것입니다.</b> 마음대로 눌러 보셔도 됩니다.";
-      body.appendChild(whoUse);
-
+    /* ---------- 📥 가져오기 — 이 도구를 만든 진짜 목적 ----------
+       폴더에 쌓아 둔 십삼 년치를 끌어오는 길이다. 전에는 «고급» 안에 묻혀 있었다.
+       묻어 두면 그 길이 있는 줄도 모른다. */
+    function paintImport() {
       var fImp = el("div", "field");
       fImp.appendChild(el("label", null, "폴더에 있는데 목록에 없는 것 가져오기"));
       fImp.appendChild(el("p", "desc",
@@ -9110,6 +9148,28 @@
       rImp.appendChild(imp); rImp.appendChild(pull);
       fImp.appendChild(rImp);
       body.appendChild(fImp);
+
+      var fTidy = el("div", "field");
+      fTidy.appendChild(el("label", null, "가져온 뒤 — 파일 이름 정리"));
+      fTidy.appendChild(el("p", "desc",
+        "드라이브에 직접 넣은 자료는 «IMG_4821.jpg» 처럼 이름만 봐서는 언제 무엇인지 알 수 없습니다. " +
+        "앞에 «날짜 + 폴더 이름» 을 붙여 줍니다. 원래 이름은 지우지 않습니다."));
+      var tidy2 = el("button", "btn", "📛 밖에서 넣은 파일 이름 정리");
+      tidy2.disabled = !connected;
+      tidy2.addEventListener("click", openRenameStudio);
+      fTidy.appendChild(tidy2);
+      body.appendChild(fTidy);
+    }
+
+    function paintAdvanced() {
+      /* ⚠️ 이 칸에는 «서로 다른 두 사람» 의 것이 섞여 있었다.
+         백업·연결 해제는 «쓰는 사람» 의 것이고, 클라이언트 ID 와 앱 주소는
+         «사본을 지은 사람» 이 SETUP 할 때 한 번 쓰고 다시 볼 일이 없다.
+         섞여 있으면 사본을 받은 사람이 「내가 뭐를 잘못했나」 싶어진다. 그래서 갈라 놓는다. */
+      var whoUse = el("p", "desc");
+      whoUse.style.margin = "0 0 10px";
+      whoUse.innerHTML = "<b>여기부터는 쓰는 사람의 것입니다.</b> 마음대로 눌러 보셔도 됩니다.";
+      body.appendChild(whoUse);
 
       /* 관리자용 둘은 접어 둔다. 필요한 사람만 열어 보면 된다. */
       var adminBox = el("div", "field");

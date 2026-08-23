@@ -199,8 +199,11 @@ await ev(`document.getElementById('btnSettings').click(); true`);
 await wait(500);
 const tabs = await ev(`JSON.stringify(Array.from(document.querySelectorAll('.tabs .tab')).map(t => t.textContent))`);
 const tabList = JSON.parse(tabs);
-/* 다섯이다 — 「웹 캡처」 를 뺐다. 설명이 길어 «무엇을 하라는 것인지» 가 안 잡혔다. */
-check("설정 탭이 다 있다", tabList.length === 5 && tabList.indexOf("웹 캡처") < 0, tabList.join(" / "));
+/* 여섯이다 — 「웹 캡처」 를 빼고, 묻혀 있던 「📥 가져오기」 를 제 칸으로 꺼냈다.
+   가져오기는 이 도구를 만든 진짜 목적이라, 「고급」 안에 있으면 그 길이 있는 줄도 모른다. */
+check("설정 탭이 다 있다",
+  tabList.length === 6 && tabList.indexOf("웹 캡처") < 0 && tabList.some(t => t.indexOf("가져오기") >= 0),
+  tabList.join(" / "));
 for (const t of tabList) {
   const r = await ev(`(() => {
     const b = Array.from(document.querySelectorAll('.tabs .tab')).find(x => x.textContent === ${JSON.stringify(t)});
