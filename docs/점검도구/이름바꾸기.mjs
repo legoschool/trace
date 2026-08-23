@@ -151,11 +151,20 @@ await ev(`(() => {
 })()`);
 await send("Page.navigate", { url: URL_ });
 await wait(2600);
-const mid = JSON.parse(await ev(`JSON.stringify({
-  body: document.body.textContent.includes('PEER 시절에 쓴 기록'),
-  folder: localStorage.getItem('trace.folder') || '',
-  settings: localStorage.getItem('trace.settings.v1') || ''
-})`));
+const mid = JSON.parse(await ev(`(() => {
+  // 저장된 값을 «먼저» 읽는다 — 아래에서 보기를 바꾸면 viewMode 가 덮여 쓴다
+  const folder = localStorage.getItem('trace.folder') || '';
+  const settings = localStorage.getItem('trace.settings.v1') || '';
+  /* 이어받은 설정이 «목록» 보기라 폴더가 접힌 채로 열린다.
+     제목이 화면에 있는지 보려면 펼쳐지는 보기로 옮겨야 한다. */
+  const v = Array.from(document.querySelectorAll('.vbtn')).find(x => (x.textContent||'').includes('나열'));
+  if (v) v.click();
+  return JSON.stringify({
+    body: document.body.textContent.includes('PEER 시절에 쓴 기록'),
+    folder: folder,
+    settings: settings
+  });
+})()`));
 check("PEER 시절 기록도 이어진다", mid.body);
 check("PEER 시절 폴더·설정도 따라온다", mid.folder.includes("06_중간폴더") && mid.settings.includes("tag"), mid.folder.slice(0, 36));
 

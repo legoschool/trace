@@ -111,6 +111,9 @@ const FAKE_DRIVE = `(function () {
   var MD1 = ['---','title: 연수 다녀옴','type: 경험','tags: [연수]','---','',
              '# 연수 다녀옴','','오늘 연수를 다녀왔다.','','![강당](연수사진.png)',''].join('\\n');
 
+  // 8×8 회색 그림. 「올라간 사진을 가리기」 를 겪어 보려면 진짜 그림이 있어야 한다.
+  var PNG8 = 'iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAIAAABLbSncAAAAEUlEQVR4nGOo6FmAFTEMLQkA/SBpAUsyaigAAAAASUVORK5CYII=';
+
   /* 원본을 건드리는 요청은 «따로 적어 둔다».
      이 점검에서 가장 중요한 것은 «무엇이 들어왔나» 가 아니라
      «십삼 년치 원본에 손을 댔나» 이기 때문이다. */
@@ -137,7 +140,15 @@ const FAKE_DRIVE = `(function () {
     }
     if (u.indexOf('alt=media') >= 0) {
       var mm = /files\\/([\\w-]+)\\?/.exec(u);
-      return Promise.resolve(new Response(mm && mm[1] === 'MD1' ? MD1 : '', { status: 200 }));
+      var who2 = mm ? mm[1] : '';
+      if (who2 === 'MD1') return Promise.resolve(new Response(MD1, { status: 200 }));
+      /* 글(MD1) 말고는 «진짜 그림» 을 내준다.
+         이게 없으면 「올라간 사진을 가리기」 를 겪어 볼 수 없다 — 그림이 안 열려 거기서 끝난다.
+         올린 뒤 붙는 아이디(NEW12 …)까지 받아야 해서 이름을 가리지 않는다. */
+      var bin = atob(PNG8);
+      var arr = new Uint8Array(bin.length);
+      for (var bi = 0; bi < bin.length; bi++) arr[bi] = bin.charCodeAt(bi);
+      return Promise.resolve(new Response(arr, { status: 200, headers: { 'Content-Type': 'image/png' } }));
     }
     if (u.indexOf('/files?') < 0) {                       // 파일 하나 확인 (verifyFolder)
       var mv = /files\\/([\\w-]+)\\?/.exec(u);
@@ -662,12 +673,23 @@ const dirList = await ev(`(() => {
   });
 })()`);
 const dl = JSON.parse(dirList);
-check("목록 보기가 디렉토리처럼 폴더로 갈린다", dl.count > 0 && dl.indented > 0 && dl.icons === dl.count,
+/* 처음에는 «접혀» 있다. 폴더가 여럿이면 펴 둔 채로는 한 화면에 안 들어와
+   무엇이 있는지 도리어 안 보이기 때문이다. 그래서 폴더 줄만 서 있어야 한다. */
+check("목록 보기가 디렉토리처럼 폴더로 갈린다", dl.count > 0 && dl.icons === dl.count,
   `폴더 ${dl.count}개 · 들여쓴 줄 ${dl.indented}개`);
+check("처음에는 접혀 있다 (폴더 줄만 선다)", dl.indented === 0, `들여쓴 줄 ${dl.indented}개`);
 check("폴더가 최신 것부터 온다", dl.folders.length < 2 || dl.folders[0] >= dl.folders[1],
   dl.folders.join(" / "));
 
-// 폴더를 접으면 그 안의 줄이 사라져야 한다
+// 폴더를 누르면 그 안이 펴지고, 다시 누르면 접혀야 한다
+const unfolded = await ev(`(() => {
+  const before = document.querySelectorAll('.lrow').length;
+  const f = document.querySelector('.lfolder');
+  if (!f) return -1;
+  f.click();
+  return document.querySelectorAll('.lrow').length - before;
+})()`);
+check("폴더를 누르면 그 안이 펴진다", Number(unfolded) > 0, `${unfolded}줄 늘어남`);
 const folded = await ev(`(() => {
   const before = document.querySelectorAll('.lrow').length;
   const f = document.querySelector('.lfolder');
@@ -762,6 +784,120 @@ check("모양을 바꾸면 «다시 만들라» 고 알려 준다",
   opened2 === "OK" && !!st && st.warn && st.again, stale);
 await ev(`(() => { document.querySelectorAll('.modal-bg').forEach(b => b.remove()); return true; })()`);
 await wait(300);
+
+/* ═══ 🗂 폴더 구조를 열면 «저절로» 드라이브를 읽는가 ═══
+   전에는 사람이 「🔄 드라이브에서 다시 읽기」 를 눌러야만 진짜 드라이브가 보였다.
+   그래서 손으로 만든 폴더가 «안 보인다 = 없다» 로 읽혀 고장으로 여기게 됐다. */
+await ev(`(() => { document.querySelectorAll('.modal-bg').forEach(b => b.remove()); return true; })()`);
+await ev(`document.getElementById('btnMap').click(); true`);
+await wait(2500);
+const tree = JSON.parse(await ev(`(() => {
+  const ps = Array.from(document.querySelectorAll('.modal-bg .mbody p'));
+  const carets = Array.from(document.querySelectorAll('.trow.tfolder .tcaret')).map(c => c.textContent);
+  return JSON.stringify({
+    live: ps.length > 1 ? ps[1].textContent : '',
+    open: carets.filter(c => c === '▾').length,
+    folders: carets.length
+  });
+})()`));
+check("폴더 구조를 열면 저절로 드라이브를 읽는다", /그대로 읽었습니다/.test(tree.live),
+  tree.live.slice(0, 50) || "빈 안내");
+check("처음 열면 뿌리만 펴 둔다", tree.open === 1, `펴진 폴더 ${tree.open}개 / 모두 ${tree.folders}개`);
+await ev(`(() => { document.querySelectorAll('.modal-bg').forEach(b => b.remove()); return true; })()`);
+await wait(300);
+
+/* ═══ 이미 드라이브에 올라간 사진도 가릴 수 있는가 ═══
+   깜빡한 것을 알아채는 때는 대개 올린 «뒤» 다. 그때 고칠 길이 없으면
+   「공유 전 사진 확인」 관문이 일러 주는 대로 해도 막다른 길이 된다. */
+await ev(`(() => {
+  const v = Array.from(document.querySelectorAll('.vbtn')).find(x => (x.textContent||'').includes('나열'));
+  if (v) v.click();
+  const q = document.getElementById('search');
+  if (q) { q.value = '연수 다녀옴'; q.dispatchEvent(new Event('input', { bubbles: true })); }
+  return true;
+})()`);
+await wait(900);
+const toEdit = await ev(`(() => {
+  const v = Array.from(document.querySelectorAll('.card.entry button')).find(b => (b.textContent||'').includes('전체 보기'));
+  if (!v) return 'NO_CARD';
+  v.click();
+  const e = Array.from(document.querySelectorAll('.viewer .vtop button')).find(b => b.textContent.includes('편집'));
+  if (!e) return 'NO_EDIT';
+  e.click(); return 'OK';
+})()`);
+await wait(1200);
+const maskBtn = await ev(`(() => {
+  const b = Array.from(document.querySelectorAll('#blocks button')).find(x => (x.textContent||'').includes('가리기'));
+  if (!b) return 'NO_MASK_BUTTON:' +
+    Array.from(document.querySelectorAll('#blocks button')).map(x => (x.textContent||'').trim()).join("|").slice(0, 140);
+  b.click(); return 'CLICKED';
+})()`);
+check("올라간 사진에도 «가리기» 단추가 붙는다", toEdit === "OK" && maskBtn === "CLICKED",
+  `${toEdit} / ${maskBtn}`);
+await wait(3000);
+const maskModal = await ev(`(() => {
+  const m = Array.from(document.querySelectorAll('.card.modal'))
+    .find(x => /가릴 곳 고르기|캡처 영역 고르기/.test(((x.querySelector('h3')||{}).textContent) || ''));
+  // ⚠️ 알림말은 알림 상자 안에서만 찾는다. document.body 를 뒤지면 코드 주석까지 걸린다
+  if (!m) {
+    var heads = Array.from(document.querySelectorAll('.card.modal h3')).map(h => h.textContent).join("|");
+    var t = Array.from(document.querySelectorAll('#toastHost *, .toast')).map(e => e.textContent).join(" ");
+    return 'NO_MODAL[창:' + (heads || '없음') + ' / 알림:' + (t.slice(0, 60) || '없음') + ']';
+  }
+  return 'OPEN';
+})()`);
+check("올라간 사진을 드라이브에서 받아 와 가릴 수 있다", maskModal === "OPEN", String(maskModal));
+await ev(`(() => { document.querySelectorAll('.modal-bg').forEach(b => b.remove()); return true; })()`);
+
+/* ═══ 공유 전 «사진 확인 관문» 에서 그 자리에서 가릴 수 있는가 ═══
+   관문이 「얼굴이 보이면 가리세요」 라고 일러 주기만 하고 길이 없으면 관문 노릇을 못 한다. */
+await ev(`(() => { document.querySelectorAll('.modal-bg').forEach(b => b.remove()); return true; })()`);
+await ev(`(() => {
+  const c = document.getElementById('btnCancelEdit');
+  if (c && !c.classList.contains('hidden')) c.click();
+  return true;
+})()`);
+await wait(500);
+await ev(`(() => {
+  const q = document.getElementById('search');
+  if (q) { q.value = '연수 다녀옴'; q.dispatchEvent(new Event('input', { bubbles: true })); }
+  return true;
+})()`);
+await wait(800);
+const gate = await ev(`(() => {
+  const v = Array.from(document.querySelectorAll('.card.entry button')).find(x => (x.textContent||'').includes('전체 보기'));
+  if (!v) return 'NO_CARD';
+  v.click();
+  const s = Array.from(document.querySelectorAll('.viewer .vtop button')).find(x => (x.textContent||'').includes('공유'));
+  if (!s) return 'NO_SHARE';
+  s.click(); return 'OK';
+})()`);
+await wait(900);
+const gateBits = JSON.parse(await ev(`(() => {
+  const m = Array.from(document.querySelectorAll('.card.modal')).find(x => (x.textContent||'').includes('링크로 공유'));
+  if (!m) return JSON.stringify({ err: 'NO_MODAL' });
+  return JSON.stringify({
+    photos: m.querySelectorAll('.sharephoto').length,
+    fix: !!Array.from(m.querySelectorAll('button')).find(b => (b.textContent||'').includes('지금 가리기')),
+    gateFirst: /먼저 확인하세요/.test(m.textContent)
+  });
+})()`));
+check("사진이 있으면 공유 전에 확인시킨다",
+  gate === "OK" && !gateBits.err && gateBits.photos >= 1 && gateBits.gateFirst,
+  gateBits.err || `사진 ${gateBits.photos}장`);
+check("관문에서 그 자리에 «지금 가리기» 가 있다", !!gateBits.fix, gateBits.fix ? "있음" : "없음");
+const fixed = await ev(`(() => {
+  const b = Array.from(document.querySelectorAll('.card.modal button')).find(x => (x.textContent||'').includes('지금 가리기'));
+  if (!b) return 'NO_FIX';
+  b.click(); return 'CLICKED';
+})()`);
+await wait(2500);
+const studio = await ev(`(() => {
+  const m = Array.from(document.querySelectorAll('.card.modal h3')).map(h => h.textContent).join("|");
+  return /사진 가리기/.test(m) ? 'OPEN' : 'NO_STUDIO[' + (m || '없음') + ']';
+})()`);
+check("«지금 가리기» 가 사진 가리기 화면을 연다", fixed === "CLICKED" && studio === "OPEN", String(studio));
+await ev(`(() => { document.querySelectorAll('.modal-bg').forEach(b => b.remove()); return true; })()`);
 
 const realErrors = errors.filter(e => !/GSI_LOGGER|popup|ERR_INTERNET|ERR_NAME|gsi\/client/i.test(String(e)));
 check("가져오고 고치고 지우는 내내 오류 없음", realErrors.length === 0, realErrors[0] || "");

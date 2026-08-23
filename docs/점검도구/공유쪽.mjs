@@ -117,6 +117,9 @@ const got = JSON.parse(await ev(`JSON.stringify({
   theme: document.documentElement.getAttribute('data-theme'),
   video: document.querySelectorAll('iframe.player.video').length,
   audio: document.querySelectorAll('iframe.player.audio').length,
+  ownAudio: document.querySelectorAll('audio.audioplayer').length,
+  audioOpen: Array.from(document.querySelectorAll('a.imgfall'))
+               .filter(a => a.href.indexOf('drive.google.com/file/d/') >= 0).length,
   media: Array.from(document.querySelectorAll('iframe.player')).map(f => f.src),
   files: document.querySelectorAll('a.fileline').length,
   links: document.querySelectorAll('a.linkcard').length,
@@ -135,7 +138,14 @@ check("제목·태그가 살아 있다", got.tags.join(",") === "#부기,#협의
   `${got.tags.join(" ")} · 소제목 ${got.heads.length}개`);
 check("인용·구분선이 살아 있다", got.quotes === 1 && got.hrs === 1);
 check("영상이 재생기로 들어간다", got.video === 1);
-check("녹음이 재생기로 들어간다", got.audio === 1);
+/* 녹음은 «우리 재생기» 를 먼저 쓴다 — 길이를 고쳐 줄 수 있고 좁은 화면에서 안 잘린다.
+   드라이브가 파일을 안 내주면 그때 드라이브 재생기로 물러선다.
+   ⚠️ 여기 ID 는 가짜라 드라이브가 안 준다. 그래서 이 점검이 보는 것은 «물러서는 쪽» 이다.
+      진짜 파일로 우리 재생기가 뜨는지는 실제 계정에서 봐야 한다. */
+check("녹음이 재생기로 들어간다", got.audio + got.ownAudio === 1,
+  got.ownAudio ? "우리 재생기" : got.audio ? "드라이브 재생기(물러섬)" : "없음");
+check("드라이브가 안 내주면 드라이브 재생기로 물러선다", got.audio === 1, `${got.audio}개`);
+check("녹음 옆에 «드라이브에서 열어 보기» 가 있다", got.audioOpen >= 1, `${got.audioOpen}개`);
 check("재생기가 잘리지 않는다 (드라이브 재생기가 들어갈 만큼)", got.audioH >= 120, `${got.audioH}px`);
 check("재생기가 드라이브를 가리킨다",
   got.media.length === 2 && got.media.every(s => /drive\.google\.com\/file\/d\/.+\/preview$/.test(s)),
@@ -146,6 +156,14 @@ check("첨부·링크가 살아 있다", got.files >= 1 && got.links === 1, `첨
 check("사진이 안 열리면 «열어 보기» 로 내려간다",
   got.files >= 2, `첨부 줄 ${got.files}개 (자료 1 + 사진 대신 1)`);
 check("가로로 안 넘친다", got.overflow === 0, `${got.overflow}px`);
+/* ⚠️ 받는 사람에게 «이 앱이 어디 있는지» 를 알려 주면 안 된다.
+   구글 심사 전이라 로그인이 평생 100명 한도고, 주소가 퍼지면 되돌릴 수 없다. */
+const leak = JSON.parse(await ev(`JSON.stringify({
+  links: Array.from(document.querySelectorAll('.foot a')).map(a => a.getAttribute('href') || ''),
+  intro: document.documentElement.innerHTML.indexOf('intro.html') >= 0
+})`));
+check("받는 사람에게 앱 주소를 흘리지 않는다", leak.links.length === 0 && !leak.intro,
+  leak.links.join(" ") || (leak.intro ? "intro.html 이 남아 있다" : "링크 없음"));
 
 /* 폰 너비 */
 await send("Emulation.setDeviceMetricsOverride", { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });

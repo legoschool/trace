@@ -803,14 +803,30 @@ if (treeOpen === "OPEN") {
       folders: rows.filter(r => r.classList.contains('tfolder')).map(r => r.querySelector('.tname').textContent),
       indents: rows.map(r => parseFloat(r.style.paddingLeft)),
       firstIsRoot: rows[0] && rows[0].classList.contains('tfolder'),
+      openFolders: rows.filter(r => r.classList.contains('tfolder') &&
+                                    r.querySelector('.tcaret').textContent === '▾').length,
       hasMd: rows.some(r => /\\.md$/.test(r.querySelector('.tname').textContent))
     });
   })()`));
   check("뿌리 폴더가 맨 위에 온다", tr.firstIsRoot, tr.folders[0] || "");
   check("태그마다 폴더가 갈라진다", tr.folders.some(f => f.startsWith("수업설계")) && tr.folders.some(f => f.startsWith("평가")),
     tr.folders.slice(0, 6).join(" "));
-  check("아래로 갈수록 안으로 들어간다", Math.max(...tr.indents) > Math.min(...tr.indents), `들여쓰기 ${Math.min(...tr.indents)}~${Math.max(...tr.indents)}px`);
-  check(".md 파일이 폴더 안에 보인다", tr.hasMd);
+  /* 처음 열면 «뿌리만» 펴져 있어야 한다.
+     펴 둔 채로 열면 폴더가 몇 개만 되어도 한 화면에 안 들어와, 무엇이 있는지 도리어 안 보인다. */
+  check("처음 열면 그 아래는 접혀 있다", !tr.hasMd && tr.openFolders === 1,
+    `펴진 폴더 ${tr.openFolders}개 · .md ${tr.hasMd ? "보임" : "안 보임"}`);
+
+  // 펴 놓고 안을 본다
+  const tr2 = JSON.parse(await evaluate(`(() => {
+    Array.from(document.querySelectorAll('.mfoot button')).find(b => b.textContent === '모두 펴기').click();
+    const rows = Array.from(document.querySelectorAll('.trow'));
+    return JSON.stringify({
+      indents: rows.map(r => parseFloat(r.style.paddingLeft)),
+      hasMd: rows.some(r => /\\.md$/.test(r.querySelector('.tname').textContent))
+    });
+  })()`));
+  check("아래로 갈수록 안으로 들어간다", Math.max(...tr2.indents) > Math.min(...tr2.indents), `들여쓰기 ${Math.min(...tr2.indents)}~${Math.max(...tr2.indents)}px`);
+  check(".md 파일이 폴더 안에 보인다", tr2.hasMd);
 
   // 접었다 폈다
   const toggled = JSON.parse(await evaluate(`(() => {

@@ -106,11 +106,34 @@ for (const label of ["나열", "바둑판", "목록"]) {
     const b = Array.from(document.querySelectorAll('.vbtn')).find(b => (b.textContent||'').includes('${label}'));
     if (!b) return 'NO_BUTTON';
     b.click();
-    return document.querySelectorAll('.card.entry, .lrow').length + '개';
+    // 목록 보기는 처음에 «접혀» 있다. 그래서 폴더 줄(.lfolder)도 함께 센다
+    return document.querySelectorAll('.card.entry, .lrow, .lfolder').length + '개';
   })()`);
   check(`보기 «${label}» 로 바뀐다`, r !== "NO_BUTTON" && !/^0개$/.test(r), String(r));
   await wait(250);
 }
+
+/* ---- 관계망도 같은 줄에서 열린다 ----
+   전에는 머리줄 구석에만 있어서, 관계망이 있는 줄도 몰랐다.
+   ⚠️ 관계망은 «골라 두는 보기» 가 아니라 «열어 보는 것» 이다.
+      그래서 눌러도 앞서 고른 보기가 그대로 남아 있어야 한다. */
+const g = JSON.parse(await ev(`(() => {
+  const before = (document.querySelector('.vbtn.on')||{}).textContent || '';
+  const b = Array.from(document.querySelectorAll('.vbtn')).find(x => (x.textContent||'').includes('관계망'));
+  if (!b) return JSON.stringify({ err: 'NO_BUTTON' });
+  b.click();
+  const m = Array.from(document.querySelectorAll('.card.modal h3')).map(h => h.textContent).join("|");
+  return JSON.stringify({
+    before: before.trim(),
+    after: ((document.querySelector('.vbtn.on')||{}).textContent || '').trim(),
+    modal: m, canvas: !!document.getElementById('graphCanvas')
+  });
+})()`));
+check("보기 줄에 «관계망» 이 있다", !g.err, g.err || "있음");
+check("관계망을 누르면 관계망이 열린다", /관계망/.test(g.modal || "") && g.canvas, g.modal || "안 열림");
+check("관계망을 열어도 고른 보기는 그대로다", g.before === g.after, `${g.before} → ${g.after}`);
+await ev(`(() => { document.querySelectorAll('.modal-bg').forEach(b => b.remove()); return true; })()`);
+await wait(250);
 
 /* ---- 검색 · 유형 거르기 · 태그 거르기 · 고정 ---- */
 // 나열 보기로 돌려놓고 검색한다

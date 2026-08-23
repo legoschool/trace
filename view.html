@@ -82,6 +82,8 @@
   /* ⚠️ 62px 로 두면 드라이브 재생기가 잘려서 «Google Drive» 글자만 보인다.
      여기는 우리 재생기가 아니라 드라이브가 그리는 쪽이라, 그쪽이 필요로 하는 만큼 줘야 한다. */
   .player.audio { height: 168px; }
+  /* 녹음은 우리 재생기를 먼저 쓴다. 좁은 화면에서도 안 잘리게 폭을 그릇에 맞춘다. */
+  .audioplayer { display: block; width: 100%; max-width: 100%; margin: 0 0 6px; }
   .fileline { display: flex; align-items: center; gap: 9px; border: var(--bw) solid var(--line);
               border-radius: 10px; padding: 10px 13px; text-decoration: none; color: var(--ink);
               background: var(--bg); margin: 0 0 12px; }
@@ -205,7 +207,53 @@
     if (cap) fig.appendChild(el("figcaption", null, cap));
     return fig;
   }
+  function driveMedia(id) { return "https://drive.google.com/uc?export=download&id=" + id; }
+
+  /* ⚠️ 폰으로 녹음한 소리(webm)에는 «얼마나 긴지» 가 안 적혀 있다.
+     그래서 재생기가 「Infinity:NaN」 을 띄우고, 끌어 옮길 수도 없고,
+     보기에는 **소리가 잘린 것처럼** 보인다. 파일이 상한 것이 아니다.
+     맨 끝으로 한 번 보내면 브라우저가 길이를 세어 준다. 그 뒤 제자리로 돌려놓는다. */
+  function fixAudioDuration(a) {
+    function tryFix() {
+      if (a.duration !== Infinity && !isNaN(a.duration)) return;
+      var back = function () {
+        a.removeEventListener("timeupdate", back);
+        a.currentTime = 0;
+      };
+      a.addEventListener("timeupdate", back);
+      try { a.currentTime = 1e101; } catch (e) { a.removeEventListener("timeupdate", back); }
+    }
+    a.addEventListener("loadedmetadata", tryFix);
+    if (a.readyState > 0) tryFix();
+  }
+
+  /* 녹음은 «우리 재생기» 를 먼저 쓴다. 길이를 고쳐 줄 수 있고, 좁은 화면에서 안 잘린다.
+     드라이브가 파일을 안 내주면 그때 드라이브 재생기로 물러선다 (사진과 같은 방식). */
+  function audioBlock(b) {
+    var box = el("div");
+    box.style.marginBottom = "18px";
+    var a = el("audio", "audioplayer");
+    a.controls = true; a.preload = "metadata"; a.src = driveMedia(b.f);
+    fixAudioDuration(a);
+    a.onerror = function () {
+      var f = el("iframe", "player audio");
+      f.src = drivePreview(b.f);
+      f.setAttribute("allow", "autoplay");
+      f.setAttribute("loading", "lazy");
+      f.setAttribute("title", b.c || b.n || "녹음");
+      a.replaceWith(f);
+    };
+    box.appendChild(a);
+    var open = el("a", "imgfall", "드라이브에서 열어 보기");
+    open.href = driveOpen(b.f); open.target = "_blank"; open.rel = "noopener noreferrer";
+    box.appendChild(open);
+    var cap0 = [b.c, b.n].filter(Boolean).join(" · ");
+    if (cap0) box.appendChild(el("figcaption", null, cap0));
+    return box;
+  }
+
   function mediaBlock(b, kind) {
+    if (kind === "audio") return audioBlock(b);
     var box = el("div");
     var f = el("iframe", "player " + kind);
     f.src = drivePreview(b.f);
@@ -264,12 +312,12 @@
 
     w.appendChild(paper);
 
+    /* ⚠️ 여기에 «구글 기록장이란?» 링크를 두었었다. 그 링크가 이 사본이 어디에 있는지를
+       받는 사람에게 그대로 알려 준다. 이 앱은 구글 심사 전이라 로그인이 «평생 100명» 한도고,
+       주소가 퍼지면 그 자리는 되돌릴 수 없다. 기록 하나를 보여 주자고 걸 만한 것이 아니다.
+       그래서 링크는 두지 않는다 — 무엇으로 만든 쪽인지만 적는다. */
     var foot = el("div", "foot");
     foot.appendChild(document.createTextNode("「구글 기록장」으로 만든 쪽입니다. 보낸 사람이 고르면 언제든 닫을 수 있습니다."));
-    foot.appendChild(document.createElement("br"));
-    var home = el("a", null, "구글 기록장이란?");
-    home.href = "intro.html";
-    foot.appendChild(home);
     w.appendChild(foot);
   }
 
