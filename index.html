@@ -13,6 +13,8 @@
 <meta name="apple-mobile-web-app-title" content="기록장" />
 <title>구글 기록장 · TRACE 개인 지식·경험 관리 체계</title>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
+<!-- 폴더·파일 고르기 창(구글 Picker). 좁은 권한에서 «밖에 있는 파일» 을 집어 오는 유일한 통로다. -->
+<script src="https://apis.google.com/js/api.js" async defer></script>
 <style>
   /* =========================================================
      모양 토큰 · 「프리셋」은 이 값들만 갈아 끼운다
@@ -1279,10 +1281,23 @@
      누르면 됩니다. 다른 구글 프로젝트를 쓰려면 이 값만 교체하세요.
      (클라이언트 ID는 비밀번호가 아니라 공개용 식별자입니다.)          */
   var OWNER_CLIENT_ID = "255330405723-v0hdhjapm5aph1ht4eme11cmimn3o6kg.apps.googleusercontent.com";
+  /* 폴더·파일 고르기 창(구글 Picker)에 필요한 열쇠입니다. 클라이언트 ID 와 마찬가지로
+     공개용이라 코드에 넣어도 됩니다. 만드는 곳은 SETUP.md 를 보세요. */
+  var OWNER_API_KEY = "AIzaSyBeXlsPART3ldUzBY_9AI4r-wNR5yK-ObM";
   /* ======================================================= */
 
-  // 사용자가 임의의 폴더 ID/링크를 지정하므로 전체 drive 스코프가 필요합니다.
-  var SCOPE = "openid email https://www.googleapis.com/auth/drive";
+  /* ⚠️ 권한을 «드라이브 전체» 에서 «이 앱이 만들거나 고른 것» 으로 좁혔다.
+     넓은 권한은 구글 심사를 통과하기 전까지 «한 프로젝트당 평생 100명» 에 걸린다.
+     좁은 권한은 심사도 한도도 없다. 대신 규칙이 하나 생긴다 —
+       · 앱이 만든 파일은 언제나 보인다
+       · 손으로 넣어 둔 파일은 «고르기 창에서 한 번 골라 주어야» 보인다
+     폴더를 골라도 그 «안에 이미 있던 것» 까지는 권한이 안 퍼진다(실측 확인).
+     그래서 밖에서 가져오는 자리마다 「드라이브에서 고르기」를 붙여 두었다. */
+  var SCOPE = "openid email https://www.googleapis.com/auth/drive.file";
+
+  /* Picker 는 «어느 앱에게 권한을 넘길지» 를 프로젝트 번호로 가린다.
+     그 번호는 클라이언트 ID 앞부분과 같은 값이라 따로 적어 둘 필요가 없다. */
+  var OWNER_PROJECT_NUMBER = String(OWNER_CLIENT_ID).split("-")[0];
 
   /* 이름이 두 번 바뀌었다: PKEMS → PEER → TRACE.
      ⚠️ 드라이브에 옛 이름으로 쌓아 둔 사람이 있다.
@@ -1790,112 +1805,129 @@
     ]
   };
   /* =========================================================
-     폴더 찾아보기 · 탐색기처럼 눌러 들어가며 고른다
-     드라이브 링크를 붙여넣는 길은 «주소를 아는 사람» 에게만 쉽다.
-     ⚠️ 로그인(accessToken)이 있어야 폴더 목록을 물어볼 수 있다.
+     고르기 창 · 구글 Picker
+     ---------------------------------------------------------
+     예전에는 드라이브를 직접 훑어 «탐색기» 를 그렸다.
+     그건 «드라이브 전체» 권한이라야 되는 일이라, 100명 한도를 부르는 원인이었다.
+     지금은 구글이 주는 고르기 창을 띄운다.
+     사람이 거기서 «고른 것» 에만 권한이 생긴다 — 그래서 심사도 한도도 없다.
      ========================================================= */
-  function listFolders(parentId) {
-    var q = "'" + parentId + "' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false";
-    return driveJson("https://www.googleapis.com/drive/v3/files?q=" + encodeURIComponent(q) +
-      "&fields=files(id,name,mimeType)&orderBy=name&pageSize=200&supportsAllDrives=true&includeItemsFromAllDrives=true")
-      .then(function (j) {
-        /* 물음에 이미 «폴더만» 을 걸어 두었지만, 여기서 한 번 더 거른다.
-           탐색기에 파일이 섞여 나오면 «눌러도 안 열리는 줄» 이 생겨서 고장 난 것처럼 보인다. */
-        return (j.files || []).filter(function (k) {
-          return k.mimeType === "application/vnd.google-apps.folder";
-        });
-      });
+  var pickerReady = false, pickerLoading = false;
+
+  function loadPicker() {
+    if (pickerReady || pickerLoading) return;
+    if (!window.gapi) { setTimeout(loadPicker, 400); return; }
+    pickerLoading = true;
+    gapi.load("picker", function () { pickerReady = true; pickerLoading = false; });
   }
+  loadPicker();
+
+  /* 고르기 창을 띄울 수 있는 상태인지 본다.
+     ⚠️ 빈손으로 «안 됩니다» 만 뜨면 고칠 길이 없다. «왜» 를 말해 준다. */
+  function pickerBlockedReason() {
+    if (!accessToken) return "먼저 구글에 로그인해 주세요.";
+    if (!OWNER_API_KEY) return "고르기 창에 필요한 API 키가 아직 비어 있습니다. SETUP.md 의 「API 키」 단계를 보세요.";
+    if (!window.google || !google.picker || !pickerReady) {
+      loadPicker();
+      return "고르기 창을 아직 못 불러왔습니다. 잠시 뒤 다시 눌러 주세요.";
+    }
+    return null;
+  }
+
+  /* ---- 폴더 하나 고르기 ---- */
   function openFolderBrowser(onPick) {
-    if (!accessToken) { toast("먼저 구글에 로그인해 주세요."); return; }
+    var why = pickerBlockedReason();
+    if (why) { toast(why); return; }
     closeModal();
-    var path = [{ id: "root", name: "내 드라이브" }];   // 지나온 길. 마지막이 지금 보고 있는 곳
-    var bg = el("div", "modal-bg");
-    var m = el("div", "card modal"); m.style.maxWidth = "520px";
-    var head = el("div", "mhead");
-    head.appendChild(el("h3", null, "📂 폴더 고르기"));
-    head.appendChild(el("span", "spacer"));
-    var x = el("button", "btn sm ghost", "✕");
-    x.addEventListener("click", closeModal);
-    head.appendChild(x);
-    m.appendChild(head);
+    var view = new google.picker.DocsView(google.picker.ViewId.FOLDERS)
+      .setIncludeFolders(true)
+      .setSelectFolderEnabled(true)
+      .setMimeTypes("application/vnd.google-apps.folder");
+    new google.picker.PickerBuilder()
+      .setOAuthToken(accessToken)
+      .setDeveloperKey(OWNER_API_KEY)
+      .setAppId(OWNER_PROJECT_NUMBER)
+      .addView(view)
+      .setTitle("기록을 둘 폴더를 고르세요")
+      .setCallback(function (data) {
+        if (data.action !== google.picker.Action.PICKED) return;
+        var d = (data.docs || [])[0];
+        if (!d) return;
+        onPick({ id: d.id, name: d.name || "고른 폴더" });
+      })
+      .build().setVisible(true);
+  }
 
-    var body = el("div", "mbody");
-    var crumbBar = el("nav", "crumbs");
-    var listBox = el("div", "picklist");
-    var note = el("p", "desc", "폴더를 눌러 안으로 들어갑니다.");
-    body.appendChild(crumbBar); body.appendChild(note); body.appendChild(listBox);
-    m.appendChild(body);
+  /* ---- 새 폴더를 만들어 그것으로 정하기 ----
+     고르기 창은 폴더를 «만들지» 못한다. 처음 쓰는 사람에게는 그 자리가 막다른 길이 된다.
+     그래서 만들기는 우리가 맡는다. 앱이 만든 폴더라 권한은 저절로 따라온다. */
+  function createFolderAndPick(onPick) {
+    if (!accessToken) { toast("먼저 구글에 로그인해 주세요."); return; }
+    var name = window.prompt("새로 만들 폴더 이름 (내 드라이브 맨 위에 만듭니다)", "교직 기록");
+    if (!name || !name.trim()) return;
+    toast("폴더를 만드는 중…");
+    createFolder(safeName(name, 60), "root")
+      .then(function (f) {
+        toast("「" + f.name + "」 을 만들었습니다.");
+        onPick({ id: f.id, name: f.name });
+      })
+      .catch(function (e) { toast("폴더를 못 만들었습니다: " + errText(e)); });
+  }
 
-    var foot = el("div", "mfoot");
-    var newBtn = el("button", "btn sm", "＋ 여기에 새 폴더");
-    foot.appendChild(newBtn);
-    foot.appendChild(el("span", "spacer"));
-    var cancel = el("button", "btn ghost", "취소");
-    cancel.addEventListener("click", closeModal);
-    var take = el("button", "btn primary", "여기로 정하기");
-    foot.appendChild(cancel); foot.appendChild(take);
-    m.appendChild(foot);
+  /* ---- 밖에서 넣은 파일에 권한 얻기 ----
+     좁은 권한에서는 «사람이 고른 것» 에만 권한이 생긴다.
+     ⚠️ 폴더를 골라도 그 «안에 이미 있던 것» 까지는 권한이 안 퍼진다(실측).
+        그래서 밖에서 가져오는 자리마다 이 창을 붙여 둔다.
+     한 번 고른 파일은 그 뒤로는 목록에 저절로 잡힌다. 매번 고를 필요는 없다. */
+  var grantedExtra = [];      // 이번 판에 골라서 권한이 생긴 것들
 
-    function here() { return path[path.length - 1]; }
-    function drawCrumbs() {
-      crumbBar.innerHTML = "";
-      path.forEach(function (p, i) {
-        if (i) crumbBar.appendChild(el("span", "crumbsep", "›"));
-        var b = el("button", "crumb" + (i === path.length - 1 ? " here" : ""), p.name);
-        b.type = "button";
-        if (i < path.length - 1) b.addEventListener("click", function () { path = path.slice(0, i + 1); load(); });
-        crumbBar.appendChild(b);
-      });
-    }
-    function load() {
-      drawCrumbs();
-      listBox.innerHTML = "";
-      listBox.appendChild(el("p", "desc", "여는 중…"));
-      take.disabled = true;
-      listFolders(here().id).then(function (kids) {
-        listBox.innerHTML = "";
-        take.disabled = false;
-        if (!kids.length) {
-          listBox.appendChild(el("p", "desc", "이 안에는 폴더가 없습니다. 여기로 정하거나, 새 폴더를 만드세요."));
-          return;
-        }
-        kids.forEach(function (k) {
-          var row = el("button", "pickrow");
-          row.type = "button";
-          row.appendChild(fileIconSvg("folder"));
-          row.appendChild(el("span", "fname", k.name));
-          row.appendChild(el("span", "spacer"));
-          row.appendChild(el("span", "crumbsep", "›"));
-          row.addEventListener("click", function () { path.push({ id: k.id, name: k.name }); load(); });
-          listBox.appendChild(row);
+  function pickDriveFiles(onDone) {
+    var why = pickerBlockedReason();
+    if (why) { toast(why); return; }
+    var b = new google.picker.PickerBuilder()
+      .setOAuthToken(accessToken)
+      .setDeveloperKey(OWNER_API_KEY)
+      .setAppId(OWNER_PROJECT_NUMBER)
+      .enableFeature(google.picker.Feature.MULTISELECT_ENABLED)
+      .setTitle("가져올 파일을 고르세요 · 여러 개 고를 수 있습니다")
+      .setCallback(function (data) {
+        if (data.action !== google.picker.Action.PICKED) return;
+        var got = (data.docs || [])
+          .filter(function (d) { return d.mimeType !== "application/vnd.google-apps.folder"; })
+          .map(function (d) {
+            return {
+              id: d.id, name: d.name, mimeType: d.mimeType,
+              _parent: d.parentId || (folder && folder.id) || "",
+              _parentName: "", _path: []
+            };
+          });
+        got.forEach(function (g) {
+          if (!grantedExtra.some(function (x) { return x.id === g.id; })) grantedExtra.push(g);
         });
-      }).catch(function (e) {
-        listBox.innerHTML = "";
-        listBox.appendChild(el("p", "desc", "폴더를 못 읽었습니다: " + errText(e)));
-        take.disabled = false;
+        if (onDone) onDone(got);
       });
+    /* 연결한 폴더 안을 먼저 보여 준다. 대개 거기에 있다.
+       그래도 못 찾는 사람을 위해 드라이브 전체도 함께 연다. */
+    if (folder && folder.id) {
+      b.addView(new google.picker.DocsView(google.picker.ViewId.DOCS)
+        .setIncludeFolders(true).setParent(folder.id));
     }
-    newBtn.addEventListener("click", function () {
-      var name = window.prompt("새 폴더 이름", "교직 기록");
-      if (!name || !name.trim()) return;
-      newBtn.disabled = true;
-      createFolder(safeName(name, 60), here().id)
-        .then(function (f) { path.push({ id: f.id, name: f.name }); newBtn.disabled = false; load(); })
-        .catch(function (e) { newBtn.disabled = false; toast("폴더를 못 만들었습니다: " + errText(e)); });
+    b.addView(new google.picker.DocsView(google.picker.ViewId.DOCS).setIncludeFolders(true));
+    b.build().setVisible(true);
+  }
+
+  /* 「드라이브에서 고르기」 단추. 세 자리(가져오기·이름 정리·폴더 구조)에서 같이 쓴다. */
+  function pickMoreBtn(label, onDone) {
+    var btn = el("button", "btn sm", label || "📂 드라이브에서 파일 고르기");
+    btn.title = "손으로 넣어 둔 파일은 여기서 한 번 골라 주어야 보입니다";
+    btn.addEventListener("click", function () {
+      pickDriveFiles(function (got) {
+        if (!got.length) { toast("고른 파일이 없습니다."); return; }
+        toast(got.length + "개를 골랐습니다. 다시 읽는 중…");
+        onDone(got);
+      });
     });
-    take.addEventListener("click", function () {
-      var h = here();
-      // 「내 드라이브」 통째로는 못 고르게 한다. 십삼 년치가 든 뿌리에 기록장 파일을 흩뿌리게 된다.
-      if (h.id === "root") { toast("드라이브 맨 위 말고, 안쪽 폴더를 하나 고르거나 새로 만들어 주세요."); return; }
-      closeModal();
-      onPick(h);
-    });
-    bg.appendChild(m);
-    bg.addEventListener("click", function (e) { if (e.target === bg) closeModal(); });
-    $("modalHost").appendChild(bg);
-    modalEl = bg;
-    load();
+    return btn;
   }
 
   function folderTree(mode) {
@@ -3765,7 +3797,17 @@
         progress(0);
         if (e && e.noFolder) { updateChrome(); openSettings("storage"); toast("저장할 폴더를 지정해 주세요."); return; }
         connected = false; updateChrome();
-        toast("연결 실패: " + (e && e.message ? e.message : e));
+        /* ⚠️ 권한을 좁힌 뒤로, 예전에 쓰던 폴더가 «없는 것» 으로 보일 수 있다.
+           앱이 만든 폴더가 아니면 한 번은 다시 골라 주어야 하기 때문이다.
+           그때 「연결 실패」 만 뜨면 고장으로 여기고 그만둔다. 무엇을 하면 되는지 말해 준다. */
+        var msg = String((e && e.message) || e);
+        if (/\b40[34]\b|not found|permission/i.test(msg)) {
+          openSettings("storage");
+          toast("예전 폴더를 열지 못했습니다. 「폴더 고르기」로 그 폴더를 한 번만 다시 골라 주세요.");
+          toast2("한 번 고르면 그 뒤로는 묻지 않습니다. 안에 든 기록은 그대로 있습니다.");
+          return;
+        }
+        toast("연결 실패: " + msg);
       });
   }
 
@@ -7366,6 +7408,12 @@
     }
 
     return walk([{ id: folder.id, name: folder.name, depth: 0, path: [] }]).then(function () {
+      /* 고르기 창에서 방금 고른 것들을 합친다.
+         ⚠️ 고른 파일은 대개 위 훑기에도 잡히지만, 연결한 폴더 «밖» 에서 고른 것은 안 잡힌다.
+            그걸 빠뜨리면 «분명히 골랐는데 없다» 가 된다. */
+      grantedExtra.forEach(function (g) {
+        if (!files.some(function (f) { return f.id === g.id; })) files.push(g);
+      });
       return { files: files, dirs: dirs, folders: visited, truncated: truncated };
     });
   }
@@ -8175,22 +8223,29 @@
       });
     }
 
-    status.textContent = "드라이브 폴더를 훑는 중…";
-    scanFolder(function (n) { status.textContent = "폴더 " + n + "곳을 훑는 중…"; })
-      .then(function (scan) {
-        var targets = (scan.files || []).filter(function (f) {
-          if (f.mimeType === "application/vnd.google-apps.folder") return false;
-          if (isAppFile(f.name)) return false;
-          if (looksOrganized(f.name)) return false;
-          return true;
+    /* ⚠️ 좁은 권한에서는 «손으로 넣은 파일» 이 안 잡힌다. 그런데 이 창이 다루는 것이
+       바로 그 파일들이다. 그래서 여기에 고르기 창을 함께 둔다. 한 번 고르면 그 뒤로는 잡힌다. */
+    function loadTargets() {
+      status.textContent = "드라이브 폴더를 훑는 중…";
+      return scanFolder(function (n) { status.textContent = "폴더 " + n + "곳을 훑는 중…"; })
+        .then(function (scan) {
+          var targets = (scan.files || []).filter(function (f) {
+            if (f.mimeType === "application/vnd.google-apps.folder") return false;
+            if (isAppFile(f.name)) return false;
+            if (looksOrganized(f.name)) return false;
+            return true;
+          });
+          status.textContent = targets.length
+            ? ("정리할 수 있는 파일 " + targets.length + "개를 찾았습니다.")
+            : "정리할 파일이 안 보입니다. 손으로 넣어 둔 파일이라면 「드라이브에서 파일 고르기」로 한 번 골라 주세요.";
+          draw(targets);
+        })
+        .catch(function (e) {
+          status.textContent = "폴더를 훑지 못했습니다: " + errText(e);
         });
-        status.textContent = "폴더 " + scan.folders + "곳을 훑었습니다." +
-          (scan.truncated ? ("  (" + SCAN_DEPTH + "단계·" + SCAN_FOLDER_MAX + "곳 한도까지만 봤습니다)") : "");
-        draw(targets);
-      })
-      .catch(function (e) {
-        status.textContent = "폴더를 훑지 못했습니다: " + errText(e);
-      });
+    }
+    foot.insertBefore(pickMoreBtn("📂 드라이브에서 파일 고르기", loadTargets), allBtn);
+    loadTargets();
   }
 
   /* ---------- 🗂 폴더 구조 · 드라이브가 지금 어떻게 생겼는지 ----------
@@ -8420,7 +8475,7 @@
           treeOpen[root.name] = true;
           live.textContent = "드라이브를 그대로 읽었습니다. 폴더 " + scan.folders + "곳 · 파일 " + scan.files.length + "개." +
             (scan.truncated ? " (" + SCAN_DEPTH + "단계·" + SCAN_FOLDER_MAX + "곳 한도까지)" : "") +
-            " 손으로 만든 폴더도 그대로 보입니다.";
+            " 손으로 넣어 둔 파일은 「드라이브에서 파일 고르기」로 한 번 골라 주어야 여기 보입니다.";
           reload.disabled = false;
           draw();
         })
@@ -8431,6 +8486,9 @@
         });
     }
     reload.addEventListener("click", refresh);
+    var pickHere = pickMoreBtn("📂 드라이브에서 파일 고르기", refresh);
+    pickHere.disabled = !connected;
+    foot.appendChild(pickHere);
     foot.appendChild(reload);
     foot.appendChild(el("span", "spacer"));
     foot.appendChild(collapse); foot.appendChild(expand);
@@ -9259,29 +9317,42 @@
       inp.style.flex = "1 1 240px"; inp.style.width = "auto";
       inp.placeholder = "https://drive.google.com/drive/folders/1AbCd… 또는 폴더 ID";
       if (folder.id) inp.value = "https://drive.google.com/drive/folders/" + folder.id;
-      /* 링크를 붙여넣게 하는 것은 «주소를 아는 사람» 에게만 쉬운 길이다.
-         탐색기처럼 눌러 들어가며 고를 수 있게 한다. 로그인해야 폴더 목록을 물어볼 수 있다. */
-      var pick = el("button", "btn", "📂 폴더 찾아보기");
+      /* ⚠️ 좁은 권한에서는 «주소를 붙여넣는 길» 이 대개 막힌다.
+         고르기 창에서 «고르는» 행위 자체가 그 폴더에 권한을 준다.
+         그래서 고르기를 앞세우고, 붙여넣기는 뒤로 물린다. */
+      function took(f) {
+        inp.value = "https://drive.google.com/drive/folders/" + f.id;
+        status.textContent = "「" + f.name + "」 을 고르셨습니다. 연결하는 중…";
+        connect(f.id).then(function () { if (connected) { status.textContent = "연결됨 · " + folder.name; paint(); } });
+      }
+      var pick = el("button", "btn primary", "📂 폴더 고르기");
       pick.disabled = !accessToken;
-      pick.title = accessToken ? "내 드라이브를 열어 폴더를 골라 봅니다" : "먼저 1단계에서 로그인해 주세요";
-      pick.addEventListener("click", function () {
-        openFolderBrowser(function (f) {
-          inp.value = "https://drive.google.com/drive/folders/" + f.id;
-          status.textContent = "「" + f.name + "」 을 고르셨습니다. 연결하는 중…";
-          connect(f.id).then(function () { if (connected) { status.textContent = "연결됨 · " + folder.name; paint(); } });
-        });
-      });
-      var chk = el("button", "btn primary", "이 폴더로 연결");
+      pick.title = accessToken ? "구글 고르기 창을 열어 폴더를 정합니다" : "먼저 1단계에서 로그인해 주세요";
+      pick.addEventListener("click", function () { openFolderBrowser(took); });
+
+      var mk = el("button", "btn", "＋ 새 폴더 만들기");
+      mk.disabled = !accessToken;
+      mk.title = accessToken ? "내 드라이브 맨 위에 새 폴더를 만들어 바로 연결합니다" : "먼저 1단계에서 로그인해 주세요";
+      mk.addEventListener("click", function () { createFolderAndPick(took); });
+
+      var chk = el("button", "btn", "주소로 연결");
+      chk.title = "예전에 쓰던 폴더 주소가 있다면 여기에 붙여넣어 보세요";
       chk.addEventListener("click", function () {
         status.textContent = "확인 중…";
-        connect(inp.value).then(function () { if (connected) { status.textContent = "연결됨"; } });
+        connect(inp.value).then(function () {
+          if (connected) { status.textContent = "연결됨"; }
+          else { status.textContent = "이 주소로는 못 열었습니다. 위의 「폴더 고르기」로 한 번 골라 주세요."; }
+        });
       });
-      r.appendChild(inp); r.appendChild(pick); r.appendChild(chk);
+      r.appendChild(pick); r.appendChild(mk);
       f2.appendChild(r);
+      var r2 = el("div", "row");
+      r2.appendChild(inp); r2.appendChild(chk);
+      f2.appendChild(r2);
       var d = el("p", "desc");
       d.textContent = folder.id
         ? ("현재 폴더: " + (folder.name || folder.id))
-        : "드라이브에서 폴더를 열었을 때 주소창에 보이는 링크를 그대로 붙여넣으세요.";
+        : "「폴더 고르기」로 정하시면 됩니다. 처음이라면 「새 폴더 만들기」가 가장 빠릅니다.";
       f2.appendChild(d);
       body.appendChild(f2);
 
@@ -9462,18 +9533,27 @@
         "드라이브에 직접 넣은 파일을 찾아 목록에 넣습니다."));
       fImp.appendChild(el("p", "desc",
         "원본은 옮기지도 고치지도 않습니다."));
+      /* ⚠️ 좁은 권한에서는 «손으로 넣은 파일» 이 훑기에 안 잡힌다.
+         한 번 골라 주면 그 뒤로는 잡힌다. 그 사정을 여기서 미리 말해 둔다.
+         말해 두지 않으면 «가져오기가 고장 났다» 로 읽는다. */
+      fImp.appendChild(el("p", "desc",
+        "밖에서 만들어 넣은 파일은 먼저 「드라이브에서 파일 고르기」로 한 번 골라 주세요. " +
+        "한 번 고른 파일은 그 뒤로는 저절로 잡힙니다."));
       fImp.appendChild(el("p", "desc",
         SCAN_DEPTH + "단계·폴더 " + SCAN_FOLDER_MAX + "곳까지 훑습니다. 큰 폴더는 몇 분 걸리니 창을 닫지 마세요."));
       var rImp = el("div", "row");
-      var imp = el("button", "btn primary", "📥 폴더 훑어서 가져오기");
-      imp.disabled = !connected;
-      imp.addEventListener("click", function () {
+      function runImport() {
         imp.disabled = true;
         importFromFolder(status).then(function (n) {
           imp.disabled = false;
           if (n) toast(n + "개를 가져왔습니다.");
         });
-      });
+      }
+      var imp = el("button", "btn primary", "📥 폴더 훑어서 가져오기");
+      imp.disabled = !connected;
+      imp.addEventListener("click", runImport);
+      var pickMore = pickMoreBtn("📂 드라이브에서 파일 고르기", function () { runImport(); });
+      pickMore.disabled = !connected;
       var pull = el("button", "btn", "드라이브에서 기록 다시 불러오기");
       pull.disabled = !connected;
       pull.addEventListener("click", function () {
@@ -9484,7 +9564,7 @@
           status.textContent = remote.entries.length + "개를 불러왔습니다.";
         }).catch(function (e) { status.textContent = "실패: " + e.message; });
       });
-      rImp.appendChild(imp); rImp.appendChild(pull);
+      rImp.appendChild(pickMore); rImp.appendChild(imp); rImp.appendChild(pull);
       fImp.appendChild(rImp);
       body.appendChild(fImp);
 
