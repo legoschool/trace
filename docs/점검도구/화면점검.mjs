@@ -1000,6 +1000,49 @@ const pairs = ["capture", "image", "text", "draw"].map(k => (addbar.btns.find(b 
 check("헷갈리는 짝이 서로 다른 그림글자다", new Set(pairs.map(t => t.slice(0, 2))).size === 4,
   pairs.join(" / "));
 
+/* ---------- 10-3. 보는 축 셋이 서로 안 흔들리는가 ----------
+   모양 · 밝기 · 글자 크기는 따로 도는 축이다. 하나를 고쳐도 나머지가 그대로여야
+   «고른 것이 어긋나지 않는다». 여기서는 설정 화면에서 실제로 눌러 본다. */
+await evaluate(`(() => { document.querySelectorAll('.modal-bg').forEach(b => b.remove()); return true; })()`);
+const axes = JSON.parse(await evaluate(`(() => {
+  document.getElementById('btnSettings').click();
+  const look = Array.from(document.querySelectorAll('.tabs .tab')).find(t => t.textContent === '모양');
+  if (!look) return JSON.stringify({ err: 'NO_LOOK_TAB' });
+  look.click();
+  const press = (t) => {
+    const b = Array.from(document.querySelectorAll('.pickbtn')).find(x => x.querySelector('.picklabel').textContent === t);
+    if (b) b.click();
+    return !!b;
+  };
+  const now = () => {
+    const r = document.documentElement, cs = getComputedStyle(r);
+    return { theme: r.getAttribute('data-theme'), mode: r.getAttribute('data-mode'),
+             size: r.getAttribute('data-size'), fs: cs.getPropertyValue('--fs').trim() };
+  };
+  const labels = Array.from(document.querySelectorAll('.mbody .field > label')).map(l => l.textContent);
+  // 모양을 «공책» 으로 두고 시작한다
+  const card = Array.from(document.querySelectorAll('.themecard')).find(c => {
+    const n = c.querySelector('.themename strong'); return n && n.textContent === '공책';
+  });
+  if (card) card.click();
+  const a = now();
+  const okDark = press('어둡게');   const b2 = now();
+  const okHuge = press('아주 크게'); const c2 = now();
+  const okLight = press('밝게');    const d2 = now();
+  return JSON.stringify({ labels, okDark, okHuge, okLight, a, b: b2, c: c2, d: d2 });
+})()`));
+check("모양 칸에 축 셋이 다 있다", !axes.err && axes.labels.length === 3,
+  axes.err || (axes.labels || []).join(" / "));
+check("밝기를 고르면 그 자리에서 바뀐다", axes.b && axes.b.mode === "dark", (axes.b || {}).mode || "안 바뀜");
+check("밝기를 바꿔도 모양은 그대로다", axes.b && axes.b.theme === axes.a.theme, `${axes.a.theme} → ${(axes.b||{}).theme}`);
+check("글자를 키워도 밝기는 그대로다", axes.c && axes.c.mode === "dark" && axes.c.fs !== "1",
+  `${(axes.c||{}).mode} · 배율 ${(axes.c||{}).fs}`);
+check("밝게로 되돌려도 글자 크기는 그대로다", axes.d && axes.d.mode === "light" && axes.d.size === "huge",
+  `${(axes.d||{}).mode} · ${(axes.d||{}).size}`);
+check("셋을 다 만져도 모양은 끝까지 그대로다", axes.d && axes.d.theme === axes.a.theme,
+  `${axes.a.theme} → ${(axes.d||{}).theme}`);
+await evaluate(`(() => { document.querySelectorAll('.modal-bg').forEach(b => b.remove()); return true; })()`);
+
 /* ---------- 11. 끝난 뒤에도 오류가 없어야 한다 ---------- */
 check("끝까지 오류 없음", errors.length === 0 && logs.length === 0, [...errors, ...logs][0] || "");
 

@@ -158,8 +158,55 @@ for (const r of rows) {
   if (r.overflow || r.폰넘침) LOW.push(`${NAME[r.th]} ${r.dark ? "어두움" : "밝음"} · 가로 넘침 ${r.overflow}/${r.폰넘침}px`);
   if (r.cards !== 5) LOW.push(`${NAME[r.th]} ${r.dark ? "어두움" : "밝음"} · 카드가 ${r.cards}장`);
 }
+/* ───────────────────────────────────────────────────────────
+   축이 서로 안 흔들리는가 — 밝기 · 글자 크기
+
+   모양·밝기·글자 크기는 «따로 도는 축» 이다. 하나를 고쳐도 다른 것이 안 변해야 한다.
+   여기서 보는 것 셋 —
+     ① 기기가 밝아도 「어둡게」 를 고르면 어두워지는가 (고른 것이 기기를 이기는가)
+     ② 기기가 어두워도 「밝게」 를 고르면 밝아지는가
+     ③ 글자를 키워도 폰에서 가로로 안 넘치는가
+   ─────────────────────────────────────────────────────────── */
+async function look(theme, mode, fontSize, deviceDark, phone) {
+  await send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-color-scheme", value: deviceDark ? "dark" : "light" }] });
+  if (phone) await send("Emulation.setDeviceMetricsOverride", { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
+  else await send("Emulation.clearDeviceMetricsOverride");
+  await ev(SEED);
+  await ev(`localStorage.setItem('trace.settings.v1', JSON.stringify({version:1, theme:'${theme}', mode:'${mode}', fontSize:'${fontSize}', viewMode:'stream', folderMode:'perEntry'})); true`);
+  await send("Page.reload", { ignoreCache: true });
+  await wait(2400);
+  return JSON.parse(await ev(`(() => {
+    const cs = getComputedStyle(document.documentElement);
+    const hex = cs.getPropertyValue('--bg').trim();
+    const n = parseInt(hex.replace('#',''), 16);
+    return JSON.stringify({
+      밝기: Math.round((((n>>16)&255)*0.299 + ((n>>8)&255)*0.587 + (n&255)*0.114)),
+      fs: cs.getPropertyValue('--fs').trim(),
+      본문px: Math.round(parseFloat(getComputedStyle(document.body).fontSize)),
+      넘침: document.documentElement.scrollWidth - document.documentElement.clientWidth
+    });
+  })()`));
+}
+
+console.log("\n[축이 서로 안 흔들리는가]");
+console.log("프리셋      기기밝음+어둡게   기기어두움+밝게   폰·아주크게");
+for (const th of THEMES) {
+  const d = await look(th, "dark", "", false, false);     // ① 고른 어둠이 이기는가
+  const l = await look(th, "light", "", true, false);     // ② 고른 밝음이 이기는가
+  const h = await look(th, "", "huge", false, true);      // ③ 키워도 안 넘치는가
+  const okD = d.밝기 < 90, okL = l.밝기 > 165, okH = h.넘침 === 0 && h.본문px >= 18;
+  console.log(
+    (NAME[th] || th).padEnd(8) +
+    (okD ? "  OK " : " FAIL") + String(d.밝기).padStart(6) + "        " +
+    (okL ? "  OK " : " FAIL") + String(l.밝기).padStart(6) + "        " +
+    (okH ? "  OK " : " FAIL") + (" " + h.본문px + "px/넘침" + h.넘침).padStart(12));
+  if (!okD) LOW.push(`${NAME[th]} · 「어둡게」 를 골랐는데 배경 밝기가 ${d.밝기}`);
+  if (!okL) LOW.push(`${NAME[th]} · 「밝게」 를 골랐는데 배경 밝기가 ${l.밝기}`);
+  if (!okH) LOW.push(`${NAME[th]} · 글자를 키우니 폰에서 ${h.넘침}px 넘침 (본문 ${h.본문px}px)`);
+}
+
 console.log("\n[걸리는 것]");
 if (!LOW.length) console.log("  없음");
 else LOW.forEach(x => console.log("  " + x));
 console.log("\n자바스크립트 오류:", errs.length ? errs[0] : "없음");
-p.kill(); process.exit(0);
+p.kill(); process.exit(LOW.length ? 1 : 0);
