@@ -247,14 +247,14 @@ const modeUi = await evaluate(`(() => {
     selects: document.querySelectorAll('.mbody select').length,
     trees: document.querySelectorAll('.modecard .ftree').length,
     icons: document.querySelectorAll('.modecard .ftree svg').length,
-    browse: !!Array.from(document.querySelectorAll('.mbody button')).find(b => (b.textContent||'').includes('찾아보기'))
+    browse: !!document.getElementById('btnMap')
   });
 })()`);
 const mu = JSON.parse(modeUi);
 check("정리 방식 다섯이 한눈에 펼쳐진다", mu.cards === 5, `카드 ${mu.cards}개`);
 check("고르는 목록(select)이 그림을 덮지 않는다", mu.selects === 0, `select ${mu.selects}개`);
 check("방식마다 폴더 그림이 붙는다", mu.trees === 5 && mu.icons >= 15, `그림 ${mu.trees}개 · 아이콘 ${mu.icons}개`);
-check("«폴더 찾아보기» 단추가 있다", mu.browse === true);
+check("«폴더 구조» 로 가는 길이 있다", mu.browse === true);
 
 // 눌러서 바꾸면 그 카드로 «고름» 이 옮겨가야 한다
 const switched = await evaluate(`(() => {

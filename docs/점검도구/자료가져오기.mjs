@@ -118,6 +118,7 @@ const FAKE_DRIVE = `(function () {
      이 점검에서 가장 중요한 것은 «무엇이 들어왔나» 가 아니라
      «십삼 년치 원본에 손을 댔나» 이기 때문이다. */
   window.__fake = { calls: 0, pages: 0, lists: 0, trashed: [], moved: [], renamed: [], shared: [] };
+  window.__fake.T = T;   // 점검이 «사람이 드라이브에서 옮기는 것» 을 흉내 낼 수 있게
   var realFetch = window.fetch.bind(window);
   function J(o) {
     return Promise.resolve(new Response(JSON.stringify(o),
@@ -549,9 +550,13 @@ await wait(600);
 check("폴더 이름에서 온 태그로 걸러진다", Number(tagged) > 0 && Number(tagged) < 50,
   Number(tagged) < 0 ? "«과학» 태그를 못 찾음" : `${tagged}편`);
 
-/* ---- ⑥ 폴더 찾아보기 · 탐색기처럼 눌러 들어가며 고른다 ----
-   링크를 붙여넣는 길은 «주소를 아는 사람» 에게만 쉽다.
-   가짜 드라이브가 폴더 나무를 들고 있으니, 실제로 눌러 들어가 본다. */
+/* ---- ⑥ 폴더를 정하는 길 ----
+   손수 만든 폴더 탐색기는 «권한을 좁혀 100명 한도를 없앤다» 에서 함께 걷어냈다.
+   drive.file 로 좁히면 앱이 드라이브 전체를 훑을 수 없어서 그 창을 세울 수가 없다.
+   지금은 구글 «고르기 창» 이 그 일을 한다. 머리 없는 브라우저로는 그 창을 못 여니,
+   여기서는 «길이 세 갈래로 서 있는지» 와 «옛 길이 안 남았는지» 까지만 본다.
+   ⚠️ 예전 점검 셋은 «폴더 고르기» 라는 «글자» 를 가진 설정 창을 폴더 탐색기로 잘못 집어
+      0개를 0개라고 세며 헛통과했다. 없는 것을 세지 말 것. */
 await ev(`(() => { document.querySelectorAll('.modal-bg').forEach(b => b.remove()); return true; })()`);
 await wait(300);
 await ev(`document.getElementById('btnSettings').click(); true`);
@@ -561,66 +566,27 @@ await ev(`(() => {
   if (t) t.click(); return true;
 })()`);
 await wait(500);
-const opened = await ev(`(() => {
-  const b = Array.from(document.querySelectorAll('.mbody button')).find(x => (x.textContent||'').includes('찾아보기'));
-  if (!b) return 'NO_BUTTON';
-  if (b.disabled) return 'DISABLED';
-  b.click(); return 'OK';
-})()`);
-await wait(1200);
-const browser = await ev(`(() => {
-  const m = Array.from(document.querySelectorAll('.card.modal')).find(x => (x.textContent||'').includes('폴더 고르기'));
-  if (!m) return 'NO_MODAL';
+const ways = await ev(`(() => {
+  const bs = Array.from(document.querySelectorAll('.mbody button')).map(b => (b.textContent||'').trim());
+  const primary = document.querySelector('.mbody button.primary');
   return JSON.stringify({
-    crumbs: Array.from(m.querySelectorAll('.crumb')).map(e => e.textContent),
-    rows: Array.from(m.querySelectorAll('.pickrow .fname')).map(e => e.textContent),
-    icons: m.querySelectorAll('.pickrow svg').length
+    pick: bs.some(t => t.includes('폴더 고르기')),
+    make: bs.some(t => t.includes('새 폴더 만들기')),
+    paste: bs.some(t => t.includes('주소로 연결')),
+    old: bs.some(t => t.includes('찾아보기')),
+    rows: document.querySelectorAll('.mbody .pickrow').length,
+    first: bs.findIndex(t => t.includes('폴더 고르기')) < bs.findIndex(t => t.includes('주소로 연결')) &&
+      Array.from(document.querySelectorAll('.mbody button')).some(x => x.classList.contains('primary') && (x.textContent||'').includes('폴더 고르기'))
   });
 })()`);
-const br = /^NO_/.test(browser) ? null : JSON.parse(browser);
-check("«폴더 찾아보기» 가 내 드라이브를 연다 (폴더만)",
-  opened === "OK" && !!br && br.crumbs[0] === "내 드라이브" &&
-  br.rows.length === 3 && br.rows.join(",") === "2019,연수,사진많은폴더",
-  br ? `${br.crumbs.join(" › ")} · ${br.rows.join(", ")}` : `${opened} / ${browser}`);
-check("폴더마다 폴더 그림이 붙는다", !!br && br.icons === br.rows.length, br ? `${br.icons}개` : "");
-
-// 폴더를 눌러 «안으로» 들어가고, 길찾기 줄이 따라오는지
-const dived = await ev(`(() => {
-  const m = Array.from(document.querySelectorAll('.card.modal')).find(x => (x.textContent||'').includes('폴더 고르기'));
-  const row = Array.from(m.querySelectorAll('.pickrow')).find(r => (r.textContent||'').indexOf('2019') === 0);
-  if (!row) return 'NO_2019';
-  row.click(); return 'OK';
-})()`);
-await wait(1200);
-const inside = await ev(`(() => {
-  const m = Array.from(document.querySelectorAll('.card.modal')).find(x => (x.textContent||'').includes('폴더 고르기'));
-  return JSON.stringify({
-    crumbs: Array.from(m.querySelectorAll('.crumb')).map(e => e.textContent),
-    rows: Array.from(m.querySelectorAll('.pickrow .fname')).map(e => e.textContent)
-  });
-})()`);
-const ins = /^NO_/.test(inside) ? null : JSON.parse(inside);
-check("폴더를 눌러 안으로 들어간다",
-  dived === "OK" && !!ins && ins.crumbs.length === 2 && ins.rows.indexOf("3학년") >= 0,
-  ins ? `${ins.crumbs.join(" › ")} · ${ins.rows.join(", ")}` : `${dived} / ${inside}`);
-
-// 「내 드라이브」 통째로는 못 고르게 막았는지 · 뿌리에 기록장 파일을 흩뿌리면 안 된다
-const rootGuard = await ev(`(() => {
-  const m = Array.from(document.querySelectorAll('.card.modal')).find(x => (x.textContent||'').includes('폴더 고르기'));
-  const home = Array.from(m.querySelectorAll('.crumb')).find(c => c.textContent === '내 드라이브');
-  if (home) home.click();
-  return 'OK';
-})()`);
-await wait(1000);
-await ev(`(() => {
-  const m = Array.from(document.querySelectorAll('.card.modal')).find(x => (x.textContent||'').includes('폴더 고르기'));
-  const take = Array.from(m.querySelectorAll('.mfoot button')).find(b => (b.textContent||'').includes('여기로 정하기'));
-  if (take) take.click(); return true;
-})()`);
-await wait(500);
-const stillOpen = await ev(`Array.from(document.querySelectorAll('.card.modal')).some(x => (x.textContent||'').includes('폴더 고르기'))`);
-check("드라이브 맨 위는 못 고르게 막는다", rootGuard === "OK" && stillOpen === true,
-  stillOpen ? "막힘" : "그냥 골라짐");
+const wy = JSON.parse(ways);
+check("폴더를 정하는 길이 셋 다 있다", wy.pick && wy.make && wy.paste,
+  `고르기 ${wy.pick} · 새로 만들기 ${wy.make} · 주소로 ${wy.paste}`);
+check("손수 만든 폴더 탐색기는 남아 있지 않다", !wy.old && wy.rows === 0,
+  wy.old ? "옛 단추가 남아 있다" : `폴더 줄 ${wy.rows}개`);
+/* 좁은 권한에서는 «주소를 붙여넣는 길» 이 대개 막힌다.
+   고르기 창에서 «고르는» 행위 자체가 그 폴더에 권한을 준다. 그래서 고르기가 앞에 서야 한다. */
+check("고르기를 앞에 세운다", wy.first === true, wy.first ? "고르기가 먼저 · 눈에 띄는 단추" : "주소 붙여넣기가 앞에 있다");
 await ev(`(() => { document.querySelectorAll('.modal-bg').forEach(b => b.remove()); return true; })()`);
 await wait(300);
 
@@ -906,6 +872,96 @@ const studio = await ev(`(() => {
 })()`);
 check("«지금 가리기» 가 사진 가리기 화면을 연다", fixed === "CLICKED" && studio === "OPEN", String(studio));
 await ev(`(() => { document.querySelectorAll('.modal-bg').forEach(b => b.remove()); return true; })()`);
+
+/* ---- ⑧ 사람이 드라이브에서 파일을 옮겼을 때 · «드라이브가 진실이다» ----
+   가져올 때 찍어 둔 자리는 «앱이 정해 둔 자리» 가 아니라 «마지막으로 본 자리» 다.
+   사람이 옮기면 앱이 따라와야 하고, 앱이 도로 끌어오면 안 된다.
+   그리고 연결한 폴더 «밖» 으로 나가면, 조용히 안 열리는 대신 안 보인다고 말해야 한다.
+   ⚠️ 어느 기록을 고를지 이름으로 박아 두지 않는다. 앞 점검들이 지우고 고치고 지나가서
+      무엇이 남아 있는지는 그때그때 다르다. «과학 폴더에 있는 것» 을 그 자리에서 찾아 쓴다. */
+await ev(`(() => { document.querySelectorAll('.modal-bg').forEach(b => b.remove()); return true; })()`);
+await wait(400);
+
+const pick = JSON.parse(await ev(`(() => {
+  const L = JSON.parse(localStorage.getItem('trace.entries.v2') || '[]');
+  const e = L.find(x => (x.srcPath || []).join('/') === '2019/3학년/과학' && x.srcId);
+  return JSON.stringify(e ? { id: e.srcId, title: e.title, path: e.srcPath } : { id: '', title: '', path: [] });
+})()`));
+check("가져온 기록이 거쳐 온 길을 들고 있다", pick.path.join("/") === "2019/3학년/과학",
+  pick.title ? `${pick.title} · ${pick.path.join(" › ")}` : "과학 폴더에서 온 기록이 안 남았다");
+
+// 화면에서 그 한 편만 남기고 본다. 1100편이 깔린 목록에서는 카드가 안 그려질 수 있다
+const only = async (title) => {
+  await ev("(() => { const q = document.getElementById('search'); q.value = " + JSON.stringify(title) +
+    "; q.dispatchEvent(new Event('input', { bubbles: true })); return true; })()");
+  await wait(700);
+};
+const readPlace = () => ev(`(() => {
+  const L = JSON.parse(localStorage.getItem('trace.entries.v2') || '[]');
+  const e = L.find(x => x.srcId === '${pick.id}');
+  return JSON.stringify({
+    path: (e && e.srcPath) || [],
+    crumbs: Array.from(document.querySelectorAll('.card.entry .crumb')).map(x => x.textContent).join('/'),
+    gone: document.querySelectorAll('.banner.gone').length
+  });
+})()`).then(JSON.parse);
+
+/* 사람이 드라이브에서 「과학」 에 있던 것을 「연수」 로 끌어다 놓았다 */
+await ev(`(() => {
+  const T = window.__fake.T;
+  const it = T.DSCI.find(f => f.id === '${pick.id}');
+  if (!it) return false;
+  T.DSCI = T.DSCI.filter(f => f.id !== '${pick.id}');
+  T.DYEONSU = T.DYEONSU.concat([it]);
+  window.__fake.moved = [];
+  return true;
+})()`);
+const rescan1 = await pressImport();
+check("옮긴 뒤에도 다시 훑을 수 있다", rescan1 === "CLICKED", String(rescan1));
+let place1 = { path: [], crumbs: "", gone: 0 };
+/* 폴더 6곳에 파일 1110개다. 다 훑는 데 시간이 걸린다. 넉넉히 기다린다 ·
+   여기서 짧게 끊으면 «안 따라온다» 고 잘못 적게 된다. */
+for (let k = 0; k < 120; k++) {
+  await wait(500);
+  place1 = await readPlace();
+  if (place1.path.join('/') === '연수') break;
+}
+await ev(`(() => { document.querySelectorAll('.modal-bg').forEach(b => b.remove()); return true; })()`);
+await only(pick.title);
+place1 = await readPlace();
+/* ⚠️ 여기서 localStorage 를 읽으면 안 된다. 가짜 드라이브에는 기록이 1100편이 넘어
+   이 기기 자리(5MB)를 넘어서고, 앱은 그때 사본 쓰기를 접는다 (드라이브에는 그대로 올라간다).
+   그러면 «앱이 안 따라온다» 고 잘못 적게 된다. 사람이 보는 것 · 길찾기 줄로 잰다. */
+check("사람이 옮기면 앱이 그 자리를 따라온다",
+  /연수/.test(place1.crumbs) && !/과학/.test(place1.crumbs), place1.crumbs || "줄 없음");
+/* ⚠️ 여기가 이 점검의 핵심이다. «자리를 다시 잡는 것» 이 «파일을 옮기는 것» 이 되면 안 된다.
+   십삼 년 동안 있던 자리에서 원본이 딸려 나오는 것이 정확히 이 자리에서 났다. */
+const touched1 = JSON.parse(await ev(`JSON.stringify(window.__fake.moved)`));
+check("자리를 다시 잡을 때 원본에는 손대지 않는다", touched1.indexOf(pick.id) < 0, touched1.join(",") || "한 번도 안 옮김");
+
+/* 이번에는 연결한 폴더 «밖» 으로 꺼냈다. 이 앱의 권한(drive.file)으로는 아예 안 보인다 */
+await ev(`(() => {
+  const T = window.__fake.T;
+  T.DYEONSU = T.DYEONSU.filter(f => f.id !== '${pick.id}');
+  return true;
+})()`);
+const rescan2 = await pressImport();
+check("밖으로 꺼낸 뒤에도 다시 훑을 수 있다", rescan2 === "CLICKED", String(rescan2));
+await wait(9000);
+await ev(`(() => { document.querySelectorAll('.modal-bg').forEach(b => b.remove()); return true; })()`);
+await only(pick.title);
+const place2 = await readPlace();
+check("안 보이게 되면 안 보인다고 말한다", place2.gone > 0, place2.gone + "곳에 알림");
+const goneText = await ev(`(() => {
+  const b = document.querySelector('.banner.gone');
+  return b ? (b.textContent || '').slice(0, 60) : '';
+})()`);
+check("다시 찾을 길을 함께 준다", /안 보입니다/.test(goneText) && /고르기/.test(goneText), goneText || "없음");
+await ev(`(() => {
+  const q = document.getElementById('search'); q.value = '';
+  q.dispatchEvent(new Event('input', { bubbles: true })); return true;
+})()`);
+await wait(400);
 
 const realErrors = errors.filter(e => !/GSI_LOGGER|popup|ERR_INTERNET|ERR_NAME|gsi\/client/i.test(String(e)));
 check("가져오고 고치고 지우는 내내 오류 없음", realErrors.length === 0, realErrors[0] || "");
