@@ -686,6 +686,53 @@ check("⑯ 누르면 그때 조각 다섯으로 바뀐다", nm5 === 5, `줄 ${nm
 await closeModals();
 await wait(300);
 
+/* =========================================================
+   상황 ⑰ · 글 쪽 조각을 다 끌 수는 없다
+   글 이름에 들어갈 수 있는 것은 날짜·태그·제목 셋뿐이다 (자료 제목·번호는 사진·파일에만).
+   셋을 다 끄면 글은 지을 이름이 없어 모두 «무제.md» 가 된다.
+   ⚠️ 그때 앱이 몰래 {제목} 을 도로 세우면, 다시 열었을 때 «끈 것이 켜져» 있다.
+      «고르면 그대로 유지» 가 조용히 깨지는 자리다. 그래서 셋 가운데 마지막 하나를 잠근다.
+   ========================================================= */
+await ev(`(() => {
+  sessionStorage.setItem('keep', '1');
+  var s = JSON.parse(localStorage.getItem('trace.settings.v1') || '{}');
+  s.mdPattern = '{날짜}_{태그}_{제목}';
+  s.filePattern = '{날짜}_{태그}_{제목}_{자료제목}_{번호}';
+  localStorage.setItem('trace.settings.v1', JSON.stringify(s));
+  return true;
+})()`);
+await send("Page.reload");
+await wait(3000);
+
+const p0 = await openNaming();
+check("⑰ 다섯이 다 켜진 자리에서 시작한다", p0.on.length === 5, p0.on.join(" · "));
+await clickName("태그");
+await wait(250);
+await clickName("제목");
+await wait(350);
+const p1 = await readNaming();
+check("⑰ 글 쪽 조각이 하나 남으면 그것이 잠긴다",
+  p1.locked.length === 1 && p1.locked[0] === "날짜", `잠긴 것 ${p1.locked.join(",") || "없음"}`);
+const tryOff = await clickName("날짜");
+check("⑰ 잠긴 것은 눌러도 안 꺼진다", tryOff === "LOCKED", String(tryOff));
+const off2 = await clickName("번호");
+await wait(350);
+const p2 = await readNaming();
+check("⑰ 사진·파일 쪽 조각은 언제든 끌 수 있다",
+  off2 === "CLICKED" && p2.on.indexOf("번호") < 0, p2.on.join(" · "));
+await saveSettings();
+const p3 = await openNaming();
+check("⑰ 저장하고 다시 열어도 끈 것이 몰래 켜지지 않는다",
+  p3.on.indexOf("태그") < 0 && p3.on.indexOf("제목") < 0 && p3.on.indexOf("번호") < 0,
+  p3.on.join(" · ") || "하나도 안 남음");
+const named = await ev(`(() => {
+  var s = JSON.parse(localStorage.getItem('trace.settings.v1') || '{}');
+  return JSON.stringify({ md: s.mdPattern || '', file: s.filePattern || '' });
+})()`).then((x) => JSON.parse(x));
+check("⑰ 글 이름이 «무제» 로 무너지지 않는다", named.md === "{날짜}", `글 ${named.md} · 자료 ${named.file}`);
+await closeModals();
+await wait(300);
+
 const realErrors = errors.filter((e) => !/GSI_LOGGER|popup|ERR_INTERNET|ERR_NAME|gsi\/client|404/i.test(String(e)));
 check("옮기고 바꾸고 버리는 내내 오류 없음", realErrors.length === 0, realErrors[0] || "");
 

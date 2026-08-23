@@ -391,11 +391,18 @@ if (mo.open) {
   // 넣기까지 끝내 본다
   await evaluate(`Array.from(document.querySelectorAll('.mfoot button'))
     .find(b => b.textContent.includes('전체 사용')).click(); true`);
-  await wait(900);
-  const placed = await evaluate(`JSON.stringify({
-    blocks: document.querySelectorAll('#blocks .block').length,
-    maskBtn: !!Array.from(document.querySelectorAll('#blocks button')).find(b => b.textContent.includes('가리기'))
-  })`);
+  /* 사진 한 장을 블록으로 앉히는 데는 그림을 다시 그리는 시간이 든다.
+     기다리는 시간을 900ms 로 못 박아 두었더니, 느린 판에서 가끔 «단추가 없다» 고
+     빨개졌다. 다시 돌리면 초록이었다. 흔들리는 점검은 못 믿는 점검이라, 붙을 때까지 본다. */
+  let placed = '{"blocks":0,"maskBtn":false}';
+  for (let k = 0; k < 25; k++) {
+    await wait(200);
+    placed = await evaluate(`JSON.stringify({
+      blocks: document.querySelectorAll('#blocks .block').length,
+      maskBtn: !!Array.from(document.querySelectorAll('#blocks button')).find(b => b.textContent.includes('가리기'))
+    })`);
+    if (JSON.parse(placed).maskBtn) break;
+  }
   const pl = JSON.parse(placed);
   check("사진 블록으로 들어간다", pl.blocks > 0, `블록 ${pl.blocks}개`);
   check("넣은 사진에도 «가리기» 단추가 붙는다", pl.maskBtn);
