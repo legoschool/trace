@@ -1199,13 +1199,13 @@
         <!-- 태그를 «지금 나누는 일» 로만 여기면 대충 적게 된다.
              나중에 그것이 «이어 주는 실» 이 된다는 것을 여기서 한 줄로 알려 준다. -->
         <p class="taghint">
-          🏷️ 태그는 <b>나중에 서로를 이어 줍니다.</b> 같은 태그끼리 모아 보고, 관계망에서 한 덩어리로 묶여요.
+          같은 태그끼리 모아 보고, 관계망에서 한 덩어리로 묶입니다.
         </p>
       </div>
     </div>
 
     <div class="field">
-      <label>내용 <span style="font-weight:400;color:var(--ink-soft)"> · 글·사진·링크를 원하는 순서로 계속 이어 붙이세요</span></label>
+      <label>내용</label>
       <div id="maskBar" class="maskbar hidden">
         <button id="btnMaskAll" class="btn sm">🔲 사진 가리기</button>
         <span class="addhint" id="maskBarHint"></span>
@@ -1226,10 +1226,6 @@
         <button class="btn sm" data-add="link">링크</button>
         <button class="btn sm" data-add="embed">코드 삽입</button>
         <button class="btn sm" data-add="divider">구분선</button>
-        <div class="addhint">
-          파일은 <b>화면 아무 곳에나 끌어다 놓아도</b> 됩니다. 영상은 <b>200MB</b> 까지 · 
-          더 길면 유튜브에 «일부공개» 로 올리고 <b>코드 삽입</b> 에 주소를 넣으세요.
-        </div>
       </div>
       <input type="file" id="fileInput" multiple class="hidden" />
       <input type="file" id="imgInput" accept="image/*" multiple class="hidden" />
@@ -1827,7 +1823,7 @@
     var body = el("div", "mbody");
     var crumbBar = el("nav", "crumbs");
     var listBox = el("div", "picklist");
-    var note = el("p", "desc", "폴더를 눌러 안으로 들어갑니다. 기록장이 쓸 폴더에서 «여기로 정하기» 를 누르세요.");
+    var note = el("p", "desc", "폴더를 눌러 안으로 들어갑니다.");
     body.appendChild(crumbBar); body.appendChild(note); body.appendChild(listBox);
     m.appendChild(body);
 
@@ -4214,7 +4210,7 @@
       v.className = "camview";
       v.srcObject = s;
       body.appendChild(v);
-      body.appendChild(el("p", "crophint", "화면에 담기면 «찍기» 를 누르세요. 찍은 뒤 필요한 부분만 잘라 넣을 수 있습니다."));
+      body.appendChild(el("p", "crophint", "화면에 담기면 «찍기» 를 누르세요."));
       m.appendChild(body);
 
       var foot = el("div", "mfoot");
@@ -4412,36 +4408,26 @@
     meterWrap.appendChild(meterBar);
     body.appendChild(meterWrap);
 
-    var note = el("p", "crophint", wantRecog
-      ? "말하는 대로 아래에 받아 적힙니다. 틀린 곳은 바로 고치면 돼요."
-      : "이 브라우저는 받아쓰기가 안 됩니다. 소리만 담깁니다. 크롬에서 열면 받아 적혀요.");
-    body.appendChild(note);
-
-    /* 두 갈래를 한 줄로 말해 준다. 지금 말하는 것 / 이미 담아 온 것 */
-    var ways = el("p", "crophint");
-    ways.innerHTML = "지금 말해도 되고, <b>폰에 담아 온 파일을 불러와도</b> 됩니다. " +
-      "어느 쪽이든 글로 옮겨 적을 수 있어요.";
-    body.appendChild(ways);
-
+    /* ⚠️ 여기에 설명을 적지 말 것. 무엇을 하는 창인지는 아래 단추가 말해 준다.
+       이 줄은 «지금 무슨 일이 일어나는가» 만 띄운다 (녹음 중·못 들었다·안 되는 것). */
     var warn = el("p", "crophint");
     warn.style.color = "var(--brand)";
-    warn.textContent = "이 창을 열어 둔 동안에만 녹음돼요. 다른 앱으로 넘어가면 멈춥니다.";
+    warn.textContent = wantRecog ? "" : "이 브라우저는 받아쓰기가 안 됩니다. 소리만 담깁니다.";
     body.appendChild(warn);
 
     /* 제목과 내용을 갈라 놓는다.
        제목은 «파일 이름» 이 되고, 받아 적은 글은 «본문» 이 된다. 둘을 섞으면 파일명이 문장이 된다. */
     var titleField = el("div", "field");
     titleField.style.textAlign = "left";   // 시계 때문에 창이 가운데 정렬이라, 적는 칸은 되돌려 놓는다
-    titleField.appendChild(el("label", null, "제목 · 파일 이름이 됩니다"));
+    titleField.appendChild(el("label", null, "제목"));
     var tin = el("input", "inp");
-    tin.placeholder = "예: 8월 협의회 · 비워 두면 날짜·시각으로 저장됩니다";
+    tin.placeholder = "예: 8월 협의회";
     titleField.appendChild(tin);
-    titleField.appendChild(el("p", "desc", "말한 내용은 아래 칸에 그대로 담깁니다. 제목까지 말로 채우지 않습니다."));
     body.appendChild(titleField);
 
     var scriptField = el("div", "field");
     scriptField.style.textAlign = "left";
-    scriptField.appendChild(el("label", null, "받아 적은 글 · 고쳐도 됩니다"));
+    scriptField.appendChild(el("label", null, "받아 적은 글"));
     var ta = el("textarea", "inp");
     ta.rows = 7;
     ta.placeholder = wantRecog ? "말하면 여기에 쌓입니다." : "여기에 직접 적어도 됩니다.";
@@ -4604,6 +4590,7 @@
         timer = setInterval(tick, 250);
         state = "recording"; sync();
         status.textContent = "녹음 중";
+        warn.textContent = "이 창을 열어 둔 동안에만 녹음돼요.";
         keepAwake();
         listenLevel(s);
         if (wantRecog) startRecog();
@@ -4776,9 +4763,6 @@
     var cv = el("canvas", "drawpad");
     wrap.appendChild(cv);
     body.appendChild(wrap);
-    body.appendChild(el("p", "crophint",
-      "손가락·펜·마우스 모두 됩니다. 태블릿 펜이면 누르는 세기에 따라 굵기가 달라집니다. " +
-      "저장하면 사진 한 장으로 들어가고, 드라이브에도 그림 파일로 쌓입니다."));
     m.appendChild(body);
 
     var foot = el("div", "mfoot");
@@ -5051,8 +5035,7 @@
     body.appendChild(stage);
 
     var hint = el("p", "crophint",
-      "얼굴 위를 톡 누르면 그 자리가 동그랗게 지워집니다. 손가락으로 쓸면 줄줄이 지워집니다. " +
-      "위에서 다른 사진으로 넘어갈 수 있고, 가린 사진에는 ✓ 가 붙습니다.");
+      "얼굴 위를 톡 누르세요. 쓸면 줄줄이 지워집니다.");
     body.appendChild(hint);
     m.appendChild(body);
 
@@ -6509,7 +6492,7 @@
         });
         g.appendChild(strip);
         g.appendChild(el("div", "crophint",
-          "눌러서 크게 볼 수 있어요. 학생 얼굴·이름표가 보이면 아래 «🔲 지금 가리기» 를 누르세요."));
+          "얼굴·이름표가 보이면 아래에서 가리세요."));
 
         /* ⚠️ 전에는 여기서 「창을 닫고 편집 → 가리기 로 지우세요」 라고만 일러 주었다.
            그런데 그 길이 막혀 있었다. 이미 올라간 사진은 «가릴 수 없습니다» 가 떴다.
@@ -6633,10 +6616,7 @@
         stop: function () { return stopSharing(n.folderId); }
       });
 
-      body.appendChild(el("p", "crophint",
-        "검색에는 걸리지 않습니다. 다만 링크가 한번 퍼지면 되돌릴 수 없으니, 필요 없어지면 «공유 끄기» 를 눌러 주세요. " +
-        "HTML 파일은 드라이브에서 «웹페이지로» 열리지 않습니다 (구글이 2016년에 그 기능을 없앴습니다) · " +
-        "사람에게 보여줄 것은 구글 문서 쪽입니다."));
+      body.appendChild(el("p", "crophint", "링크가 한번 퍼지면 되돌릴 수 없습니다."));
     }
     draw();
 
@@ -6929,7 +6909,7 @@
 
     var body = el("div", "mbody");
     body.appendChild(el("p", "desc",
-      "고른 기록을 하나의 파일로 묶습니다. 목차·연결까지 담기므로 연수 자료나 산출물로 그대로 쓸 수 있습니다."));
+      "고른 기록을 한 파일로 묶습니다."));
 
     var f1 = el("div", "field");
     f1.appendChild(el("label", null, "책 제목"));
@@ -8077,8 +8057,7 @@
 
     var body = el("div", "mbody");
     body.appendChild(el("p", "crophint",
-      "드라이브 폴더에 직접 넣은 자료 중 «이름이 날짜로 시작하지 않는 것»을 찾아 줍니다. " +
-      "앞에 «날짜 + 폴더 이름»을 붙입니다. 원래 이름은 지우지 않습니다."));
+      "이름 앞에 날짜와 폴더 이름을 붙입니다. 원래 이름은 지우지 않습니다."));
     var status = el("div", "desc");
     body.appendChild(status);
     var listBox = el("div", "renamebox");
@@ -9158,7 +9137,7 @@
       ensureAllThemeFonts();   // 일곱 갈래를 한눈에 보여 주려면 글꼴이 먼저 와 있어야 한다
       f.appendChild(el("label", null, "① 모양"));
       f.appendChild(el("p", "desc",
-        "왼쪽 위로 갈수록 아이답고, 오른쪽 아래로 갈수록 정밀합니다. 누르면 바로 바뀝니다."));
+        "왼쪽 위가 아이답고, 오른쪽 아래가 정밀합니다."));
       f.appendChild(themeAxis());
       var grid = el("div", "themegrid");
       THEMES.forEach(function (t) {
@@ -9209,7 +9188,7 @@
          전에는 색이 모양에 붙어 있어서 「공책 모양에 청사진 색」 을 할 수 없었다. */
       var gT = el("div", "field");
       gT.appendChild(el("label", null, "② 색감"));
-      gT.appendChild(el("p", "desc", "모양은 그대로 두고 색만 갈아입힙니다."));
+      gT.appendChild(el("p", "desc", ""));
       var tRow = el("div", "tonerow");
       var pickedTone = toneOf(draft.theme || "base", draft.tone);
       TONES.forEach(function (tn) {
@@ -9243,12 +9222,12 @@
       gT.appendChild(reset);
       body.appendChild(gT);
 
-      axis("③ 밝기", "어느 모양이든 어둡게 볼 수 있어요.", "mode", [
+      axis("③ 밝기", "", "mode", [
         ["", "🖥️", "기기 따름", "기기가 어두우면 어둡게"],
         ["light", "☀️", "밝게", "언제나 밝은 종이"],
         ["dark", "🌙", "어둡게", "밤·강당·눈이 부실 때"]
       ]);
-      axis("④ 글자 크기", "모양과 색은 그대로고 크기만 커집니다.", "fontSize", [
+      axis("④ 글자 크기", "", "fontSize", [
         ["", "가", "보통", "기본 15px"],
         ["big", "가", "크게", "약 17px"],
         ["huge", "가", "아주 크게", "약 19px"]
@@ -9330,7 +9309,7 @@
       paintMode();
       f3.appendChild(modeGrid);
       f3.appendChild(el("p", "desc",
-        "방식을 바꾸면 앞으로 저장되는 것부터 적용됩니다. 이미 올라간 파일을 옮기려면 아래 버튼을 쓰세요."));
+        "앞으로 저장되는 것부터 적용됩니다."));
       var reorg = el("button", "btn sm", "기존 파일도 새 방식으로 옮기기");
       reorg.disabled = !connected;
       reorg.addEventListener("click", function () {
@@ -9348,14 +9327,11 @@
       var f5 = el("div", "field");
       f5.style.borderTop = "1px solid var(--line)";
       f5.style.paddingTop = "14px";
-      f5.appendChild(el("p", "desc",
-        "드라이브에 직접 넣은 .md 파일이나 옵시디언에서 만든 노트를 목록에 넣으려면 " +
-        "위쪽 「고급」 탭의 «폴더 훑어서 가져오기» 를 쓰세요."));
       body.appendChild(f5);
     }
 
     function paintTypes() {
-      body.appendChild(el("p", "desc", "기록의 종류를 직접 만들어 쓰세요. 순서를 바꾸면 작성 화면의 버튼 순서도 바뀝니다."));
+      body.appendChild(el("p", "desc", "순서를 바꾸면 작성 화면도 따라 바뀝니다."));
       var list = el("div"); list.style.marginTop = "12px";
       body.appendChild(list);
 
@@ -9447,7 +9423,7 @@
     function paintNaming() {
       var ff = el("div", "field");
       ff.appendChild(el("label", null, "저장 형식 · 무엇으로 남길까요?"));
-      ff.appendChild(el("p", "desc", "마크다운(.md)은 항상 저장됩니다. 사람이 읽기 편한 사본을 함께 만들 수 있습니다."));
+      ff.appendChild(el("p", "desc", "마크다운(.md)은 항상 저장됩니다."));
       [["alsoGdoc", "📄 구글 문서로도 저장", "드라이브에서 클릭 한 번에 열립니다. 제목·소제목·인용이 서식으로 보입니다. (가장 읽기 편함)"],
        ["alsoHtml", "🌐 HTML 파일로도 저장", "브라우저로 열어 보거나 그대로 웹에 올릴 수 있습니다."]
       ].forEach(function (opt) {
@@ -9463,11 +9439,9 @@
         lab.appendChild(cb); lab.appendChild(txt);
         ff.appendChild(lab);
       });
-      ff.appendChild(el("p", "desc",
-        "마크다운은 옵시디언·LLM 연동용이고, 구글 문서는 사람이 읽는 용도입니다. 둘 다 켜 두면 같은 내용이 두 형식으로 나란히 저장됩니다."));
       body.appendChild(ff);
 
-      body.appendChild(el("p", "desc", "드라이브에 저장될 파일 이름을 원하는 대로 정하세요. 태그를 눌러 조립할 수 있습니다."));
+      body.appendChild(el("p", "desc", "태그를 눌러 조립합니다."));
       body.appendChild(makePatternField("📝 글(마크다운) 파일 이름", "mdPattern", MD_PRESETS, true));
       body.appendChild(makePatternField("📎 사진·파일 이름", "filePattern", FILE_PRESETS, false));
       var note = el("p", "desc");
@@ -9485,10 +9459,9 @@
       var fImp = el("div", "field");
       fImp.appendChild(el("label", null, "폴더에 있는데 목록에 없는 것 가져오기"));
       fImp.appendChild(el("p", "desc",
-        "드라이브에 직접 넣은 파일은 목록에 안 보입니다. 아래 버튼을 누르면 폴더를 훑어 찾아 넣어 줍니다."));
+        "드라이브에 직접 넣은 파일을 찾아 목록에 넣습니다."));
       fImp.appendChild(el("p", "desc",
-        "한글·발표·PDF·사진·영상·구글 문서까지 들어옵니다. 몇 개인지 먼저 보여 주고 물어봐요. " +
-        "<b>원본은 옮기지도 고치지도 않습니다.</b> 거쳐 온 폴더 이름은 태그로 붙습니다."));
+        "원본은 옮기지도 고치지도 않습니다."));
       fImp.appendChild(el("p", "desc",
         SCAN_DEPTH + "단계·폴더 " + SCAN_FOLDER_MAX + "곳까지 훑습니다. 큰 폴더는 몇 분 걸리니 창을 닫지 마세요."));
       var rImp = el("div", "row");
@@ -9518,7 +9491,7 @@
       var fTidy = el("div", "field");
       fTidy.appendChild(el("label", null, "가져온 뒤 · 파일 이름 정리"));
       fTidy.appendChild(el("p", "desc",
-        "«IMG_4821.jpg» 앞에 날짜와 폴더 이름을 붙여 줍니다. 원래 이름은 지우지 않아요."));
+        "이름 앞에 날짜와 폴더 이름을 붙입니다."));
       var tidy2 = el("button", "btn", "📛 밖에서 넣은 파일 이름 정리");
       tidy2.disabled = !connected;
       tidy2.addEventListener("click", openRenameStudio);
@@ -9770,9 +9743,7 @@
     m.appendChild(head);
     var body = el("div", "mbody");
     body.appendChild(el("p", "desc",
-      "기록장 화면의 모양입니다. 왼쪽 위로 갈수록 아이답고, 오른쪽 아래로 갈수록 정밀합니다. " +
-      "지금 고르지 않아도 되고, 나중에 ⚙️ 설정 → 모양에서 언제든 바꿀 수 있습니다. " +
-      "쌓아 둔 기록은 어느 모양을 골라도 그대로입니다."));
+      "나중에 설정에서 바꿀 수 있습니다."));
     body.appendChild(themeAxis());
     var grid = el("div", "themegrid");
     function draw() {

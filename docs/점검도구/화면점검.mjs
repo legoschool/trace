@@ -1132,6 +1132,36 @@ check("«태어날 때의 색으로» 가 되돌린다", tone.c && tone.c.bg ===
   `${(tone.c||{}).tone} · ${(tone.c||{}).bg}`);
 await evaluate(`(() => { document.querySelectorAll('.modal-bg').forEach(b => b.remove()); return true; })()`);
 
+/* ---------- 10-4. 말이 다시 늘어나지 않았는가 ----------
+   ⚠️ 쓰기 전에 읽어야 할 글이 있으면 사람들은 그냥 안 쓴다.
+      화면이 이미 말하고 있는 것(단추 이름·라벨·자리글)은 설명하지 않는다.
+      남길 것은 «되돌릴 수 없는 것» 과 «안 되는 것» 뿐이고, 그것도 한 줄이다.
+      이 줄이 빨개지면 «설명을 또 붙였다» 는 뜻이다. 붙이지 말고 화면으로 말할 것. */
+await evaluate(`(() => { document.querySelectorAll('.modal-bg').forEach(b => b.remove()); return true; })()`);
+const wordy = JSON.parse(await evaluate(`(() => {
+  const long = [];
+  document.querySelectorAll('.desc, .crophint, .addhint').forEach(e => {
+    const t = (e.textContent || '').replace(/\\s+/g, ' ').trim();
+    if (t.length > 45) long.push(t.slice(0, 40));
+  });
+  return JSON.stringify({ n: long.length, first: long[0] || '' });
+})()`));
+check("첫 화면에 긴 설명이 없다", wordy.n === 0, wordy.first || "45자 넘는 것 없음");
+
+const voiceWords = JSON.parse(await evaluate(`(() => {
+  const b = Array.from(document.querySelectorAll('[data-add]')).find(x => (x.textContent||'').includes('녹음'));
+  if (!b) return JSON.stringify({ err: 'NO_BUTTON' });
+  b.click();
+  const m = document.querySelector('.modal-bg .card.modal');
+  if (!m) return JSON.stringify({ err: 'NO_MODAL' });
+  const t = (m.querySelector('.mbody').textContent || '').replace(/\\s+/g, '').trim();
+  return JSON.stringify({ chars: t.length, head: t.slice(0, 40) });
+})()`));
+/* 녹음 창은 «시계 · 제목 · 받아 적은 글» 이면 된다. 그 밖의 글자가 붙으면 설명이 돌아온 것이다. */
+check("녹음 창에 설명이 없다", !voiceWords.err && voiceWords.chars < 40,
+  voiceWords.err || `글자 ${voiceWords.chars}자`);
+await evaluate(`(() => { document.querySelectorAll('.modal-bg').forEach(b => b.remove()); return true; })()`);
+
 /* ---------- 11. 끝난 뒤에도 오류가 없어야 한다 ---------- */
 check("끝까지 오류 없음", errors.length === 0 && logs.length === 0, [...errors, ...logs][0] || "");
 
