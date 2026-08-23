@@ -48,7 +48,7 @@ const ev = async (e) => {
 const results = [];
 const check = (name, ok, detail = "") => {
   results.push({ name, ok });
-  console.log(`${ok ? "  OK  " : " FAIL "} ${name}${detail ? "  — " + detail : ""}`);
+  console.log(`${ok ? "  OK  " : " FAIL "} ${name}${detail ? " · " + detail : ""}`);
 };
 
 let u;
@@ -138,7 +138,7 @@ check("제목·태그가 살아 있다", got.tags.join(",") === "#부기,#협의
   `${got.tags.join(" ")} · 소제목 ${got.heads.length}개`);
 check("인용·구분선이 살아 있다", got.quotes === 1 && got.hrs === 1);
 check("영상이 재생기로 들어간다", got.video === 1);
-/* 녹음은 «우리 재생기» 를 먼저 쓴다 — 길이를 고쳐 줄 수 있고 좁은 화면에서 안 잘린다.
+/* 녹음은 «우리 재생기» 를 먼저 쓴다. 길이를 고쳐 줄 수 있고 좁은 화면에서 안 잘린다.
    드라이브가 파일을 안 내주면 그때 드라이브 재생기로 물러선다.
    ⚠️ 여기 ID 는 가짜라 드라이브가 안 준다. 그래서 이 점검이 보는 것은 «물러서는 쪽» 이다.
       진짜 파일로 우리 재생기가 뜨는지는 실제 계정에서 봐야 한다. */
@@ -151,7 +151,7 @@ check("재생기가 드라이브를 가리킨다",
   got.media.length === 2 && got.media.every(s => /drive\.google\.com\/file\/d\/.+\/preview$/.test(s)),
   got.media[0] || "");
 check("첨부·링크가 살아 있다", got.files >= 1 && got.links === 1, `첨부 ${got.files} · 링크 ${got.links}`);
-/* 사진은 가짜 ID 라 드라이브가 안 준다 — 그때 «드라이브에서 열어 보기» 로 내려가야 한다.
+/* 사진은 가짜 ID 라 드라이브가 안 준다. 그때 «드라이브에서 열어 보기» 로 내려가야 한다.
    이 대비책이 없으면 받는 사람 화면에 깨진 그림만 남는다. */
 check("사진이 안 열리면 «열어 보기» 로 내려간다",
   got.files >= 2, `첨부 줄 ${got.files}개 (자료 1 + 사진 대신 1)`);
@@ -172,7 +172,7 @@ const mob = await ev(`document.documentElement.scrollWidth - document.documentEl
 check("폰에서도 가로로 안 넘친다", Number(mob) === 0, `${mob}px`);
 await send("Emulation.clearDeviceMetricsOverride");
 
-/* 주소가 잘렸을 때 — 카톡·문자에서 흔히 일어난다. 조용히 빈 쪽이 되면 안 된다. */
+/* 주소가 잘렸을 때 · 카톡·문자에서 흔히 일어난다. 조용히 빈 쪽이 되면 안 된다. */
 await send("Page.navigate", { url: BASE + "view.html#d=" + link.slice(0, Math.floor(link.length / 2)) });
 await wait(1600);
 const broken = await ev(`(document.querySelector('.oops b')||{}).textContent || ''`);

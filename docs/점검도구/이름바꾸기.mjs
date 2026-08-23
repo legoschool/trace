@@ -38,7 +38,7 @@ const ev = async (e) => {
 const results = [];
 const check = (name, ok, detail = "") => {
   results.push({ name, ok });
-  console.log(`${ok ? "  OK  " : " FAIL "} ${name}${detail ? "  — " + detail : ""}`);
+  console.log(`${ok ? "  OK  " : " FAIL "} ${name}${detail ? " · " + detail : ""}`);
 };
 
 let u;
@@ -152,7 +152,7 @@ await ev(`(() => {
 await send("Page.navigate", { url: URL_ });
 await wait(2600);
 const mid = JSON.parse(await ev(`(() => {
-  // 저장된 값을 «먼저» 읽는다 — 아래에서 보기를 바꾸면 viewMode 가 덮여 쓴다
+  // 저장된 값을 «먼저» 읽는다. 아래에서 보기를 바꾸면 viewMode 가 덮여 쓴다
   const folder = localStorage.getItem('trace.folder') || '';
   const settings = localStorage.getItem('trace.settings.v1') || '';
   /* 이어받은 설정이 «목록» 보기라 폴더가 접힌 채로 열린다.
@@ -169,7 +169,7 @@ check("PEER 시절 기록도 이어진다", mid.body);
 check("PEER 시절 폴더·설정도 따라온다", mid.folder.includes("06_중간폴더") && mid.settings.includes("tag"), mid.folder.slice(0, 36));
 
 /* «연결됨» 상태로 씨앗을 심었으므로 앱이 구글 창을 열려고 한다.
-   화면 없는 브라우저에서는 그 창이 막히는 게 정상이다 — 결함이 아니라 예상된 일이다.
+   화면 없는 브라우저에서는 그 창이 막히는 게 정상이다. 결함이 아니라 예상된 일이다.
    (실제 브라우저에서는 열리거나, 막히면 «다시 연결» 띠가 뜬다) */
 const realErrors = errors.filter(e => !/GSI_LOGGER|popup/i.test(String(e)));
 check("이관 중 오류 없음", realErrors.length === 0, realErrors[0] || "");

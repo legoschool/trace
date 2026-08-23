@@ -45,11 +45,11 @@ const ev = async (e) => {
 const results = [];
 const check = (name, ok, detail = "") => {
   results.push({ name, ok });
-  console.log(`${ok ? "  OK  " : " FAIL "} ${name}${detail ? "  — " + detail : ""}`);
+  console.log(`${ok ? "  OK  " : " FAIL "} ${name}${detail ? " · " + detail : ""}`);
 };
 
 /* ---------------------------------------------------------
-   가짜 드라이브 — 십삼 년치 폴더를 작게 줄여 놓은 것
+   가짜 드라이브 · 십삼 년치 폴더를 작게 줄여 놓은 것
 
    ROOT 내 폴더/
     ├ 2019/ 3학년/ 과학/        ← 세 겹 안쪽. 태그가 여기서 나와야 한다
@@ -143,7 +143,7 @@ const FAKE_DRIVE = `(function () {
       var who2 = mm ? mm[1] : '';
       if (who2 === 'MD1') return Promise.resolve(new Response(MD1, { status: 200 }));
       /* 글(MD1) 말고는 «진짜 그림» 을 내준다.
-         이게 없으면 「올라간 사진을 가리기」 를 겪어 볼 수 없다 — 그림이 안 열려 거기서 끝난다.
+         이게 없으면 「올라간 사진을 가리기」 를 겪어 볼 수 없다. 그림이 안 열려 거기서 끝난다.
          올린 뒤 붙는 아이디(NEW12 …)까지 받아야 해서 이름을 가리지 않는다. */
       var bin = atob(PNG8);
       var arr = new Uint8Array(bin.length);
@@ -156,7 +156,7 @@ const FAKE_DRIVE = `(function () {
       return J({ id: fid, name: fid === 'ROOT' ? '내 폴더' : fid, mimeType: FOLDER });
     }
     var q = decodeURIComponent((/[?&]q=([^&]*)/.exec(u) || ['', ''])[1]);
-    // 이름으로 찾는 물음(색인·설정 파일)에는 «없다» 고 답한다 — 앱이 새로 만들게
+    // 이름으로 찾는 물음(색인·설정 파일)에는 «없다» 고 답한다. 앱이 새로 만들게
     if (q.indexOf("name=") >= 0 || q.indexOf("name contains") >= 0) return J({ files: [] });
     var mp = /'([\\w-]+)' in parents/.exec(q);
     if (!mp) return J({ files: [] });
@@ -201,7 +201,7 @@ check("가짜 드라이브에 붙었다", JSON.parse(hooked).calls > 0, `구글 
 
 /* ---- 설정 → 고급 → 📥 를 실제로 누른다 ---- */
 async function pressImport() {
-  // 열려 있는 창을 «전부» 치운다 — 하나만 지우면 뒤에 겹친 창이 단추를 가린다
+  // 열려 있는 창을 «전부» 치운다. 하나만 지우면 뒤에 겹친 창이 단추를 가린다
   await ev(`(() => { document.querySelectorAll('.modal-bg').forEach(b => b.remove()); return true; })()`);
   await ev(`document.getElementById('btnSettings').click(); true`);
   await wait(500);
@@ -223,7 +223,7 @@ async function pressImport() {
 const pressed = await pressImport();
 check("«폴더 훑어서 가져오기» 를 누를 수 있다", pressed === "CLICKED", String(pressed));
 
-/* 폴더 6곳 + 사진 1100장(두 쪽) — 다 훑을 때까지 기다린다 */
+/* 폴더 6곳 + 사진 1100장(두 쪽) · 다 훑을 때까지 기다린다 */
 let ask = "";
 for (let i = 0; i < 60; i++) {
   ask = await ev(`(() => {
@@ -247,7 +247,7 @@ check("무엇이 몇 개인지 미리 보여 준다",
 check("글·바로가기·부스러기는 자료로 세지 않는다", /자료가 1105개/.test(ask),
   (ask.match(/자료가 \d+개/) || ["못 찾음"])[0]);
 
-/* ---- 먼저 «취소» — 글만 들어오고 자료는 한 개도 안 들어와야 한다 ---- */
+/* ---- 먼저 «취소» · 글만 들어오고 자료는 한 개도 안 들어와야 한다 ---- */
 await ev(`(() => {
   const m = Array.from(document.querySelectorAll('.card.modal')).find(x => (x.textContent||'').includes('자료도 함께'));
   const b = Array.from(m.querySelectorAll('button')).find(b => b.textContent === '취소');
@@ -343,7 +343,7 @@ check("구글 문서도 두 번 들어오지 않는다",
   Number(await ev(`JSON.parse(localStorage.getItem('trace.entries.v2')||'[]').filter(e => e.title === '2020 학급운영계획').length`)) === 1);
 
 /* =========================================================
-   가져온 «뒤» — 여기서부터가 진짜 위험한 자리다
+   가져온 «뒤» · 여기서부터가 진짜 위험한 자리다
 
    목록에 세우는 것까지는 되돌릴 수 있다. 되돌릴 수 없는 것은
    **십삼 년치 원본에 손을 대는 것**이다. 고치고·빼고·지우고·옮겨 보면서
@@ -384,7 +384,7 @@ check("«📁 원본 폴더» 로 데려다 준다 (내 폴더인 척하지 않�
   !!vv && vv.tops.some(t => t.includes("원본 폴더")) && !vv.tops.some(t => t === "📁 폴더"),
   vv ? vv.tops.join(" | ") : "");
 
-/* ---- ② 고쳐서 저장 — 원본을 옮기거나 이름을 바꾸면 안 된다 ---- */
+/* ---- ② 고쳐서 저장 · 원본을 옮기거나 이름을 바꾸면 안 된다 ---- */
 await ev(`(() => {
   const b = Array.from(document.querySelectorAll('.viewer .vtop button')).find(b => b.textContent.includes('편집'));
   if (b) b.click(); return true;
@@ -395,7 +395,7 @@ check("가져온 자료를 편집으로 불러온다", loaded === "물의 상태
 
 await ev(`(() => {
   const t = document.getElementById('title');
-  t.value = '물의 상태변화 학습지 — 다시 보니 3차시용';
+  t.value = '물의 상태변화 학습지 · 다시 보니 3차시용';
   t.dispatchEvent(new Event('input', { bubbles: true }));
   const g = document.getElementById('tags');
   if (g) { g.value = '2019, 3학년, 과학, 다시쓸것'; g.dispatchEvent(new Event('input', { bubbles: true })); }
@@ -423,7 +423,7 @@ check("고쳐 저장해도 원본은 그대로 가리킨다", afterEdit.stillPoi
 check("가져온 자료는 남의 폴더를 «자기 폴더» 로 삼지 않는다",
   afterEdit.folderId !== "DSCI", `folderId = ${afterEdit.folderId}`);
 
-/* ---- ③ 첨부 줄을 빼고 저장 — 여기서 원본이 휴지통에 가면 안 된다 ---- */
+/* ---- ③ 첨부 줄을 빼고 저장 · 여기서 원본이 휴지통에 가면 안 된다 ---- */
 await ev(`(() => { window.__fake.trashed = []; document.querySelectorAll('.modal-bg').forEach(b => b.remove()); return true; })()`);
 await findOne("3차시용");
 await wait(700);
@@ -454,7 +454,7 @@ check("첨부 줄을 빼고 저장해도 원본을 안 버린다",
   removedBlock === "OK" && !trashedAfterWipe.includes("H1"),
   `${removedBlock} · 휴지통: ${trashedAfterWipe.join(",") || "없음"}`);
 
-/* ---- ④ 지우기 — 가장 위험한 자리 ----
+/* ---- ④ 지우기 · 가장 위험한 자리 ----
    전에는 folderId 에 원본 폴더가 들어 있어서, 한 편 지우면 그 폴더가 통째로 갔다.
    즉 「학습지 하나 지우기」가 「2019/3학년/과학/ 통째로 버리기」였다. */
 await ev(`(() => { window.__fake.trashed = []; document.querySelectorAll('.modal-bg').forEach(b => b.remove()); return true; })()`);
@@ -490,7 +490,7 @@ check("⚠️ 지워도 원본이 든 폴더를 통째로 안 버린다",
   !afterDel.f.trashed.includes("DSCI") && !afterDel.f.trashed.includes("D2019"),
   `휴지통: ${afterDel.f.trashed.join(",") || "없음"}`);
 
-/* ---- ④-2 길찾기 줄 — 이 기록이 «어디에» 있는지 ----
+/* ---- ④-2 길찾기 줄 · 이 기록이 «어디에» 있는지 ----
    폴더를 훑을 때 거쳐 온 길을 srcPath 에 남긴다. 그게 화면에서 줄로 서고,
    누르면 그 아래에 있는 것만 남아야 한다. */
 await findOne("물의 상태변화 학습지");
@@ -504,7 +504,7 @@ check("기록이 어디에 있는지 줄로 보여 준다",
   /2019/.test(crumb) && /3학년/.test(crumb) && /과학/.test(crumb) && /›/.test(crumb),
   String(crumb));
 
-/* ⚠️ 목록 맨 위 카드를 집으면 안 된다 — 사진 1100장이 위에 깔려 있어 엉뚱한 기록의 줄을 누르게 된다.
+/* ⚠️ 목록 맨 위 카드를 집으면 안 된다. 사진 1100장이 위에 깔려 있어 엉뚱한 기록의 줄을 누르게 된다.
    검색으로 좁혀 «그 기록의» 줄을 누른 다음, 검색을 풀어 남은 것을 센다. */
 const clicked = await ev(`(() => {
   const c = document.querySelector('.card.entry .crumbs');
@@ -549,7 +549,7 @@ await wait(600);
 check("폴더 이름에서 온 태그로 걸러진다", Number(tagged) > 0 && Number(tagged) < 50,
   Number(tagged) < 0 ? "«과학» 태그를 못 찾음" : `${tagged}편`);
 
-/* ---- ⑥ 폴더 찾아보기 — 탐색기처럼 눌러 들어가며 고른다 ----
+/* ---- ⑥ 폴더 찾아보기 · 탐색기처럼 눌러 들어가며 고른다 ----
    링크를 붙여넣는 길은 «주소를 아는 사람» 에게만 쉽다.
    가짜 드라이브가 폴더 나무를 들고 있으니, 실제로 눌러 들어가 본다. */
 await ev(`(() => { document.querySelectorAll('.modal-bg').forEach(b => b.remove()); return true; })()`);
@@ -581,7 +581,7 @@ const br = /^NO_/.test(browser) ? null : JSON.parse(browser);
 check("«폴더 찾아보기» 가 내 드라이브를 연다 (폴더만)",
   opened === "OK" && !!br && br.crumbs[0] === "내 드라이브" &&
   br.rows.length === 3 && br.rows.join(",") === "2019,연수,사진많은폴더",
-  br ? `${br.crumbs.join(" › ")} — ${br.rows.join(", ")}` : `${opened} / ${browser}`);
+  br ? `${br.crumbs.join(" › ")} · ${br.rows.join(", ")}` : `${opened} / ${browser}`);
 check("폴더마다 폴더 그림이 붙는다", !!br && br.icons === br.rows.length, br ? `${br.icons}개` : "");
 
 // 폴더를 눌러 «안으로» 들어가고, 길찾기 줄이 따라오는지
@@ -602,9 +602,9 @@ const inside = await ev(`(() => {
 const ins = /^NO_/.test(inside) ? null : JSON.parse(inside);
 check("폴더를 눌러 안으로 들어간다",
   dived === "OK" && !!ins && ins.crumbs.length === 2 && ins.rows.indexOf("3학년") >= 0,
-  ins ? `${ins.crumbs.join(" › ")} — ${ins.rows.join(", ")}` : `${dived} / ${inside}`);
+  ins ? `${ins.crumbs.join(" › ")} · ${ins.rows.join(", ")}` : `${dived} / ${inside}`);
 
-// 「내 드라이브」 통째로는 못 고르게 막았는지 — 뿌리에 기록장 파일을 흩뿌리면 안 된다
+// 「내 드라이브」 통째로는 못 고르게 막았는지 · 뿌리에 기록장 파일을 흩뿌리면 안 된다
 const rootGuard = await ev(`(() => {
   const m = Array.from(document.querySelectorAll('.card.modal')).find(x => (x.textContent||'').includes('폴더 고르기'));
   const home = Array.from(m.querySelectorAll('.crumb')).find(c => c.textContent === '내 드라이브');
@@ -652,17 +652,17 @@ check("공유하는 길 넷이 이름으로 갈려 있다",
   rows.every(r => String(shareUi).indexOf(r) >= 0),
   rows.filter(r => String(shareUi).indexOf(r) < 0).join(" / ") || "넷 다 있음");
 /* 「쪽 링크 만들기」 라는 말이 낯설다는 이야기를 들었다. 익숙한 말은 «URL» 이다.
-   넷이 여전히 서로 갈려 있어야 한다 — 다 같은 이름이면 고를 수가 없다. */
+   넷이 여전히 서로 갈려 있어야 한다. 다 같은 이름이면 고를 수가 없다. */
 const btnNames = ["🔗 URL 링크 만들기", "🔗 문서 URL 링크 만들기", "🔗 문서 파일 URL 만들기", "🔗 폴더 URL 만들기"];
 check("누르는 단추가 «URL» 이라는 익숙한 말을 쓴다",
   btnNames.every(b => String(shareUi).indexOf(b) >= 0) && String(shareUi).indexOf("쪽 링크 만들기") < 0,
   btnNames.filter(b => String(shareUi).indexOf(b) < 0).join(" / ") || "넷 다 URL");
-check("무엇을 고를지 한 줄로 알려 준다", /고르는 잣대/.test(String(shareUi)));
+check("무엇을 고를지 한 줄로 알려 준다", /영상·녹음이 있으면 ①/.test(String(shareUi)));
 await ev(`(() => { document.querySelectorAll('.modal-bg').forEach(b => b.remove()); return true; })()`);
 await wait(300);
 
 /* ---------- 목록 보기 = 디렉토리 · 연결을 그 자리에서 보기 ---------- */
-/* ⚠️ 여기서 새로고침하면 안 된다 — 가짜 드라이브가 뜰 때 localStorage 를 비운다.
+/* ⚠️ 여기서 새로고침하면 안 된다. 가짜 드라이브가 뜰 때 localStorage 를 비운다.
    화면에 있는 「목록」 단추를 눌러 보기 방식을 바꾼다. 사람이 하는 것과 같은 길이다. */
 await ev(`(() => {
   const q = document.getElementById('search'); if (q) { q.value=''; q.dispatchEvent(new Event('input',{bubbles:true})); }

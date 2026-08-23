@@ -4,13 +4,13 @@
    「공책 모양은 좋은데 청사진 색으로 보고 싶다」 를 할 수 없었고,
    일곱 벌의 팔레트가 손으로 적혀 있어 조금씩 어긋나 있었다.
 
-   여기서 만드는 것 —
+   여기서 만드는 것 · 
      [data-theme=…]  모양만: 글꼴 · 모서리 · 테두리 굵기 · 돌기 · 여백 · 덮개
      [data-tone=…]   색만  : 종이 · 잉크 · 강조 · 선 · 유형 여섯 · 알림 세 벌
    순서가 중요하다. 색이 «뒤에» 와야 모양 블록의 남은 색을 덮는다.
 
    ⚠️ 이것은 «점검» 이 아니라 «만드는» 도구다. 한 번 돌리면 index.html 의 색 부분을 갈아 끼운다.
-      색감을 고칠 일이 있으면 아래 TONES 만 고치고 다시 돌린다. 손으로 CSS 를 고치지 말 것 —
+      색감을 고칠 일이 있으면 아래 TONES 만 고치고 다시 돌린다. 손으로 CSS 를 고치지 말 것 · 
       어두울 때 값이 두 자리(기기 따름 · 사람이 고름)에 놓여야 해서, 한쪽만 고치면 어긋난다.
 
    ⚠️ 이미 갈아 끼운 뒤에는 그대로 다시 못 돌린다 (찾는 자리가 사라졌다).
@@ -134,9 +134,9 @@ function palette(v, pad) {
   ].map((l) => P + l).join(nl);
 }
 
-/* ── 모양 일곱 벌 — 색은 한 톨도 없다 ────────────────────── */
+/* ── 모양 일곱 벌 · 색은 한 톨도 없다 ────────────────────── */
 const SHAPES = {
-  memo: { title: "메모지 — 손으로 그린 듯 삐뚤한 테두리", css: [
+  memo: { title: "메모지 · 손으로 그린 듯 삐뚤한 테두리", css: [
     `--shadow: none;`,
     `--font-title: "Gaegu", var(--font-body); --title-spacing: -.5px;`,
     `--bw: 2.5px;`,
@@ -148,7 +148,7 @@ const SHAPES = {
     `--r-block: 15px 225px 15px 255px / 225px 15px 255px 15px;`,
     `--veil: transparent;         /* 유형 색이 카드에 드러난다 */`,
     `--accent-w: 0px;`] },
-  brick: { title: "블록 — 쌓아 올리는 조각", css: [
+  brick: { title: "블록 · 쌓아 올리는 조각", css: [
     `--shadow: 2.5px 2.5px 0 var(--hard);`,
     `--font-title: "Gaegu", var(--font-body); --title-spacing: -.5px;`,
     `--bw: 2.5px;`,
@@ -158,13 +158,13 @@ const SHAPES = {
     `--entry-pt: 26px;`,
     `--accent-w: 0px;`,
     `--stud: block;`] },
-  note: { title: "공책 — 한 권에 이어 적기", css: [
+  note: { title: "공책 · 한 권에 이어 적기", css: [
     `--shadow: none;`,
     `--font-title: "Gaegu", var(--font-body); --title-spacing: -.5px;`,
     `--bw: 1.5px;`,
     `--radius: 4px; --r-btn: 6px; --r-btn-sm: 5px; --r-inp: 6px; --r-block: 5px;`,
     `--accent-w: 0px; --accent-l: 5px;   /* 왼쪽에 유형 색줄 */`] },
-  play: { title: "블록놀이 — 가장 아이답게", css: [
+  play: { title: "블록놀이 · 가장 아이답게", css: [
     `--shadow: 0 5px 0 var(--hard);`,
     `--font-title: "Jua", var(--font-body); --title-spacing: 0px;`,
     `--bw: 3.5px;`,
@@ -174,7 +174,7 @@ const SHAPES = {
     `--entry-pt: 34px;`,
     `--accent-w: 0px;`,
     `--stud: block; --stud-w: 108px; --stud-h: 18px; --stud-step: 27px;`] },
-  paper: { title: "문서 — 인쇄물처럼", css: [
+  paper: { title: "문서 · 인쇄물처럼", css: [
     `--shadow: none;`,
     `--font-body: "Gowun Batang", "Apple SD Gothic Neo", "Malgun Gothic", serif;`,
     `--font-title: "Gowun Batang", serif; --title-spacing: -.2px;`,
@@ -182,7 +182,7 @@ const SHAPES = {
     `--radius: 2px; --r-btn: 2px; --r-btn-sm: 2px; --r-inp: 2px; --r-pill: 2px; --r-block: 2px;`,
     `--veil: var(--panel);`,
     `--accent-w: 0px; --accent-l: 2px;`] },
-  draft: { title: "설계도 — 가장 정밀하게", css: [
+  draft: { title: "설계도 · 가장 정밀하게", css: [
     `--shadow: none;`,
     `--font-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;`,
     `--font-title: "IBM Plex Sans KR", sans-serif; --title-spacing: -.2px;`,
@@ -196,10 +196,10 @@ const SHAPES = {
 const out = [];
 out.push("");
 out.push("  /* =========================================================");
-out.push("     모양 일곱 — **색은 한 톨도 없다.**");
+out.push("     모양 일곱 · **색은 한 톨도 없다.**");
 out.push("     색은 아래 «색감» 이 맡는다. 그래야 모양을 고쳐도 색이 안 흔들린다.");
 out.push("     ⚠️ 여기에 색을 적고 싶어지면, 그건 색감에 적어야 하는 것이다.");
-out.push("        딱 하나 예외 — 테두리를 «잉크색으로» 쓰는 모양은 --line: var(--ink) 로");
+out.push("        딱 하나 예외 · 테두리를 «잉크색으로» 쓰는 모양은 --line: var(--ink) 로");
 out.push("        «가리키기만» 한다. 색 자체를 적는 것이 아니다.");
 out.push("     ========================================================= */");
 for (const [k, v] of Object.entries(SHAPES)) {
@@ -211,13 +211,13 @@ for (const [k, v] of Object.entries(SHAPES)) {
 
 out.push("");
 out.push("  /* =========================================================");
-out.push("     색감 여섯 — **모양은 한 톨도 없다.**");
+out.push("     색감 여섯 · **모양은 한 톨도 없다.**");
 out.push("     한 벌이 밝을 때와 어두울 때를 «같은 자리» 에 갖는다.");
 out.push("     ⚠️ 어두울 때 값은 두 곳에 놓인다 (기기 따름 · 사람이 고름).");
-out.push("        손으로 두 벌을 쓰지 말 것 — 찍어 낸 것이다 (scratchpad/tone.mjs).");
+out.push("        손으로 두 벌을 쓰지 말 것 · 찍어 낸 것이다 (scratchpad/tone.mjs).");
 out.push("     ========================================================= */");
 for (const [k, v] of Object.entries(TONES)) {
-  out.push(`  /* ${v.label} — ${v.sub} */`);
+  out.push(`  /* ${v.label} · ${v.sub} */`);
   out.push(`  [data-tone="${k}"] {`);
   out.push(palette(v.l, 4));
   out.push("  }");

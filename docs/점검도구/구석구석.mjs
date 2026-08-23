@@ -1,4 +1,4 @@
-/* 구석구석 훑기 — 자동 점검이 안 건드리는 화면을 전부 열어 보고 오류를 줍는다. */
+/* 구석구석 훑기 · 자동 점검이 안 건드리는 화면을 전부 열어 보고 오류를 줍는다. */
 import { spawn } from "node:child_process";
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -39,7 +39,7 @@ const ev = async (e) => {
 const results = [];
 const check = (name, ok, detail = "") => {
   results.push({ name, ok });
-  console.log(`${ok ? "  OK  " : " FAIL "} ${name}${detail ? "  — " + detail : ""}`);
+  console.log(`${ok ? "  OK  " : " FAIL "} ${name}${detail ? " · " + detail : ""}`);
 };
 
 let u;
@@ -199,7 +199,7 @@ await ev(`document.getElementById('btnSettings').click(); true`);
 await wait(500);
 const tabs = await ev(`JSON.stringify(Array.from(document.querySelectorAll('.tabs .tab')).map(t => t.textContent))`);
 const tabList = JSON.parse(tabs);
-/* 여섯이다 — 「웹 캡처」 를 빼고, 묻혀 있던 「📥 가져오기」 를 제 칸으로 꺼냈다.
+/* 여섯이다. 「웹 캡처」 를 빼고, 묻혀 있던 「📥 가져오기」 를 제 칸으로 꺼냈다.
    가져오기는 이 도구를 만든 진짜 목적이라, 「고급」 안에 있으면 그 길이 있는 줄도 모른다. */
 check("설정 탭이 다 있다",
   tabList.length === 6 && tabList.indexOf("웹 캡처") < 0 && tabList.some(t => t.indexOf("가져오기") >= 0),

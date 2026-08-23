@@ -1,4 +1,4 @@
-/* PEER 화면 점검 — Edge 를 머리 없이 띄워 CDP 로 직접 눌러 본다.
+/* PEER 화면 점검 · Edge 를 머리 없이 띄워 CDP 로 직접 눌러 본다.
    설치할 것 없음: 노드 24 에 들어 있는 WebSocket 만 쓴다.
    실행:  node smoke.mjs [url] */
 import { spawn } from "node:child_process";
@@ -36,7 +36,7 @@ const pending = new Map();
 const errors = [];
 const logs = [];
 
-/* 답이 안 오면 영원히 매달린다 — 그러면 「멈춘 채로 끝」이라 무엇이 잘못됐는지 모른다.
+/* 답이 안 오면 영원히 매달린다. 그러면 「멈춘 채로 끝」이라 무엇이 잘못됐는지 모른다.
    30초 안에 답이 없으면 그 자리에서 실패로 알린다. */
 function send(method, params = {}) {
   const id = ++msgId;
@@ -75,7 +75,7 @@ async function connect() {
 const results = [];
 function check(name, ok, detail = "") {
   results.push({ name, ok, detail });
-  console.log(`${ok ? "  OK  " : " FAIL "} ${name}${detail ? "  — " + detail : ""}`);
+  console.log(`${ok ? "  OK  " : " FAIL "} ${name}${detail ? " · " + detail : ""}`);
 }
 
 const wsUrl = await connect();
@@ -114,7 +114,7 @@ check("자바스크립트 오류 없음", errors.length === 0, errors[0] || "");
 
 /* ---------- 1-2. 모양 프리셋 ----------
    처음 온 사람(기록이 하나도 없는 사람)에게는 «어떤 모양으로 쓸까요?» 를 먼저 묻는다.
-   이걸 안 치우면 뒤따르는 점검이 전부 이 창에 가로막힌다 — 실제 사람도 마찬가지다. */
+   이걸 안 치우면 뒤따르는 점검이 전부 이 창에 가로막힌다. 실제 사람도 마찬가지다. */
 await wait(700);
 const askedLook = await evaluate(`(() => {
   const m = Array.from(document.querySelectorAll('.card.modal')).find(x => (x.textContent||'').includes('어떤 모양으로'));
@@ -126,7 +126,7 @@ check("처음 오면 모양부터 묻는다", askedLook === "블록놀이,메모
 const picked = await evaluate(`(() => {
   const m = Array.from(document.querySelectorAll('.card.modal')).find(x => (x.textContent||'').includes('어떤 모양으로'));
   if (!m) return 'NO_MODAL';
-  // 이름이 겹친다 — '블록'을 찾으면 '블록놀이'가 먼저 잡힌다. 이름 칸만 정확히 견준다.
+  // 이름이 겹친다. '블록'을 찾으면 '블록놀이'가 먼저 잡힌다. 이름 칸만 정확히 견준다.
   const c = Array.from(m.querySelectorAll('.themecard')).find(x => {
     const n = x.querySelector('.themename strong');
     return n && n.textContent === '블록';
@@ -160,7 +160,7 @@ const kp = JSON.parse(kept);
 check("고른 모양이 설정에 남는다", kp.saved === "brick", kp.saved || "(빈 값)");
 check("고르고 나면 창이 닫힌다", !kp.open);
 
-/* 기록 카드가 «유형 색» 을 물려받는지 — 프리셋의 핵심이다.
+/* 기록 카드가 «유형 색» 을 물려받는지 · 프리셋의 핵심이다.
    색을 유형 키로 정하면 사용자가 만든 유형에 색이 없어지므로, 차례(자리)로 돌려 쓴다. */
 const tinted = await evaluate(`(() => {
   const chips = Array.from(document.querySelectorAll('#typeChips .chip'));
@@ -179,7 +179,7 @@ await evaluate(`(() => {
   return true;
 })()`);
 
-/* ---------- 1-3. 녹음 — 제목과 내용이 갈려 있는가 ----------
+/* ---------- 1-3. 녹음. 제목과 내용이 갈려 있는가 ----------
    전에는 받아 적은 글의 앞 60자가 «자료 제목» 이 되어 파일 이름에 통째로 박혔다.
    («2026-08-21_부기_협의회_아직 교사가 안 다듬어져서 요거 다듬어지고…_02.webm»)
    제목은 사람이 짧게 적는 칸이 따로 있어야 하고, 말한 내용은 글 블록이 맡아야 한다. */
@@ -199,7 +199,7 @@ check("녹음 창에 «제목» 칸이 따로 있다",
   !!vu && vu.labels.some(l => /제목/.test(l)) && vu.labels.some(l => /받아 적은 글/.test(l)) && vu.inputs >= 1,
   vu ? vu.labels.join(" / ") : String(voiceUi));
 
-// 제목을 비운 채로 받아 적은 글만 넣어 본다 — 그 글이 «자료 제목» 으로 새면 안 된다
+// 제목을 비운 채로 받아 적은 글만 넣어 본다. 그 글이 «자료 제목» 으로 새면 안 된다
 const voiceSplit = await evaluate(`(() => {
   const m = Array.from(document.querySelectorAll('.card.modal')).find(x => (x.textContent||'').includes('녹음'));
   const ta = m.querySelector('textarea.inp');
@@ -231,8 +231,8 @@ await evaluate(`(() => {
 })()`);
 await wait(400);
 
-/* ---------- 1-4. 폴더 정리 방식 — 고르는 목록이 그림을 가리지 않는가 ----------
-   전에는 <select> 였다. 펼치면 그 아래 폴더 그림을 통째로 덮었다 — 정작 봐야 할 것을 가렸다. */
+/* ---------- 1-4. 폴더 정리 방식 · 고르는 목록이 그림을 가리지 않는가 ----------
+   전에는 <select> 였다. 펼치면 그 아래 폴더 그림을 통째로 덮었다. 정작 봐야 할 것을 가렸다. */
 await evaluate(`document.getElementById('btnSettings').click(); true`);
 await wait(500);
 await evaluate(`(() => {
@@ -321,7 +321,7 @@ if (mo.open) {
   const ma = JSON.parse(masked);
   check("모자이크 모드로 바뀐다", ma.primary.includes("가리기"), ma.head);
 
-  // 이미지 위에서 드래그 흉내 — 왼쪽 절반을 고른다
+  // 이미지 위에서 드래그 흉내 · 왼쪽 절반을 고른다
   const dragged = await evaluate(`(() => {
     const img = document.querySelector('.cropwrap img');
     const r = img.getBoundingClientRect();
@@ -477,7 +477,7 @@ if (studio === "OPEN") {
   check("원 밖은 한 점도 안 건드린다", stamped.outside === 0, `${stamped.outside}px 바뀜`);
   check("가린 사진에 ✓ 가 붙는다", /✓/.test(stamped.badge), stamped.badge);
 
-  /* 가장자리 얼굴 — 왼쪽 위 모서리에 찍어 본다.
+  /* 가장자리 얼굴 · 왼쪽 위 모서리에 찍어 본다.
      원이 사진 밖으로 넘칠 때도 «그 자리는 반드시 지워져야» 한다.
      (넘치는 네모를 잘라내는 계산이 틀리면 모서리가 빈 채로 남을 수 있다) */
   const corner = JSON.parse(await evaluate(`(() => {
@@ -661,6 +661,53 @@ if (voiceOpen === "OPEN") {
   check("받아 적은 글도 함께 들어간다", vb.texts.includes("증발과 끓음"), "");
 }
 
+/* ---------- 4-4. 밖에서 담아 온 녹음 파일 ----------
+   폰 녹음기·회의 녹음기로 담아 온 것이 대부분이다. 그것도 이 창에서 받아 적을 수 있어야
+   «녹음 = 이 창» 이 된다. 안 그러면 파일은 파일대로 따로 붙이게 된다. */
+await evaluate(`(() => { document.querySelectorAll('.modal-bg').forEach(b => b.remove());
+  document.getElementById('blocks').innerHTML = ''; return true; })()`);
+const file = JSON.parse(await evaluate(`(() => {
+  const b = Array.from(document.querySelectorAll('[data-add]')).find(x => (x.textContent||'').includes('녹음'));
+  if (!b) return JSON.stringify({ err: 'NO_BUTTON' });
+  b.click();
+  const m = document.querySelector('.modal-bg .card.modal');
+  if (!m) return JSON.stringify({ err: 'NO_MODAL' });
+  const seen = () => Array.from(m.querySelectorAll('.mfoot button'))
+    .filter(x => x.style.display !== 'none').map(x => x.textContent.trim());
+  const before = seen();
+  const inp = m.querySelector('input[type=file][accept="audio/*"]');
+  if (!inp) return JSON.stringify({ err: 'NO_FILE_INPUT', before: before });
+  // 아주 작은 wav 하나를 «불러온 것처럼» 흉내 낸다
+  const hdr = new Uint8Array([82,73,70,70,36,0,0,0,87,65,86,69,102,109,116,32,16,0,0,0,
+                              1,0,1,0,68,172,0,0,136,88,1,0,2,0,16,0,100,97,116,97,0,0,0,0]);
+  const dt = new DataTransfer();
+  dt.items.add(new File([hdr], '회의녹음 8.23.wav', { type: 'audio/wav' }));
+  inp.files = dt.files;
+  inp.dispatchEvent(new Event('change', { bubbles: true }));
+  const after = seen();
+  const ta = m.querySelector('textarea');
+  ta.value = '협의회에서 나온 이야기';
+  ta.dispatchEvent(new Event('input', { bubbles: true }));
+  const put = Array.from(m.querySelectorAll('.mfoot button')).find(x => x.textContent.includes('이 녹음 넣기'));
+  if (put) put.click();
+  return JSON.stringify({
+    before: before, after: after,
+    names: Array.from(document.querySelectorAll('#blocks .origname')).map(e => e.textContent).join(' | '),
+    texts: Array.from(document.querySelectorAll('#blocks textarea')).map(e => e.value).join(' ')
+  });
+})()`));
+check("녹음 창에 길이 둘이다 (지금 말하기 · 파일 불러오기)",
+  !file.err && (file.before || []).some(t => t.includes('녹음 시작')) && (file.before || []).some(t => t.includes('파일 불러오기')),
+  file.err || (file.before || []).join(" / "));
+check("파일을 불러오면 «넣기» 와 «틀어 놓고 받아 적기» 가 선다",
+  (file.after || []).some(t => t.includes('넣기')) && (file.after || []).some(t => t.includes('받아 적기')),
+  (file.after || []).join(" / "));
+/* ⚠️ 불러온 파일은 «그 이름» 을 지켜야 한다. 「녹음_날짜」 로 갈아 끼우면
+   폰에서 무슨 회의였는지 적어 둔 이름이 사라진다. */
+check("불러온 파일은 그 이름을 지킨다", (file.names || "").includes("회의녹음 8.23.wav"),
+  (file.names || "").slice(0, 70));
+check("불러온 파일도 받아 적은 글과 함께 들어간다", (file.texts || "").includes("협의회에서 나온 이야기"), "");
+
 /* ---------- 5. 설정 → 웹 캡처 칸 ---------- */
 await evaluate(`document.getElementById('blocks').innerHTML=''; true`);
 const capTab = await evaluate(`(() => {
@@ -683,7 +730,7 @@ const capUi = await evaluate(`(() => {
   });
 })()`);
 const cu = JSON.parse(capUi);
-/* ⚠️ 「웹 캡처」 칸은 뺐다 — 설명이 길어 «무엇을 하라는 것인지» 가 안 잡혔다.
+/* ⚠️ 「웹 캡처」 칸은 뺐다. 설명이 길어 «무엇을 하라는 것인지» 가 안 잡혔다.
    그래서 여기서는 «없어야 한다» 를 본다. 다시 생기면 그때 이 줄을 뒤집으면 된다.
    폰의 공유 시트로 받는 길은 manifest 가 담당하므로 그대로 살아 있다 (아래 6번에서 본다). */
 check("설정에서 «웹 캡처» 칸을 뺐다 (설정 화면)", !cu.found, cu.found ? "아직 있다" : "없음");
@@ -745,7 +792,7 @@ if (swReady) {
     sh.meta ? sh.meta.title : "받지 못함");
   check("공유된 사진도 함께 넘어온다", sh.fileBytes > 0, `${sh.fileBytes} bytes`);
 
-  // 화면 쪽에서 실제로 꺼내 블록이 되는지 — ?share=1 로 다시 들어간다
+  // 화면 쪽에서 실제로 꺼내 블록이 되는지 · ?share=1 로 다시 들어간다
   await send("Page.navigate", { url: URL_ + "?share=1" });
   await wait(3000);
   const intake = await evaluate(`JSON.stringify({
@@ -778,7 +825,7 @@ await evaluate(`(() => {
 })()`);
 await send("Page.navigate", { url: URL_ });
 await wait(2500);
-// 태그가 곧 폴더인 상태로 맞춰 둔다 — 트리가 태그별로 갈라지는지 보려고
+// 태그가 곧 폴더인 상태로 맞춰 둔다. 트리가 태그별로 갈라지는지 보려고
 await evaluate(`(() => {
   const s = JSON.parse(localStorage.getItem('trace.settings.v1') || '{}');
   s.folderMode = 'tag';
@@ -898,7 +945,7 @@ check("연결 전에는 공유가 막히고 이유를 말해 준다", /연결|�
 await evaluate(`(() => { const v = document.querySelector('.viewer'); if (v) v.remove();
   document.body.style.overflow = ''; return true; })()`);
 
-/* ---------- 9. 엮어내기 — 창이 안 깨지고, 뽑은 것이 고른 모양을 따라가는가 ---------- */
+/* ---------- 9. 엮어내기 · 창이 안 깨지고, 뽑은 것이 고른 모양을 따라가는가 ---------- */
 await evaluate(`(() => { document.querySelectorAll('.modal-bg').forEach(b => b.remove()); return true; })()`);
 // 고른 프리셋이 «뽑아낸 파일» 까지 따라오는지 보려면 기본이 아닌 것으로 골라 둬야 한다
 await evaluate(`(() => {
@@ -954,7 +1001,7 @@ check("프리셋 글꼴까지 함께 불러온다", !!book.font, book.font ? "Ga
 check("뽑아낸 파일에 군더더기 머리줄이 없다", !book.leak, book.leak ? "무언가 끼어 있다" : "깨끗함");
 await evaluate(`(() => { document.querySelectorAll('.modal-bg').forEach(b => b.remove()); return true; })()`);
 
-/* ---------- 10. 설정 — 「웹 캡처」 를 빼고, 관리자용은 접어 두었는가 ---------- */
+/* ---------- 10. 설정 · 「웹 캡처」 를 빼고, 관리자용은 접어 두었는가 ---------- */
 const setTabs = JSON.parse(await evaluate(`(() => {
   document.getElementById('btnSettings').click();
   const tabs = Array.from(document.querySelectorAll('.tabs .tab')).map(t => t.textContent);
@@ -968,12 +1015,12 @@ const setTabs = JSON.parse(await evaluate(`(() => {
   return JSON.stringify({ tabs, hasToggle: !!toggle, before, after });
 })()`));
 check("설정에서 «웹 캡처» 칸을 뺐다", setTabs.tabs.indexOf("웹 캡처") < 0, setTabs.tabs.join(" · "));
-check("고급 — 관리자용은 접혀 있다", setTabs.hasToggle && setTabs.before === "none",
+check("고급 · 관리자용은 접혀 있다", setTabs.hasToggle && setTabs.before === "none",
   setTabs.hasToggle ? `처음 ${setTabs.before}` : "여닫는 단추 없음");
-check("고급 — 눌러야 펴진다", setTabs.after === "", `누른 뒤 ${setTabs.after || "(펴짐)"}`);
+check("고급 · 눌러야 펴진다", setTabs.after === "", `누른 뒤 ${setTabs.after || "(펴짐)"}`);
 await evaluate(`(() => { document.querySelectorAll('.modal-bg').forEach(b => b.remove()); return true; })()`);
 
-/* ---------- 10-2. 넣기 줄 — ＋ 는 앞에 하나, 단추마다 그림글자 ---------- */
+/* ---------- 10-2. 넣기 줄 · ＋ 는 앞에 하나, 단추마다 그림글자 ---------- */
 const addbar = JSON.parse(await evaluate(`(() => {
   const lead = document.querySelector('.addlead .addplus');
   const btns = Array.from(document.querySelectorAll('#addbar button[data-add]'))
@@ -983,8 +1030,9 @@ const addbar = JSON.parse(await evaluate(`(() => {
     plusPx: lead ? Math.round(parseFloat(getComputedStyle(lead).fontSize)) : 0,
     btns: btns,
     withPlus: btns.filter(b => b.t.indexOf('＋') >= 0).length,
-    // 그림글자로 시작하지 않는 단추 (❝ 는 따옴표라 이모지 판정에 안 걸린다)
-    noIcon: btns.filter(b => /^[가-힣A-Za-z]/.test(b.t)).map(b => b.kind)
+    svgs: document.querySelectorAll('#addbar [data-add] svg').length,
+    // 그림글자(이모지)가 남아 있으면 안 된다
+    emoji: /[\\u{1F300}-\\u{1FAFF}\\u{2600}-\\u{27BF}]/u.test(btns.map(b => b.t).join(''))
   });
 })()`));
 /* ＋ 를 단추마다 붙이면 열한 번 되풀이된다. 앞에 크게 하나만 세우면
@@ -992,13 +1040,20 @@ const addbar = JSON.parse(await evaluate(`(() => {
 check("넣기 줄 앞에 큰 ＋ 가 하나 선다", addbar.plus === "＋" && addbar.plusPx >= 20,
   `${addbar.plus || "없음"} · ${addbar.plusPx}px`);
 check("단추마다 ＋ 를 되풀이하지 않는다", addbar.withPlus === 0, `＋ 붙은 단추 ${addbar.withPlus}개`);
-check("단추마다 그림글자가 앞에 붙는다", addbar.noIcon.length === 0,
-  addbar.noIcon.join(",") || `${addbar.btns.length}개 다 붙음`);
-/* 헷갈리기 쉬운 두 쌍이 서로 다른 그림글자여야 한다 —
-   📸 캡처(찍는 것) / 🖼️ 사진(이미 있는 것), ✍️ 글(치는 것) / 🖌️ 손 메모(긋는 것) */
-const pairs = ["capture", "image", "text", "draw"].map(k => (addbar.btns.find(b => b.kind === k) || {}).t || "");
-check("헷갈리는 짝이 서로 다른 그림글자다", new Set(pairs.map(t => t.slice(0, 2))).size === 4,
-  pairs.join(" / "));
+check("단추마다 선 아이콘이 앞에 붙는다", addbar.svgs === addbar.btns.length,
+  `${addbar.svgs}/${addbar.btns.length}개`);
+/* ⚠️ 그림글자(이모지)는 안 쓴다. 기기마다 다른 그림이 나오고, 색도 우리 색을 안 따라온다.
+   선 아이콘은 currentColor 라 어느 색감·밝기에서도 글자와 같은 색으로 선다. */
+check("넣기 줄에 그림글자를 쓰지 않는다", !addbar.emoji, addbar.emoji ? "이모지가 남아 있다" : "선으로만");
+/* 헷갈리기 쉬운 두 쌍은 아이콘 «그림» 이 서로 달라야 한다.
+   캡처(직접 찍는 것) / 사진(이미 있는 것), 글(치는 것) / 손 메모(긋는 것) */
+const shapes = JSON.parse(await evaluate(`JSON.stringify(
+  ['capture','image','text','draw'].map(k => {
+    const s = document.querySelector('#addbar [data-add="' + k + '"] svg');
+    return s ? Array.from(s.querySelectorAll('path')).map(p => p.getAttribute('d')).join('|') : '';
+  }))`));
+check("헷갈리는 짝이 서로 다른 아이콘이다", new Set(shapes).size === 4 && shapes.every(Boolean),
+  new Set(shapes).size + "가지");
 
 /* ---------- 10-3. 보는 축 넷이 서로 안 흔들리는가 ----------
    모양 · 색감 · 밝기 · 글자 크기는 따로 도는 축이다. 하나를 고쳐도 나머지가 그대로여야

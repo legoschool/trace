@@ -22,7 +22,7 @@ const send=(m,p={})=>{const i=++id; ws.send(JSON.stringify({id:i,method:m,params
 const ev=async e=>{const r=await send("Runtime.evaluate",{expression:e,returnByValue:true,awaitPromise:true,userGesture:true}); if(r.exceptionDetails) throw new Error(r.exceptionDetails.exception?.description); return r.result.value;};
 const shot=async n=>{const r=await send("Page.captureScreenshot",{format:"png",captureBeyondViewport:false}); writeFileSync(join(OUT,n),Buffer.from(r.data,"base64")); console.log("찍음 "+n);};
 const results=[];
-const check=(n,ok,d="")=>{results.push({n,ok}); console.log(`${ok?"  OK  ":" FAIL "} ${n}${d?"  — "+d:""}`);};
+const check=(n,ok,d="")=>{results.push({n,ok}); console.log(`${ok?"  OK  ":" FAIL "} ${n}${d?" · "+d:""}`);};
 
 let u; for(let i=0;i<60&&!u;i++){try{const l=await fetch(`http://127.0.0.1:${PORT}/json/list`).then(r=>r.json()); u=l.find(t=>t.type==="page"&&t.webSocketDebuggerUrl)?.webSocketDebuggerUrl;}catch{} if(!u) await wait(250);}
 ws=new WebSocket(u);

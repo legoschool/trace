@@ -1,6 +1,6 @@
 /* 색인이 커졌을 때 «조각으로 나뉘는지» 와, 무엇보다 «기록이 안 사라지는지» 를 본다.
 
-   왜 만들었나 —
+   왜 만들었나 · 
    색인 하나에 십삼 년치를 다 담으면, 글자 하나를 고쳐도 그 전부를 다시 올려야 한다.
    폰에서는 그게 곧 「저장이 안 되는 도구」 다. 그래서 색인을 조각으로 나눴다.
    나누는 순간 «못 읽은 조각을 빈 것으로 알고 덮어쓰는» 사고가 생길 수 있다.
@@ -48,11 +48,11 @@ const ev = async (e) => {
 const results = [];
 const check = (name, ok, detail = "") => {
   results.push({ name, ok });
-  console.log(`${ok ? "  OK  " : " FAIL "} ${name}${detail ? "  — " + detail : ""}`);
+  console.log(`${ok ? "  OK  " : " FAIL "} ${name}${detail ? " · " + detail : ""}`);
 };
 
 /* ---------------------------------------------------------
-   가짜 드라이브 — 올린 것을 그대로 들고 있는다
+   가짜 드라이브 · 올린 것을 그대로 들고 있는다
 
    sessionStorage 에 넣어 두므로 **새로고침해도 살아남는다.**
    그래서 「올렸다 → 새로고침 → 다시 읽었다」 를 한 줄로 겪어 볼 수 있다.
@@ -62,12 +62,12 @@ const FAKE_DRIVE = `(function () {
   if (location.protocol !== 'http:' && location.protocol !== 'https:') return;
   var FOLDER = 'application/vnd.google-apps.folder';
 
-  // 드라이브 안의 파일들 — 새로고침을 넘어 살아남게 sessionStorage 에 둔다
+  // 드라이브 안의 파일들 · 새로고침을 넘어 살아남게 sessionStorage 에 둔다
   function db() { try { return JSON.parse(sessionStorage.getItem('fakedrive') || '{}'); } catch (e) { return {}; } }
   function put(d) { sessionStorage.setItem('fakedrive', JSON.stringify(d)); }
   if (!sessionStorage.getItem('fakedrive')) put({});
 
-  // 올린 것을 기록해 둔다 — «통째로 올렸나, 조각만 올렸나» 를 여기서 잰다
+  // 올린 것을 기록해 둔다. «통째로 올렸나, 조각만 올렸나» 를 여기서 잰다
   window.__up = [];
   window.__calls = 0;
   window.__break = sessionStorage.getItem('break') || '';   // 이 이름의 파일은 못 읽는 척한다
@@ -213,14 +213,14 @@ const drive = () => ev(`(() => {
   return JSON.stringify(Object.keys(d).map(k => ({ name: d[k].name, bytes: (d[k].body||'').length })));
 })()`).then(JSON.parse);
 const uploads = () => ev(`JSON.stringify(window.__up || [])`).then(JSON.parse);
-// 목록 첫 카드의 📌 를 누른다 — saveIndex() 를 부르는 가장 짧은 길
+// 목록 첫 카드의 📌 를 누른다. saveIndex() 를 부르는 가장 짧은 길
 const pin = () => ev(`(() => {
   const b = document.querySelector('.pinbtn');
   if (!b) return 'NO_PIN';
   b.click(); return 'CLICKED';
 })()`);
 
-/* ═══ ① 작을 때는 나누지 않는다 — 옛 버전으로 열어도 그대로 보여야 한다 ═══ */
+/* ═══ ① 작을 때는 나누지 않는다. 옛 버전으로 열어도 그대로 보여야 한다 ═══ */
 await open(seed(3, 50));
 check("가짜 드라이브에 붙었다", (await ev(`window.__calls || 0`)) > 0,
   `구글 호출 ${await ev(`window.__calls || 0`)}회`);
@@ -263,7 +263,7 @@ check("목차에는 조각의 자리만 적힌다", (() => {
   catch { return false; }
 })(), man0.slice(0, 60));
 
-/* ═══ ③ 하나를 고치면 «그 조각만» 다시 올라간다 — 이것이 이 작업의 이유다 ═══ */
+/* ═══ ③ 하나를 고치면 «그 조각만» 다시 올라간다. 이것이 이 작업의 이유다 ═══ */
 await ev(`window.__up = []`);
 await pin();                             // 고정을 풀었다 = 기록 하나가 바뀌었다
 await wait(2500);
@@ -290,7 +290,7 @@ await wait(4000);
 const back = await ev(`JSON.parse(localStorage.getItem('trace.entries.v2')||'[]').length`);
 check("빈 기기에서도 조각을 다 읽어 400편이 돌아온다", back === 400, `${back}편`);
 
-/* ═══ ⑤ 조각 하나를 못 읽으면 «덮어쓰지 않는다» — 가장 중요한 곳 ═══ */
+/* ═══ ⑤ 조각 하나를 못 읽으면 «덮어쓰지 않는다» · 가장 중요한 곳 ═══ */
 const victim = shards[0].name;
 await ev(`sessionStorage.setItem('break', ${JSON.stringify(victim)})`);
 await send("Page.navigate", { url: "about:blank" });
@@ -315,7 +315,7 @@ check("사람에게도 알린다", (await ev(`(document.body.textContent||'').in
 
 /* ═══ ⑥ 옛 버전이 목차를 덮어써도, 남은 조각을 함께 읽는다 ═══ */
 await ev(`sessionStorage.removeItem('break')`);
-// 옛 버전이 저장한 것처럼 — 목차 자리에 «기록 1편만 든 v3 색인» 을 밀어 넣는다
+// 옛 버전이 저장한 것처럼 · 목차 자리에 «기록 1편만 든 v3 색인» 을 밀어 넣는다
 await ev(`(() => {
   const d = JSON.parse(sessionStorage.getItem('fakedrive')||'{}');
   const k = Object.keys(d).find(k => d[k].name === 'TRACE-index.json');
@@ -347,7 +347,7 @@ await open(seed(400, 1200));
 await pin();
 await wait(3000);
 const before7 = (await drive()).filter(f => /^TRACE-index-[0-9a-f]{2}\.json$/.test(f.name)).length;
-// 400편을 더 얹는다 — 조각 하나가 한 아름을 넘어 «다시 나누기» 가 일어나야 한다
+// 400편을 더 얹는다. 조각 하나가 한 아름을 넘어 «다시 나누기» 가 일어나야 한다
 await ev(`(() => {
   const L = JSON.parse(localStorage.getItem('trace.entries.v2') || '[]');
   const body = new Array(1201).join('나');
