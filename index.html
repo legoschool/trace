@@ -1429,40 +1429,60 @@
     { key: "graph", label: "관계망", icon: "🕸️", desc: "무엇이 무엇과 이어져 있는지", modal: true }
   ];
 
-  var FILE_PRESETS = [
-    "{날짜}_{태그}_{제목}_{자료제목}_{번호}",
-    "{날짜}_{태그}_{제목}_{번호}",
-    "{날짜}_{제목}_{자료제목}_{번호}",
-    "{폴더명}_{날짜}_{제목}_{번호}",
-    "{날짜}_{제목}_{번호}",
-    "{폴더명}_{날짜}_{유형}_{제목}_{번호}",
-    "{날짜}_{유형}_{제목}_{번호}",
-    "{날짜}_{제목}_{번호}_{원본이름}",
-    "{폴더명}_{원본이름}",
-    "{제목}_{번호}",
-    "{날짜}_{시간}_{원본이름}",
-    "{날짜}_{원본이름}",
-    "{원본이름}"
+  /* 파일 이름은 «조각 다섯» 을 켜고 끄는 것이다.
+     예전에는 프리셋 스물하나에 토큰 열하나를 손으로 조립하는 칸이었다.
+     이름 규칙을 조립하러 온 사람은 없다. 무엇이 이름에 들어갈지만 정하면 된다.
+     ⚠️ 저장되는 것은 여전히 {날짜}_{태그}_… 꼴의 «규칙 문자열» 이다.
+        그래야 이름을 만드는 자리(applyPattern·attachName·mdName·이름 정리)가 하나도 안 바뀐다.
+        체크칸은 그 문자열을 «짓는» 도구일 뿐이다. */
+  var NAME_PARTS = [
+    { key: "date",    token: "{날짜}",     label: "날짜",     sample: "2026-08-16", md: true },
+    { key: "tag",     token: "{태그}",     label: "태그",     sample: "수업설계",   md: true },
+    { key: "title",   token: "{제목}",     label: "제목",     sample: "수업 회고",  md: true },
+    { key: "caption", token: "{자료제목}", label: "자료 제목", sample: "칠판 정리",  md: false },
+    { key: "no",      token: "{번호}",     label: "번호",     sample: "01",         md: false }
   ];
-  var MD_PRESETS = [
-    "{날짜}_{태그}_{제목}",
-    "{날짜}_{태그}_{유형}_{제목}",
-    "{폴더명}_{날짜}_{유형}_{제목}",
-    "{날짜}_{유형}_{제목}",
-    "{날짜}_{제목}",
-    "{유형}_{제목}",
-    "{날짜}_{시간}_{제목}",
-    "{제목}"
-  ];
-  var TOKENS = ["{날짜}", "{태그}", "{제목}", "{자료제목}", "{번호}",
-                "{폴더명}", "{하위폴더}", "{시간}", "{유형}", "{원본이름}", "{확장자}"];
-  // 토큰이 무슨 뜻인지 설정 화면에 그대로 보여 준다
-  var TOKEN_HELP = {
-    "{날짜}": "2026-08-20", "{태그}": "첫 태그", "{제목}": "기록 제목",
-    "{자료제목}": "사진·파일에 적은 제목", "{번호}": "01, 02 …",
-    "{폴더명}": "연결한 폴더 이름", "{하위폴더}": "자료 · 2026-08 …",
-    "{시간}": "1421", "{유형}": "경험 · 지식 …", "{원본이름}": "IMG_4821", "{확장자}": "png"
-  };
+  var SIMPLE_TOKENS = NAME_PARTS.map(function (p) { return p.token; });
+
+  /* 지금 설정이 «조각 다섯으로 지을 수 있는 것» 인가.
+     {폴더명}·{유형}·{원본이름} 처럼 조각 밖의 토큰을 쓰고 있으면 손대지 않는다.
+     쓰던 사람의 이름 규칙을 말없이 갈아 치우면, 다음 저장부터 파일 이름이 통째로 달라진다. */
+  function isSimplePattern(pattern) {
+    var toks = String(pattern || "").match(/\{[^}]*\}/g) || [];
+    for (var i = 0; i < toks.length; i++) {
+      if (SIMPLE_TOKENS.indexOf(toks[i]) < 0) return false;
+    }
+    var joined = toks.join("_");
+    var canon = SIMPLE_TOKENS.filter(function (t) { return toks.indexOf(t) >= 0; }).join("_");
+    return joined === canon && String(pattern) === canon;   // 차례까지 그대로여야 한다
+  }
+  function simpleNaming(st) {
+    return isSimplePattern(st.filePattern) && isSimplePattern(st.mdPattern);
+  }
+  // 지금 규칙에서 «어느 조각이 켜져 있나» 를 읽어 낸다
+  function namePartsOf(st) {
+    var on = {};
+    NAME_PARTS.forEach(function (p) {
+      on[p.key] = p.md
+        ? (String(st.mdPattern || "").indexOf(p.token) >= 0 || String(st.filePattern || "").indexOf(p.token) >= 0)
+        : String(st.filePattern || "").indexOf(p.token) >= 0;
+    });
+    return on;
+  }
+  // 켜 둔 조각으로 규칙 두 줄을 짓는다. 차례는 늘 같다 (날짜 · 태그 · 제목 · 자료제목 · 번호)
+  function patternsFromParts(on) {
+    function join(forMd) {
+      return NAME_PARTS.filter(function (p) {
+        if (forMd && !p.md) return false;      // 글에는 자료 제목·번호가 들어갈 자리가 없다
+        return on[p.key];
+      }).map(function (p) { return p.token; }).join("_");
+    }
+    var md = join(true), file = join(false);
+    // 하나도 안 남으면 이름이 «무제» 뿐이 된다. 제목만은 남긴다
+    if (!md) md = "{제목}";
+    if (!file) file = "{제목}";
+    return { mdPattern: md, filePattern: file };
+  }
 
   var LS = {
     entries: "trace.entries.v2",
@@ -9587,51 +9607,91 @@
       body.appendChild(add);
     }
 
-    function makePatternField(labelText, key, presets, isMd) {
+    /* 📛 파일 이름 · 조각 다섯을 켜고 끈다.
+       예전에는 프리셋 스물하나가 든 목록에 «직접 만들기» 칸과 토큰 단추 열하나가 붙어 있었다.
+       이름 규칙을 조립하러 이 화면에 오는 사람은 없다. 무엇이 이름에 들어갈지만 정하면 된다.
+       고른 것은 그대로 남는다 · 설정에 규칙 문자열로 적히기 때문이다. */
+    function previewRow(label, value) {
+      var r = el("div");
+      r.style.cssText = "display:flex;gap:10px;align-items:baseline;";
+      var l = el("span", null, label);
+      l.style.cssText = "min-width:64px;flex:0 0 auto;opacity:.75;";
+      r.appendChild(l);
+      r.appendChild(el("span", null, value));
+      return r;
+    }
+    function makeNameField() {
       var f = el("div", "field");
-      f.appendChild(el("label", null, labelText));
-      var sel = el("select", "inp");
-      presets.forEach(function (p) {
-        var o = el("option", null, p + "   →   " + patternPreview(p, isMd));
-        o.value = p; sel.appendChild(o);
-      });
-      var custom = el("option", null, "직접 만들기…"); custom.value = "__custom__";
-      sel.appendChild(custom);
-
-      var ci = el("input", "inp"); ci.style.marginTop = "8px"; ci.placeholder = "예: {날짜}_{유형}_{제목}_{번호}";
+      f.appendChild(el("label", null, "파일 이름에 무엇을 넣을까요?"));
+      var on = namePartsOf(draft);
+      var rows = el("div");
       var pv = el("div", "preview");
-      var tk = el("div", "tokens");
-      TOKENS.forEach(function (t) {
-        // 글에는 {자료제목} 이 들어갈 자리가 없다 (사진·파일에만 있는 것)
-        if (isMd && t === "{자료제목}") return;
-        var b = el("button", "token", t); b.type = "button";
-        if (TOKEN_HELP[t]) b.title = t + " → " + TOKEN_HELP[t];
-        b.addEventListener("click", function () {
-          ci.classList.remove("hidden"); sel.value = "__custom__";
-          ci.value = (ci.value || draft[key]) + t;
-          draft[key] = ci.value; refresh();
+      f.appendChild(rows); f.appendChild(pv);
+
+      function paintRows() {
+        rows.innerHTML = "";
+        var live = NAME_PARTS.filter(function (p) { return on[p.key]; }).length;
+        NAME_PARTS.forEach(function (p) {
+          var lab = el("label");
+          lab.style.cssText = "display:flex;gap:9px;align-items:center;margin:7px 0;font-size:calc(13.5px * var(--fs));";
+          var cb = el("input"); cb.type = "checkbox"; cb.checked = !!on[p.key];
+          cb.style.cssText = "width:17px;height:17px;flex:0 0 auto;";
+          /* 하나만 남았으면 그것까지는 못 끈다. 다 끄면 모든 파일이 «무제» 가 된다.
+             말로 막지 않고 «못 누르게» 해서 보인다. */
+          cb.disabled = !!on[p.key] && live === 1;
+          cb.addEventListener("change", function () {
+            on[p.key] = cb.checked;
+            var made = patternsFromParts(on);
+            draft.mdPattern = made.mdPattern;
+            draft.filePattern = made.filePattern;
+            paintRows(); paintPreview();
+          });
+          lab.appendChild(cb);
+          var nm = el("span", null, p.label);
+          nm.style.cssText = "min-width:64px;font-weight:600;";
+          lab.appendChild(nm);
+          var ex = el("span", "mono", p.sample);
+          ex.style.cssText = "color:var(--ink-soft);min-width:110px;";
+          lab.appendChild(ex);
+          if (!p.md) {
+            var only = el("span", null, "사진·파일에만");
+            only.style.cssText = "font-size:calc(11.5px * var(--fs));color:var(--ink-soft);";
+            lab.appendChild(only);
+          }
+          rows.appendChild(lab);
         });
-        tk.appendChild(b);
-      });
-
-      function refresh() {
-        // 폴더 연결 전에는 {폴더명} 자리가 예시라는 걸 분명히 밝힌다
-        var hint = (!folder.name && draft[key].indexOf("{폴더명}") >= 0) ? "   ← 폴더 연결 전이라 예시 이름" : "";
-        pv.textContent = "미리보기:  " + patternPreview(draft[key], isMd) + hint;
       }
+      function paintPreview() {
+        pv.innerHTML = "";
+        pv.appendChild(previewRow("글", patternPreview(draft.mdPattern, true)));
+        pv.appendChild(previewRow("사진·파일", patternPreview(draft.filePattern, false)));
+      }
+      paintRows(); paintPreview();
+      return f;
+    }
 
-      if (presets.indexOf(draft[key]) >= 0) { sel.value = draft[key]; ci.classList.add("hidden"); }
-      else { sel.value = "__custom__"; ci.value = draft[key]; }
-
-      sel.addEventListener("change", function () {
-        if (sel.value === "__custom__") { ci.classList.remove("hidden"); ci.value = draft[key]; ci.focus(); }
-        else { ci.classList.add("hidden"); draft[key] = sel.value; }
-        refresh();
+    /* 조각 밖의 규칙(«{폴더명}_{유형}_{원본이름}» 같은 것)을 쓰고 있는 사람.
+       ⚠️ 말없이 갈아 치우면 다음 저장부터 파일 이름이 통째로 달라진다.
+          지금 쓰는 것을 그대로 보여 주고, 바꿀지는 사람이 정한다. */
+    function makeOldNameField() {
+      var f = el("div", "field");
+      f.appendChild(el("label", null, "지금 쓰는 이름 규칙"));
+      f.appendChild(previewRow("글", draft.mdPattern));
+      f.appendChild(previewRow("사진·파일", draft.filePattern));
+      var pv = el("div", "preview");
+      pv.appendChild(previewRow("글", patternPreview(draft.mdPattern, true)));
+      pv.appendChild(previewRow("사진·파일", patternPreview(draft.filePattern, false)));
+      f.appendChild(pv);
+      var btn = el("button", "btn sm", "간단한 방식으로 바꾸기");
+      btn.type = "button";
+      btn.addEventListener("click", function () {
+        var made = patternsFromParts(namePartsOf(draft));
+        draft.mdPattern = made.mdPattern;
+        draft.filePattern = made.filePattern;
+        paint();
       });
-      ci.addEventListener("input", function () { draft[key] = ci.value; refresh(); });
-
-      f.appendChild(sel); f.appendChild(ci); f.appendChild(tk); f.appendChild(pv);
-      refresh();
+      f.appendChild(el("p", "desc", "⚠️ 바꾸면 앞으로 저장되는 이름이 달라집니다. 이미 있는 파일은 그대로입니다."));
+      f.appendChild(btn);
       return f;
     }
 
@@ -9656,15 +9716,10 @@
       });
       body.appendChild(ff);
 
-      body.appendChild(el("p", "desc", "태그를 눌러 조립합니다."));
-      body.appendChild(makePatternField("📝 글(마크다운) 파일 이름", "mdPattern", MD_PRESETS, true));
-      body.appendChild(makePatternField("📎 사진·파일 이름", "filePattern", FILE_PRESETS, false));
-      var note = el("p", "desc");
-      note.textContent =
-        "{폴더명} 은 지금 연결된 드라이브 폴더 이름(" + (folder.name || "미연결") + ")이 자동으로 들어갑니다. " +
-        "폴더를 바꾸면 이후 저장분에 새 폴더명이 따라붙습니다. " +
-        "{확장자} 를 쓰지 않으면 원래 확장자가 자동으로 붙고, 같은 이름이 이미 있으면 -2, -3 이 붙습니다.";
-      body.appendChild(note);
+      body.appendChild(simpleNaming(draft) ? makeNameField() : makeOldNameField());
+      /* 남길 것은 «되돌릴 수 없는 것» 과 «안 되는 것» 뿐이다.
+         같은 이름이 겹치면 -2, -3 이 붙는 것은 사람이 알아야 하는 «안 되는 것» 이 아니라
+         저절로 되는 일이라 적지 않는다. */
     }
 
     /* ---------- 📥 가져오기 · 이 도구를 만든 진짜 목적 ----------

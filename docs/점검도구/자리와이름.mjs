@@ -560,6 +560,132 @@ check("⑫ 떠나면 못 돌아온다고 미리 말해 준다", shown.warn, show
 await closeModals();
 await wait(300);
 
+/* =========================================================
+   상황 ⑬ · 파일 이름에 무엇을 넣을지 «고르는» 자리
+   예전에는 프리셋 스물하나와 토큰 단추 열하나로 규칙을 손수 조립했다.
+   지금은 조각 다섯을 켜고 끈다. 기본은 다섯 다 켜짐이고, 한 번 고르면 그대로 남아야 한다.
+   ========================================================= */
+const readNaming = () => ev(`(() => {
+  const NAMES = ['날짜', '태그', '제목', '자료 제목', '번호'];
+  const nameOf = (l) => (l.children[1] ? (l.children[1].textContent || '').trim() : '');
+  const rows = Array.from(document.querySelectorAll('.mbody label'))
+    .filter(l => l.querySelector('input[type=checkbox]') && NAMES.indexOf(nameOf(l)) >= 0);
+  return JSON.stringify({
+    n: rows.length,
+    on: rows.filter(l => l.querySelector('input').checked).map(nameOf),
+    locked: rows.filter(l => l.querySelector('input').disabled).map(nameOf),
+    preview: Array.from(document.querySelectorAll('.mbody .preview')).map(x => x.textContent).join(' | '),
+    old: /지금 쓰는 이름 규칙/.test(document.querySelector('.mbody').textContent || ''),
+    toSimple: !!Array.from(document.querySelectorAll('.mbody button')).find(b => (b.textContent||'').includes('간단한 방식으로'))
+  });
+})()`).then((x) => JSON.parse(x));
+
+const openNaming = async () => {
+  await closeModals();
+  await ev(`document.getElementById('btnSettings').click(); true`);
+  await wait(500);
+  await ev(`(() => {
+    const t = Array.from(document.querySelectorAll('.tabs .tab')).find(x => (x.textContent||'').includes('파일 이름'));
+    if (t) t.click(); return true;
+  })()`);
+  await wait(600);
+  return readNaming();
+};
+const clickName = (label) => ev(
+  "(() => { const rows = Array.from(document.querySelectorAll('.mbody label'));" +
+  " const l = rows.find(x => x.children[1] && (x.children[1].textContent || '').trim() === " + JSON.stringify(label) + ");" +
+  " if (!l) return 'NO_ROW'; const cb = l.querySelector('input[type=checkbox]');" +
+  " if (!cb) return 'NO_BOX'; if (cb.disabled) return 'LOCKED'; cb.click(); return 'CLICKED'; })()"
+);
+const saveSettings = async () => {
+  const r = await ev(`(() => {
+    const b = Array.from(document.querySelectorAll('.mfoot button')).find(x => (x.textContent||'').trim() === '저장');
+    if (!b) return 'NO_SAVE';
+    b.click(); return 'SAVED';
+  })()`);
+  await wait(900);
+  return r;
+};
+
+const nm0 = await openNaming();
+check("⑬ 이름 조각 다섯을 고르는 자리가 있다", nm0.n === 5, `줄 ${nm0.n}개`);
+check("⑬ 기본은 다섯 다 켜져 있다", nm0.on.length === 5, nm0.on.join(" · ") || "하나도 안 켜짐");
+check("⑬ 글과 사진·파일 이름을 그 자리에서 보여 준다",
+  /\.md/.test(nm0.preview) && /\.png/.test(nm0.preview), nm0.preview.replace(/\s+/g, " ").slice(0, 70));
+
+/* =========================================================
+   상황 ⑭ · 하나를 끄면 이름에서 빠지고, 그 뒤로 계속 그대로여야 한다
+   ========================================================= */
+const off = await clickName("태그");
+await wait(400);
+const nm1 = await ev(`(() => Array.from(document.querySelectorAll('.mbody .preview')).map(x => x.textContent).join(' | '))()`);
+check("⑭ 조각을 끄면 미리보기에서 바로 빠진다", off === "CLICKED" && !/수업설계/.test(nm1), nm1.replace(/\s+/g, " ").slice(0, 70));
+check("⑭ 고른 것을 저장할 수 있다", (await saveSettings()) === "SAVED");
+const stored = await ev(`(() => {
+  const s = JSON.parse(localStorage.getItem('trace.settings.v1') || '{}');
+  return JSON.stringify({ md: s.mdPattern || '', file: s.filePattern || '' });
+})()`).then((x) => JSON.parse(x));
+check("⑭ 고른 것이 설정에 적힌다", stored.md.indexOf("{태그}") < 0 && stored.file.indexOf("{태그}") < 0,
+  `글 ${stored.md} · 자료 ${stored.file}`);
+const nm2 = await openNaming();
+check("⑭ 다시 열어도 고른 그대로다", nm2.on.length === 4 && nm2.on.indexOf("태그") < 0, nm2.on.join(" · "));
+
+/* =========================================================
+   상황 ⑮ · 하나만 남으면 그것까지 끌 수는 없다
+   다 끄면 모든 파일이 «무제» 가 된다. 말로 막지 않고 못 누르게 한다
+   ========================================================= */
+await clickName("날짜");
+await wait(300);
+await clickName("자료 제목");
+await wait(300);
+await clickName("번호");
+await wait(400);
+const nm3 = await readNaming();   // ⚠️ 여기서 창을 다시 열면 아직 저장 안 한 것이 버려진다
+check("⑮ 하나만 남으면 그 하나는 못 끈다",
+  nm3.on.length === 1 && nm3.locked.length === 1 && nm3.locked[0] === nm3.on[0],
+  `남은 것 ${nm3.on.join(",")} · 잠긴 것 ${nm3.locked.join(",")}`);
+check("⑮ 그래도 이름은 «무제» 가 아니다", /수업 회고/.test(nm3.preview), nm3.preview.replace(/\s+/g, " ").slice(0, 60));
+
+// 되돌려 놓는다 (뒤에 오는 점검이 기본 이름을 보게)
+await clickName("날짜"); await wait(250);
+await clickName("태그"); await wait(250);
+await clickName("자료 제목"); await wait(250);
+await clickName("번호"); await wait(250);
+await saveSettings();
+
+/* =========================================================
+   상황 ⑯ · 손으로 조립한 옛 규칙을 쓰던 사람
+   조각 밖의 토큰({폴더명}·{원본이름} …)을 쓰고 있으면 말없이 갈아 치우면 안 된다
+   ========================================================= */
+await ev(`(() => {
+  sessionStorage.setItem('keep', '1');
+  var s = JSON.parse(localStorage.getItem('trace.settings.v1') || '{}');
+  s.filePattern = '{폴더명}_{원본이름}';
+  s.mdPattern = '{유형}_{제목}';
+  localStorage.setItem('trace.settings.v1', JSON.stringify(s));
+  return true;
+})()`);
+await send("Page.reload");
+await wait(3000);
+const nm4 = await openNaming();
+check("⑯ 옛 규칙은 갈아 치우지 않고 그대로 보여 준다", nm4.old && nm4.n === 0, nm4.old ? "지금 쓰는 규칙으로 보임" : "조각 화면으로 갈아 치웠다");
+check("⑯ 간단한 방식으로 옮겨 갈 길을 준다", nm4.toSimple, nm4.toSimple ? "단추 있음" : "단추 없음");
+await ev(`(() => {
+  const b = Array.from(document.querySelectorAll('.mbody button')).find(x => (x.textContent||'').includes('간단한 방식으로'));
+  if (b) b.click(); return true;
+})()`);
+await wait(700);
+const nm5 = await ev(`(() => {
+  const NAMES = ['날짜', '태그', '제목', '자료 제목', '번호'];
+  const rows = Array.from(document.querySelectorAll('.mbody label')).filter(l =>
+    l.querySelector('input[type=checkbox]') && l.children[1] &&
+    NAMES.indexOf((l.children[1].textContent || '').trim()) >= 0);
+  return rows.length;
+})()`);
+check("⑯ 누르면 그때 조각 다섯으로 바뀐다", nm5 === 5, `줄 ${nm5}개`);
+await closeModals();
+await wait(300);
+
 const realErrors = errors.filter((e) => !/GSI_LOGGER|popup|ERR_INTERNET|ERR_NAME|gsi\/client|404/i.test(String(e)));
 check("옮기고 바꾸고 버리는 내내 오류 없음", realErrors.length === 0, realErrors[0] || "");
 
