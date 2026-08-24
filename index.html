@@ -7663,6 +7663,12 @@
   function isImportable(f) {
     if (!f || !f.name) return false;
     if (/\.md$/i.test(f.name)) return false;                            // 글은 따로 읽는다
+    /* ⚠️ 앱이 제 살림으로 쓰는 파일은 «자료» 가 아니다.
+       색인(TRACE-index.json)·설정·색인 조각(TRACE-index-00.json …)이 그것이다.
+       안 거르면 폴더를 훑을 때마다 제 색인이 기록 한 편으로 목록에 선다.
+       쓰던 사람 눈에는 «내가 안 넣은 것이 자꾸 생긴다» 로 보인다. */
+    if (isAppFile(f.name)) return false;
+    if (f.name.indexOf(SHARD_PREFIX) === 0) return false;
     if (JUNK_RE.test(f.name)) return false;
     if (f.mimeType === "application/vnd.google-apps.folder") return false;
     if (f.mimeType === "application/vnd.google-apps.shortcut") return false;
@@ -7804,6 +7810,11 @@
           srcFolderName: (f._parent !== folder.id) ? f._parentName : null,
           _imported: true
         };
+        /* ⚠️ 지운 표시(tombstone)를 걷는다.
+           사람이 「폴더 훑어서 가져오기」 를 누른 것은 «이걸 돌려놓아라» 는 뜻이다.
+           표시를 그대로 두면, 색인을 다시 합칠 때(mergeEntries) 방금 가져온 것이
+           도로 지워진다. 화면에는 «들어왔다가 새로고침 한 번에 사라지는» 것으로 보인다. */
+        tombstones = tombstones.filter(function (t) { return t.id !== n.id; });
         byEntryId[n.id] = 1;
         entries.push(n);
         addedMd++;

@@ -75,7 +75,9 @@ const FAKE = `(function () {
   };
   var PARENT = { D2019: 'ROOT', DSCI: 'D2019', DYEONSU: 'ROOT', H1: 'DSCI', P1: 'DSCI', MD1: 'DYEONSU' };
 
-  var MD1TEXT = ['---','title: 연수 다녀옴','type: 경험','tags: [연수]','---','',
+  /* id 가 적힌 .md · 앱이 쓴 글을 다른 기기에서 가져온 모양이다.
+     이게 있어야 «지웠다가 다시 가져오기» 에서 지운 표시(tombstone)와 부딪히는 자리를 겪어 볼 수 있다. */
+  var MD1TEXT = ['---','id: k_yeonsu1','title: 연수 다녀옴','type: 경험','tags: [연수]','---','',
                  '# 연수 다녀옴','','오늘 연수를 다녀왔다.',''].join('\\n');
   var PNG8 = 'iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAIAAABLbSncAAAAEUlEQVR4nGOo6FmAFTEMLQkA/SBpAUsyaigAAAAASUVORK5CYII=';
 
@@ -314,6 +316,14 @@ const hwp0 = await entryBy("H1");
 check("① 거쳐 온 길이 그대로 적힌다", !!hwp0 && hwp0.path.join("/") === "2019/과학",
   hwp0 ? hwp0.path.join(" › ") : "기록이 안 섰다");
 const md0 = await entryBy("MD1");
+/* 앱이 제 살림으로 쓰는 파일(색인·설정·색인 조각)이 «자료» 로 들어오면,
+   폴더를 훑을 때마다 내가 안 넣은 기록이 목록에 하나씩 는다. */
+const mine = await ev(`(() => {
+  const L = JSON.parse(localStorage.getItem('trace.entries.v2') || '[]');
+  return L.filter(e => /TRACE-index|TRACE-settings/.test(e.title || '')).length;
+})()`);
+check("① 앱이 만든 색인·설정은 기록으로 안 들어온다", mine === 0, mine + "편 들어옴");
+
 check("① 글(.md)은 안을 읽어 되살린다", !!md0 && md0.title === "연수 다녀옴", md0 ? md0.title : "없음");
 
 /* =========================================================
@@ -850,6 +860,72 @@ check("⑱ 한 번 정리한 것은 다시 대상이 아니다",
   !td2.names.some(n => /^\d{4}-\d{2}-\d{2}_/.test(n)), td2.names.join(", ").slice(0, 60) || "대상 없음");
 await closeModals();
 await wait(300);
+
+/* =========================================================
+   상황 ⑲ · 목록에서 뺐다가 «다시 가져오기» 를 누르면 돌아와야 한다
+   가져온 것을 지우는 것은 «목록에서만 빼는 일» 이다 (원본은 그대로 있다).
+   그러니 다시 훑으면 다시 들어오는 것이 사람이 기대하는 바다.
+   ⚠️ 그런데 지운 표시(tombstone)가 색인에 남아 있으면, 들어왔다가
+      새로고침 한 번에 도로 사라진다. «분명히 가져왔는데 없다» 가 된다.
+   ========================================================= */
+await ev(`(() => { sessionStorage.setItem('keep', '1'); window.__drive.reset(); return true; })()`);
+await closeModals();
+// 지울 기록을 «제목» 이 아니라 «어느 파일에서 왔는가» 로 집는다. 제목은 앞 상황에서 바뀌었다
+const mdTitle = await ev(`(() => {
+  const L = JSON.parse(localStorage.getItem('trace.entries.v2') || '[]');
+  const e = L.find(x => x.mdId === 'MD1');
+  return e ? e.title : '';
+})()`);
+await setSearch(mdTitle);
+await wait(700);
+const gone = await ev(`(() => {
+  const want = ${JSON.stringify("")} + document.getElementById('search').value;
+  const cards = Array.from(document.querySelectorAll('.card.entry'));
+  const c = cards.find(x => (x.textContent || '').indexOf(want) >= 0) || cards[0];
+  if (!c) return 'NO_CARD';
+  const b = Array.from(c.querySelectorAll('button')).find(x => (x.textContent||'').includes('삭제'));
+  if (!b) return 'NO_DEL[' + cards.length + ']';
+  b.click(); return 'ASKED';
+})()`);
+await wait(700);
+await ev(`(() => {
+  const m = Array.from(document.querySelectorAll('.card.modal')).find(x => (x.textContent||'').includes('삭제할까요'));
+  if (!m) return false;
+  const b = Array.from(m.querySelectorAll('button')).find(x => /삭제|확인|예/.test(x.textContent||''));
+  if (b) b.click(); return true;
+})()`);
+await wait(2000);
+await closeModals();
+const afterDel = await ev(`(() => {
+  const L = JSON.parse(localStorage.getItem('trace.entries.v2') || '[]');
+  const T = JSON.parse(localStorage.getItem('trace.tombstones.v1') || '[]');
+  return JSON.stringify({ has: L.some(e => e.mdId === 'MD1'), tombs: T.length,
+    titles: L.map(e => e.title).join(", ").slice(0, 60) });
+})()`).then((x) => JSON.parse(x));
+check("⑲ 목록에서 빼면 목록에서 사라진다", gone === "ASKED" && !afterDel.has,
+  `${gone} · 지운 표시 ${afterDel.tombs}개 · 남은 것 ${afterDel.titles}`);
+check("⑲ 빼도 드라이브 원본은 그대로다", (await ev(`window.__drive.nameOf('MD1')`)) !== null,
+  await ev(`window.__drive.nameOf('MD1')`));
+
+await setSearch('');
+await wait(300);
+await runImport();
+const back = await ev(`(() => {
+  const L = JSON.parse(localStorage.getItem('trace.entries.v2') || '[]');
+  return JSON.stringify({ has: L.some(e => e.mdId === 'MD1') });
+})()`).then((x) => JSON.parse(x));
+check("⑲ 다시 훑으면 돌아온다", back.has, back.has ? "돌아옴" : "안 돌아옴");
+
+/* ⚠️ 진짜 자리는 여기다. 새로고침하면 색인을 다시 합치는데,
+   그때 지운 표시가 살아 있으면 방금 가져온 것이 도로 지워진다. */
+await send("Page.reload");
+await wait(3200);
+const afterReload = await ev(`(() => {
+  const L = JSON.parse(localStorage.getItem('trace.entries.v2') || '[]');
+  return JSON.stringify({ has: L.some(e => e.mdId === 'MD1'), n: L.length });
+})()`).then((x) => JSON.parse(x));
+check("⑲ 새로고침해도 도로 사라지지 않는다", afterReload.has,
+  afterReload.has ? "그대로 있음" : `사라짐 · 남은 기록 ${afterReload.n}편`);
 
 const realErrors = errors.filter((e) => !/GSI_LOGGER|popup|ERR_INTERNET|ERR_NAME|gsi\/client|404/i.test(String(e)));
 check("옮기고 바꾸고 버리는 내내 오류 없음", realErrors.length === 0, realErrors[0] || "");
