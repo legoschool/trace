@@ -323,6 +323,31 @@ const mine = await ev(`(() => {
   return L.filter(e => /TRACE-index|TRACE-settings/.test(e.title || '')).length;
 })()`);
 check("① 앱이 만든 색인·설정은 기록으로 안 들어온다", mine === 0, mine + "편 들어옴");
+/* 왼쪽 기둥 · 접힘. 기본은 뿌리 바로 아래만 보이고, ▸ 를 눌러 편다.
+   폴더가 수십이 되면 접히지 않는 기둥은 기둥이 아니라 벽이다. */
+const sideFold = await ev(`(() => {
+  const names = () => Array.from(document.querySelectorAll('#sideNav .siderow .n')).map(x => x.textContent);
+  const before = names();
+  const find = (nm) => Array.from(document.querySelectorAll('#sideNav .siderow'))
+    .find(x => (x.querySelector('.n')||{}).textContent === nm);
+  const r2019 = find('2019');
+  if (!r2019) return JSON.stringify({ err: 'NO_2019', before });
+  const tog = r2019.querySelector('.sidetog');
+  if (!tog || tog.classList.contains('none')) return JSON.stringify({ err: 'NO_TOG', before });
+  tog.click();
+  const opened = names();
+  const tog2 = find('2019').querySelector('.sidetog');
+  tog2.click();
+  const closed = names();
+  return JSON.stringify({ before, opened, closed });
+})()`).then((x) => JSON.parse(x));
+check("① 기둥은 접힌 채로 시작한다", !sideFold.err && sideFold.before.indexOf("과학") < 0,
+  sideFold.err || sideFold.before.join(" · "));
+check("① ▸ 를 누르면 펴진다", !sideFold.err && sideFold.opened.indexOf("과학") >= 0,
+  (sideFold.opened || []).join(" · "));
+check("① 다시 누르면 접힌다", !sideFold.err && sideFold.closed.indexOf("과학") < 0,
+  (sideFold.closed || []).join(" · "));
+
 
 check("① 글(.md)은 안을 읽어 되살린다", !!md0 && md0.title === "연수 다녀옴", md0 ? md0.title : "없음");
 

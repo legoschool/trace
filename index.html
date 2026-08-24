@@ -113,6 +113,9 @@
   [data-theme="lego"] .logo { color: var(--panel); }
   [data-theme="lego"] .logo small { color: var(--panel); opacity: .78; }
   [data-theme="lego"] header.top .acct { color: var(--panel); opacity: .85; }
+  /* «방금 동기화» 도 판 위에서 읽혀야 한다. busy(도는 중)는 조금 더 또렷하게 */
+  [data-theme="lego"] header.top .syncpill { color: var(--panel); opacity: .8; }
+  [data-theme="lego"] header.top .syncpill.busy { opacity: 1; }
   /* 돌기 셋 · 첨부 시안의 상단 점 · 레고라는 것을 머리띠가 스스로 말한다 */
   [data-theme="lego"] .logo::before {
     content: ""; flex: 0 0 auto; width: 10px; height: 10px; border-radius: 50%;
@@ -146,6 +149,14 @@
              padding: 9px 10px; border-radius: var(--r-btn); font-size: calc(14.5px * var(--fs)); }
   .siderow:hover { background: var(--brand-soft); }
   .siderow svg { flex: 0 0 auto; color: var(--ink-soft); }
+  /* ▸ 접힘 손잡이 · 돌아가며 편다. 자식이 없으면 빈 칸으로 자리만 지킨다 */
+  .sidetog { flex: 0 0 auto; width: 22px; height: 22px; display: flex; align-items: center;
+             justify-content: center; border-radius: 6px; color: var(--ink-soft);
+             transition: transform .15s ease; }
+  .sidetog:hover { background: var(--line-soft); }
+  .sidetog.open { transform: rotate(90deg); }
+  .sidetog.none { visibility: hidden; }
+  .siderow.on .sidetog { color: var(--brand); }
   .siderow .n { flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .siderow .cnt { flex: 0 0 auto; font-size: calc(12px * var(--fs)); color: var(--ink-soft); }
   .siderow.on { background: var(--brand-soft); color: var(--brand-dark); font-weight: 700; }
@@ -7236,7 +7247,36 @@
     if (nav) nav.classList.remove("open");
     if (scrim) scrim.classList.add("hidden");
   }
-  var SIDE_DEPTH = 4;   // 이 아래는 접는다 · 왼쪽 기둥은 지도지 서랍장이 아니다
+  var SIDE_DEPTH = 4;   // 이 아래는 아예 안 그린다 · 왼쪽 기둥은 지도지 서랍장이 아니다
+  /* 접힘 · 기본은 «뿌리 바로 아래만» 보인다. 깊은 폴더는 ▸ 를 눌러 편다.
+     고른 길(filterPath)은 저절로 펴진다 · 내가 보고 있는 곳이 접혀 있으면 안 된다.
+     편 것은 기기에 남는다 · 매번 다시 펴게 하면 아무도 안 편다. */
+  var sideOpen = safeParse(localStorage.getItem("trace.sideOpen.v1")) || {};
+  function saveSideOpen() {
+    try { localStorage.setItem("trace.sideOpen.v1", JSON.stringify(sideOpen)); } catch (e) {}
+  }
+  function sideOpenOf(key, path) {
+    if (Object.prototype.hasOwnProperty.call(sideOpen, key)) return !!sideOpen[key];
+    // 고른 길 위에 있으면 저절로 펴진다
+    if (filterPath.length >= path.length) {
+      for (var i = 0; i < path.length; i++) if (filterPath[i] !== path[i]) return false;
+      return true;
+    }
+    return false;
+  }
+  function caretSvg() {
+    var ns = "http://www.w3.org/2000/svg";
+    var svg = document.createElementNS(ns, "svg");
+    svg.setAttribute("width", "12"); svg.setAttribute("height", "12");
+    svg.setAttribute("viewBox", "0 0 24 24"); svg.setAttribute("fill", "none");
+    svg.setAttribute("stroke", "currentColor"); svg.setAttribute("stroke-width", "2.5");
+    svg.setAttribute("stroke-linecap", "round"); svg.setAttribute("stroke-linejoin", "round");
+    svg.setAttribute("aria-hidden", "true");
+    var p = document.createElementNS(ns, "path");
+    p.setAttribute("d", "M9 5l7 7-7 7");
+    svg.appendChild(p);
+    return svg;
+  }
   function renderSideNav() {
     var host = $("sideNav");
     if (!host) return;
@@ -7262,10 +7302,23 @@
       });
     });
 
-    function row(label, path, depth, count) {
+    function row(label, path, depth, count, hasKids, open) {
       var b = el("button", "siderow" + (depth > 0 ? " d" + Math.min(depth, 3) : "") +
         (samePath(filterPath, path) ? " on" : ""));
       b.type = "button";
+      /* ▸ 자리 · 자식이 없어도 칸은 차지한다. 안 그러면 이름들이 들쭉날쭉 선다 */
+      var tg = el("span", "sidetog" + (open ? " open" : "") + (hasKids ? "" : " none"));
+      if (hasKids) {
+        tg.appendChild(caretSvg());
+        tg.title = open ? "접기" : "펴기";
+        tg.addEventListener("click", function (e) {
+          e.stopPropagation();           // 접는 것과 좁혀 보는 것은 다른 일이다
+          sideOpen[path.join("/")] = !open;
+          saveSideOpen();
+          renderSideNav();
+        });
+      }
+      b.appendChild(tg);
       b.appendChild(folderSvg(15));
       var nm = el("span", "n", label); nm.title = label;
       b.appendChild(nm);
@@ -7278,12 +7331,15 @@
       host.appendChild(b);
     }
 
-    row(folder.name || "내 폴더", [], 0, entries.length);
+    row(folder.name || "내 폴더", [], 0, entries.length, false, true);
     (function walk(node, path, depth) {
       node.order.slice().sort(function (a, b) { return a.localeCompare(b, "ko"); }).forEach(function (nm) {
         var kid = node.children[nm];
-        row(nm, path.concat([nm]), depth, kid.count);
-        walk(kid, path.concat([nm]), depth + 1);
+        var p = path.concat([nm]);
+        var hasKids = kid.order.length > 0;
+        var open = hasKids && sideOpenOf(p.join("/"), p);
+        row(nm, p, depth, kid.count, hasKids, open);
+        if (open) walk(kid, p, depth + 1);
       });
     })(root, [], 1);
 
