@@ -733,6 +733,124 @@ check("⑰ 글 이름이 «무제» 로 무너지지 않는다", named.md === "{
 await closeModals();
 await wait(300);
 
+/* =========================================================
+   상황 ⑱ · 「📛 밖에서 넣은 파일 이름 정리」 를 실제로 돌려 본다
+   이 앱에서 가장 되돌리기 힘든 일이다. 십삼 년치 파일의 «이름» 을 바꾼다.
+   그런데 여태 «단추가 있는가» 만 보고, 한 번도 눌러 본 적이 없었다.
+   보는 것 · 무엇이 대상으로 잡히나 · 사람이 누를 때만 바뀌나 ·
+   바뀐 이름이 원래 이름을 지우지 않나 · 파일 ID 가 그대로라 기록이 안 끊기나.
+   ========================================================= */
+await ev(`(() => {
+  sessionStorage.setItem('keep', '1');
+  window.__drive.reset();
+  return true;
+})()`);
+
+const openTidy = async () => {
+  await closeModals();
+  await ev(`document.getElementById('btnMap').click(); true`);
+  await wait(1200);
+  await ev(`(() => {
+    const t = Array.from(document.querySelectorAll('.mfoot button')).find(x => (x.textContent||'').includes('이름 정리'));
+    if (t) t.click(); return true;
+  })()`);
+  // 폴더를 훑어 «정리할 것» 을 골라 올 때까지 기다린다
+  for (let i = 0; i < 40; i++) {
+    await wait(400);
+    const ready = await ev(`(() => {
+      const box = document.querySelector('.renamebox');
+      if (!box) return false;
+      const t = document.querySelector('.mbody').textContent || '';
+      return /찾았습니다|정리할 파일이 없습니다|안 보입니다|훑지 못했습니다/.test(t);
+    })()`);
+    if (ready) break;
+  }
+  return ev(`(() => {
+    const box = document.querySelector('.renamebox');
+    if (!box) return JSON.stringify({ open: false });
+    // 줄은 .renamerow 다. 지금 이름은 .renamewas, 바뀔 이름은 .renamenew 에 있다
+    const rows = Array.from(box.querySelectorAll('.renamerow'));
+    const txt = (r, sel) => { const e = r.querySelector(sel); return e ? (e.textContent || '').trim() : ''; };
+    return JSON.stringify({
+      open: true,
+      names: rows.map(r => txt(r, '.renamewas')),
+      proposed: rows.map(r => txt(r, '.renamenew')),
+      count: (document.querySelector('.mfoot .desc') || {}).textContent || ''
+    });
+  })()`).then((x) => JSON.parse(x));
+};
+
+const td = await openTidy();
+check("⑱ 이름 정리 창이 열리고 대상을 찾아 준다", td.open && td.names.length > 0,
+  td.open ? `${td.names.length}개 · ${td.names.join(", ").slice(0, 60)}` : "안 열림");
+/* 앱이 만든 색인·설정 파일과 이미 날짜로 시작하는 것은 대상이 아니다.
+   여기에 색인이 끼면, 사람이 「전부 고르기」 한 번에 앱의 뼈대 파일 이름을 바꿔 버린다. */
+check("⑱ 앱이 만든 색인·설정은 대상이 아니다",
+  !td.names.some(n => /TRACE-index|TRACE-settings/.test(n)), td.names.join(", ").slice(0, 60));
+
+const beforeNames = await ev(`JSON.stringify({
+  H1: window.__drive.nameOf('H1'), P1: window.__drive.nameOf('P1')
+})`).then((x) => JSON.parse(x));
+const renamedBefore = await ev(`JSON.stringify(window.__drive.renamed)`);
+check("⑱ 창을 열어 놓기만 해서는 아무것도 안 바뀐다", renamedBefore === "[]", renamedBefore);
+
+// 사람이 「전부 고르기」 → 「이름 바꾸기」 를 누른다
+const pressed = await ev(`(() => {
+  /* 「전부 고르기」 는 토글이다. 줄은 처음부터 다 골라져 있으므로
+     여기서 누르면 오히려 전부 풀린다. 그대로 두고 누른다. */
+  const go = Array.from(document.querySelectorAll('.mfoot button')).find(x => (x.textContent||'').includes('이름 바꾸기'));
+  if (!go) return 'NO_GO';
+  if (go.disabled) return 'DISABLED';
+  go.click(); return 'CLICKED';
+})()`);
+check("⑱ 사람이 고르고 누를 수 있다", pressed === "CLICKED", String(pressed));
+for (let i = 0; i < 40; i++) {
+  await wait(400);
+  const done = await ev(`/개를 바꿨습니다/.test(document.querySelector('.mbody').textContent || '')`);
+  if (done) break;
+}
+const after = await ev(`JSON.stringify({
+  H1: window.__drive.nameOf('H1'),
+  P1: window.__drive.nameOf('P1'),
+  renamed: window.__drive.renamed,
+  moved: window.__drive.moved,
+  trashed: window.__drive.trashed
+})`).then((x) => JSON.parse(x));
+
+check("⑱ 눌렀을 때 이름이 바뀐다", after.renamed.length > 0, `${after.renamed.length}개`);
+/* 「원래 이름은 지우지 않습니다」 가 이 창의 약속이다.
+   앞에 날짜와 폴더 이름만 붙는다. 원래 이름이 사라지면 사람이 제 파일을 못 찾는다. */
+const keptStem = (before, now) => {
+  const stem = String(before).replace(/\.[^.]+$/, "");
+  return String(now).indexOf(stem) >= 0;
+};
+check("⑱ 원래 이름을 지우지 않고 앞에만 붙인다",
+  keptStem(beforeNames.H1, after.H1) && keptStem(beforeNames.P1, after.P1),
+  `${after.H1} · ${after.P1}`);
+check("⑱ 날짜로 시작하게 된다",
+  /^\d{4}-\d{2}-\d{2}_/.test(after.H1) && /^\d{4}-\d{2}-\d{2}_/.test(after.P1),
+  `${after.H1} · ${after.P1}`);
+/* 이름만 바꾸는 일이다. 옮기거나 버리면 그건 다른 일이다 */
+check("⑱ 이름만 바꾸지, 옮기거나 버리지 않는다",
+  after.moved.length === 0 && after.trashed.length === 0,
+  `옮김 ${after.moved.length} · 버림 ${after.trashed.length}`);
+
+// 파일 ID 가 그대로여야 기록이 안 끊긴다. 앱은 이름이 아니라 ID 로 붙잡고 있다
+await closeModals();
+await wait(400);
+const stillLinked = await ev(`(() => {
+  const L = JSON.parse(localStorage.getItem('trace.entries.v2') || '[]');
+  return L.filter(e => e.srcId === 'H1' || e.srcId === 'P1').length;
+})()`);
+check("⑱ 이름이 바뀌어도 기록은 그 파일을 그대로 붙잡고 있다", stillLinked >= 1, `이어진 기록 ${stillLinked}편`);
+
+// 한 번 정리한 것은 다시 대상이 되지 않는다 (날짜로 시작하므로)
+const td2 = await openTidy();
+check("⑱ 한 번 정리한 것은 다시 대상이 아니다",
+  !td2.names.some(n => /^\d{4}-\d{2}-\d{2}_/.test(n)), td2.names.join(", ").slice(0, 60) || "대상 없음");
+await closeModals();
+await wait(300);
+
 const realErrors = errors.filter((e) => !/GSI_LOGGER|popup|ERR_INTERNET|ERR_NAME|gsi\/client|404/i.test(String(e)));
 check("옮기고 바꾸고 버리는 내내 오류 없음", realErrors.length === 0, realErrors[0] || "");
 
