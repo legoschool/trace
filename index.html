@@ -167,7 +167,18 @@
              font-family: var(--font-title); letter-spacing: var(--title-spacing);
              font-size: calc(16px * var(--fs)); border-radius: var(--r-btn); padding: 12px; }
   .sidenew:hover { background: var(--brand-dark); }
-  .burgerbtn { display: none; }
+  /* 줄 셋(☰) · 어디서나 «폴더 구조를 열고 닫는» 단추다.
+     PC 에서는 기둥을 접었다 펴고, 폰에서는 서랍을 연다. 한 단추, 한 뜻. */
+  .burgerbtn { display: flex; flex-direction: column; justify-content: center; align-items: center;
+               gap: 4.5px; width: 40px; height: 40px; flex: 0 0 auto; cursor: pointer;
+               background: var(--panel); border: var(--bw) solid var(--line); border-radius: var(--r-btn-sm); }
+  .burgerbtn i { display: block; width: 17px; height: 2.5px; border-radius: 2px; background: var(--ink); }
+  [data-theme="lego"] .burgerbtn { background: rgba(255,255,255,.16); border-color: transparent; }
+  [data-theme="lego"] .burgerbtn i { background: var(--panel); }
+  @media (min-width: 1021px) {
+    .layout.folded { grid-template-columns: minmax(0, 1fr); }
+    .layout.folded #sideNav { display: none; }
+  }
   #drawerScrim { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 59; }
   #drawerScrim.hidden { display: none; }
 
@@ -183,12 +194,6 @@
                transform: translateX(-105%); transition: transform .18s ease; }
     #sideNav.open { transform: none; }
     #sideNav .sidehead .x { display: block; }
-    .burgerbtn { display: flex; flex-direction: column; justify-content: center; align-items: center;
-                 gap: 4.5px; width: 40px; height: 40px; flex: 0 0 auto; cursor: pointer;
-                 background: var(--panel); border: var(--bw) solid var(--line); border-radius: var(--r-btn-sm); }
-    .burgerbtn i { display: block; width: 17px; height: 2.5px; border-radius: 2px; background: var(--ink); }
-    [data-theme="lego"] .burgerbtn { background: rgba(255,255,255,.16); border-color: transparent; }
-    [data-theme="lego"] .burgerbtn i { background: var(--panel); }
   }
 
   /* ---------- 빈 화면 · 브릭 셋과 단추 하나 ---------- */
@@ -1784,8 +1789,17 @@
      ========================================================= */
   function crumbsOf(n) {
     var path = (n.srcPath || []).slice();
-    if (!path.length && n.folderName) path = [n.folderName];
-    return path;
+    if (path.length) return path;
+    if (n.folderName) return [n.folderName];
+    /* 앱이 만든 기록인데 폴더 이름이 아직 안 적혀 있다.
+       «정리 방식이 정한 자리» 를 그대로 보여 준다. 태그·월별 방식은 폴더 이름을
+       기록에 안 적어 두는데, 그러면 나무에도 길찾기 줄에도 그 기록이 안 잡혀서
+       «연수 폴더에 넣었는데 왜 안 보이나» 가 된다 (실제로 그렇게 물어봤다). */
+    var mode = settings.folderMode;
+    if (mode === "tag") return [primaryTagFolder(n)];
+    if (mode === "monthly") return [dateStamp(n.createdAt).slice(0, 7)];
+    if (mode === "perEntry") return [entryFolderName(n)];   // 아직 안 올라간 기록 · 갈 자리로
+    return [];   // flat · materials 의 글은 뿌리에 산다
   }
   /* 드라이브에서 안 보이게 된 기록 · 한 줄만, 그때만.
      이 앱의 권한(drive.file)은 파일 하나하나 허락받는 방식이라, 연결한 폴더 «밖» 으로
@@ -7352,13 +7366,28 @@
     });
     host.appendChild(add);
   }
+  /* ☰ 한 단추가 두 자리에서 같은 뜻으로 돈다.
+     PC · 기둥을 접었다 편다 (접은 것은 기기에 남는다)
+     폰 · 서랍을 연다 (서랍은 남길 것이 없다 · 늘 닫힌 채로 시작) */
+  var sideFolded = localStorage.getItem("trace.sideFolded.v1") === "1";
+  function applySideFolded() {
+    var l = document.querySelector(".layout");
+    if (l) l.classList.toggle("folded", sideFolded);
+  }
   (function wireDrawer() {
     var btn = $("btnDrawer"), scrim = $("drawerScrim");
     if (btn) btn.addEventListener("click", function () {
-      $("sideNav").classList.add("open");
-      scrim.classList.remove("hidden");
+      if (window.matchMedia("(max-width: 1020px)").matches) {
+        $("sideNav").classList.add("open");
+        scrim.classList.remove("hidden");
+      } else {
+        sideFolded = !sideFolded;
+        try { localStorage.setItem("trace.sideFolded.v1", sideFolded ? "1" : "0"); } catch (e) {}
+        applySideFolded();
+      }
     });
     if (scrim) scrim.addEventListener("click", closeDrawer);
+    applySideFolded();
   })();
 
   function render() {

@@ -1178,7 +1178,19 @@ const side = JSON.parse(await evaluate(`(() => {
 check("PC 에서는 왼쪽에 폴더 구조 기둥이 선다", !side.err && side.visible && side.rows >= 1,
   side.err || `줄 ${side.rows}개 · 뿌리 「${side.root}」`);
 check("기둥 맨 아래에 «＋ 새 기록» 이 있다", !!side.add);
-check("PC 에서는 줄 셋(☰)이 없다", side.burger === "none", String(side.burger));
+/* ☰ 는 이제 PC 에도 있다 · 기둥을 접었다 편다. 한 단추, 한 뜻 */
+check("PC 에도 줄 셋(☰)이 있다", side.burger !== "none", String(side.burger));
+const folded = JSON.parse(await evaluate(`(() => {
+  const btn = document.getElementById('btnDrawer');
+  btn.click();
+  const closed = document.querySelector('.layout').classList.contains('folded') &&
+    getComputedStyle(document.getElementById('sideNav')).display === 'none';
+  btn.click();
+  const back = !document.querySelector('.layout').classList.contains('folded');
+  return JSON.stringify({ closed, back });
+})()`));
+check("누르면 기둥이 접힌다", folded.closed);
+check("다시 누르면 펴진다", folded.back);
 /* 빈 화면의 긴 설명도 걷어냈다 · 그 글이 돌아오면 안 된다 */
 const oldEmptyDesc = await evaluate(`/마크다운\\(.md\\)으로, 사진·파일은 정리된 이름/.test(document.body.textContent)`);
 check("빈 화면의 긴 설명이 돌아오지 않았다", !oldEmptyDesc);
