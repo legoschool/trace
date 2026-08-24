@@ -1,4 +1,4 @@
-/* 프리셋 대비 점검 · 일곱 갈래를 밝은/어두운 · 데스크톱/폰 네 자리에서 «재 본다».
+/* 대비 점검 · 레고 한 모양 × 색감 여섯을 밝은/어두운 · 데스크톱/폰에서 «재 본다».
 
    눈으로 스물여덟 장을 보는 대신 수치로 훑는다. 보는 것:
      · 글자 대비 (WCAG 4.5:1) · 본문·제목·배지·날짜·태그·길찾기·단추·칩
@@ -111,7 +111,8 @@ const MEASURE = `(() => {
   };
 })()`;
 
-const THEMES = ["play", "memo", "brick", "note", "base", "paper", "draft"];
+/* 모양은 레고 하나다. 색은 색감이 쥐므로, 모양 쪽은 한 벌만 재면 된다 */
+const THEMES = ["lego"];
 /* 색감 여섯. 색은 이제 «모양» 이 아니라 «색감» 이 쥐고 있다.
    그래서 색 대비는 색감마다 한 번씩만 재면 된다. 모양은 색을 안 건드리므로. */
 const TONES = ["craft", "sunny", "sky", "forest", "ink", "blue"];
@@ -145,7 +146,7 @@ for (const th of THEMES) {
   }
 }
 
-const NAME = { play: "블록놀이", memo: "메모지", brick: "블록", note: "공책", base: "기본", paper: "문서", draft: "설계도" };
+const NAME = { lego: "레고" };
 const LOW = [];
 console.log("프리셋      화면   카드 넘침 폰넘침 | 본문  제목  배지  날짜  태그  길찾기 단추  칩");
 for (const r of rows) {
@@ -177,7 +178,7 @@ for (const tn of TONES) {
     await send("Emulation.clearDeviceMetricsOverride");
     await send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-color-scheme", value: dark ? "dark" : "light" }] });
     await ev(SEED);
-    await ev(`localStorage.setItem('trace.settings.v1', JSON.stringify({version:1, theme:'memo', tone:'${tn}', viewMode:'stream', folderMode:'perEntry'})); true`);
+    await ev(`localStorage.setItem('trace.settings.v1', JSON.stringify({version:1, theme:'lego', tone:'${tn}', viewMode:'stream', folderMode:'perEntry'})); true`);
     await send("Page.reload", { ignoreCache: true });
     await wait(2400);
     await ev(`(() => { const c=document.querySelector('.composer'); if(c) c.style.display='none'; return true; })()`);

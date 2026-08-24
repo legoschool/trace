@@ -91,77 +91,41 @@
   }
 
   /* =========================================================
-     모양 일곱 · **색은 한 톨도 없다.**
-     색은 아래 «색감» 이 맡는다. 그래야 모양을 고쳐도 색이 안 흔들린다.
+     모양은 «레고» 하나 · **색은 한 톨도 없다.**
+     색은 아래 «색감» 이 맡는다. 색감 여섯이 이 한 모양 위에서 갈아입는다.
+     예전에는 일곱이었다 (메모지·블록·공책·블록놀이·문서·설계도·기본).
+     일곱을 고르게 하니 고르는 일 자체가 짐이었다. 이 도구의 정체성은 하나다 ·
+     납작한 색면 · 둥근 모서리 · 돌기 · 둥근 제목 글꼴 · 잘 읽히는 고딕 본문.
      ⚠️ 여기에 색을 적고 싶어지면, 그건 색감에 적어야 하는 것이다.
-        딱 하나 예외 · 테두리를 «잉크색으로» 쓰는 모양은 --line: var(--ink) 로
-        «가리키기만» 한다. 색 자체를 적는 것이 아니다.
      ========================================================= */
-  /* 메모지 · 손으로 그린 듯 삐뚤한 테두리 */
-  [data-theme="memo"] {
-    --shadow: none;
-    --font-title: "Gaegu", var(--font-body); --title-spacing: -.5px;
-    --bw: 2.5px;
-    --line: var(--ink);          /* 굵고 짙은 테두리가 이 모양의 얼굴이다 */
-    --radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
-    --r-btn: 225px 15px 255px 15px / 15px 255px 15px 225px;
-    --r-btn-sm: 225px 15px 255px 15px / 15px 255px 15px 225px;
-    --r-inp: 255px 15px 225px 15px / 15px 225px 15px 255px;
-    --r-block: 15px 225px 15px 255px / 225px 15px 255px 15px;
-    --veil: transparent;         /* 유형 색이 카드에 드러난다 */
-    --accent-w: 0px;
-  }
-  /* 블록 · 쌓아 올리는 조각 */
-  [data-theme="brick"] {
-    --shadow: 2.5px 2.5px 0 var(--hard);
-    --font-title: "Gaegu", var(--font-body); --title-spacing: -.5px;
-    --bw: 2.5px;
-    --line: var(--ink);
-    --radius: 8px; --r-btn: 7px; --r-btn-sm: 6px; --r-inp: 7px; --r-pill: 5px; --r-block: 7px;
-    --veil: transparent;
-    --entry-pt: 26px;
-    --accent-w: 0px;
-    --stud: block;
-  }
-  /* 공책 · 한 권에 이어 적기 */
-  [data-theme="note"] {
-    --shadow: none;
-    --font-title: "Gaegu", var(--font-body); --title-spacing: -.5px;
-    --bw: 1.5px;
-    --radius: 4px; --r-btn: 6px; --r-btn-sm: 5px; --r-inp: 6px; --r-block: 5px;
-    --accent-w: 0px; --accent-l: 5px;   /* 왼쪽에 유형 색줄 */
-  }
-  /* 블록놀이 · 가장 아이답게 */
-  [data-theme="play"] {
-    --shadow: 0 5px 0 var(--hard);
+  [data-theme="lego"] {
+    --shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.07);
     --font-title: "Jua", var(--font-body); --title-spacing: 0px;
-    --bw: 3.5px;
-    --line: var(--ink);
-    --radius: 18px; --r-btn: 14px; --r-btn-sm: 12px; --r-inp: 14px; --r-pill: 999px; --r-block: 14px;
-    --veil: transparent;
-    --entry-pt: 34px;
+    --bw: 1px;                   /* 테두리는 머리카락만큼 · 색면이 말하게 둔다 */
+    --radius: 20px; --r-btn: 12px; --r-btn-sm: 10px; --r-inp: 12px; --r-pill: 999px; --r-block: 14px;
+    --veil: transparent;         /* 기록 카드에 유형 색이 그대로 드러난다 */
+    --entry-pt: 30px;
     --accent-w: 0px;
-    --stud: block; --stud-w: 108px; --stud-h: 18px; --stud-step: 27px;
+    --stud: block; --stud-w: 96px; --stud-h: 14px; --stud-step: 24px;
   }
-  /* 문서 · 인쇄물처럼 */
-  [data-theme="paper"] {
-    --shadow: none;
-    --font-body: "Gowun Batang", "Apple SD Gothic Neo", "Malgun Gothic", serif;
-    --font-title: "Gowun Batang", serif; --title-spacing: -.2px;
-    --bw: 1px;
-    --radius: 2px; --r-btn: 2px; --r-btn-sm: 2px; --r-inp: 2px; --r-pill: 2px; --r-block: 2px;
-    --veil: var(--panel);
-    --accent-w: 0px; --accent-l: 2px;
+  /* 머리띠 · 강조색 판. 색은 색감의 --brand 를 «가리키기만» 한다 */
+  [data-theme="lego"] header.top { background: var(--brand); border-bottom: none; }
+  [data-theme="lego"] .logo { color: var(--panel); }
+  [data-theme="lego"] .logo small { color: var(--panel); opacity: .78; }
+  [data-theme="lego"] header.top .acct { color: var(--panel); opacity: .85; }
+  /* 돌기 셋 · 첨부 시안의 상단 점 · 레고라는 것을 머리띠가 스스로 말한다 */
+  [data-theme="lego"] .logo::before {
+    content: ""; flex: 0 0 auto; width: 10px; height: 10px; border-radius: 50%;
+    background: var(--panel); opacity: .45; margin-right: 32px;
+    box-shadow: 15px 0 0 var(--panel), 30px 0 0 var(--panel);
   }
-  /* 설계도 · 가장 정밀하게 */
-  [data-theme="draft"] {
-    --shadow: none;
-    --font-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
-    --font-title: "IBM Plex Sans KR", sans-serif; --title-spacing: -.2px;
-    --bw: 1px;
-    --radius: 0px; --r-btn: 0px; --r-btn-sm: 0px; --r-inp: 0px; --r-pill: 0px; --r-block: 0px;
-    --veil: var(--panel);
-    --accent-w: 2px; --accent-l: 0px;
+  /* 머리띠 위 단추 · 흰 알약 (시안의 「교사용 지도안」) · 로그인만 진하게 */
+  [data-theme="lego"] header.top .btn.sm { border-color: transparent; }
+  [data-theme="lego"] header.top .btn.primary {
+    background: var(--panel); color: var(--brand); border-color: transparent; font-weight: 700;
+  }
+  @media (max-width: 720px) {
+    [data-theme="lego"] .logo::before { display: none; }   /* 폰에서는 자리가 좁다 */
   }
 
   /* =========================================================
@@ -1347,36 +1311,27 @@
     folderPattern: "{날짜}_{유형}_{제목}",
     materialsFolderName: "자료",
     viewMode: "stream",   // stream(나열) | grid(바둑판) | list(목록)
-    theme: "",           // 모양 프리셋. 빈 값이면 «아직 안 골랐다» · 첫 실행에 물어본다
-    tone: "",            // 색감. 빈 값이면 «모양이 태어날 때의 색»
+    theme: "lego",       // 모양은 레고 하나 · 고르는 것이 아니다
+    tone: "",            // 색감. 빈 값이면 크래프트 (태어날 때의 색)
     mode: "",            // 밝기. "" 기기 따름 · "light" 밝게 · "dark" 어둡게
-    fontSize: "",        // 글자 크기. "" 보통 · "big" 크게 · "huge" 아주 크게
+    /* 처음 오는 사람은 «크게» 로 시작한다. 폰에서도 강당에서도 읽혀야 한다.
+       이미 쓰던 사람의 저장된 값("" 포함)은 그대로 존중한다. */
+    fontSize: "big",     // 글자 크기. "" 보통 · "big" 크게 · "huge" 아주 크게
     maskGrain: 1,        // 모자이크 칸 크기 0 곱게 · 1 보통 · 2 굵게
     alsoGdoc: true,       // 구글 문서로도 저장 (드라이브에서 바로 읽기 좋음)
     alsoHtml: false,      // HTML 파일로도 저장
     useSubfolder: false,  // 구버전 설정 호환용
     subfolderName: "자료"
   };
-  /* 프리셋은 «아이 → 정밀» 한 축 위에 놓는다. 목록 순서가 곧 그 축이다.
-     font 은 구글 글꼴에서 받아 올 이름 · 없으면 기기에 있는 글꼴을 쓴다. */
+  /* 모양은 «레고» 하나다. 고르는 것이 아니라 이 도구의 얼굴이다.
+     예전에는 일곱이었는데, 일곱을 고르게 하니 고르는 일 자체가 짐이었다.
+     ⚠️ 옛 키(play·memo·brick·note·base·paper·draft)가 설정·공유 링크에 남아 있을 수 있다.
+        themeOf() 가 모르는 키를 THEMES[0] 으로 받아 주므로 전부 레고로 선다. 지우지 말 것. */
   var THEMES = [
-    { key: "play",  label: "블록놀이", sub: "가장 아이답게", tone: 1, font: "Jua",
-      desc: "굵은 테두리와 큰 돌기, 원색 브릭. 저학년 아이와 함께 볼 화면이라면 이쪽입니다." },
-    { key: "memo",  label: "메모지",   sub: "손으로 쓴 쪽지", tone: 2, font: "Gaegu:wght@400;700",
-      desc: "기록 한 편이 색색의 메모지 한 장. 테두리가 손으로 그린 듯 삐뚤합니다. 가장 따뜻합니다." },
-    { key: "brick", label: "블록",     sub: "쌓아 올리는 조각", tone: 3, font: "Gaegu:wght@400;700",
-      desc: "기록 한 편이 브릭 한 조각. 위에 돌기가 있습니다. 글·사진·파일을 «블록»이라 부르는 이 앱과 말이 맞습니다." },
-    { key: "note",  label: "공책",     sub: "한 권에 이어 적기", tone: 4, font: "Gaegu:wght@400;700",
-      desc: "줄이 촘촘한 속지. 왼쪽에 유형 색줄이 섭니다. 기록이 많을수록 이 갈래가 편합니다." },
-    { key: "base",  label: "기본",     sub: "지금 그대로", tone: 5, font: "",
-      desc: "차분한 파랑과 흰 종이. 업무용 화면에 익숙한 사람에게 편합니다." },
-    { key: "paper", label: "문서",     sub: "인쇄물처럼", tone: 6, font: "Gowun+Batang",
-      desc: "명조 글꼴에 얇은 선. 긴 글을 오래 읽기에 가장 좋습니다. 연수 자료를 뽑아 쓰는 분께." },
-    { key: "draft", label: "설계도",   sub: "가장 정밀하게", tone: 7, font: "IBM+Plex+Sans+KR:wght@400;500;600",
-      desc: "모서리를 깎지 않고, 선을 머리카락만큼 얇게. 군더더기 없이 빽빽하게 봅니다." }
+    { key: "lego", label: "레고", sub: "단 하나의 모양", tone: 1, font: "Jua",
+      desc: "납작한 색면과 둥근 모서리, 위에 돌기. 제목은 둥근 주아, 본문은 잘 읽히는 고딕입니다." }
   ];
-  /* 색감 여섯 · 모양과 «따로» 도는 축.
-     모양을 고르면 그 모양에 어울리는 색감이 먼저 걸리고, 그 뒤에 마음대로 바꿀 수 있다. */
+  /* 색감 여섯 · 이 한 모양이 갈아입는 옷. 여기만 고른다. */
   var TONES = [
     { key: "craft",  label: "크래프트", sub: "크림 종이에 붉은 흙" },
     { key: "sunny",  label: "볕",       sub: "노란 종이에 빨강" },
@@ -1385,13 +1340,13 @@
     { key: "ink",    label: "먹",       sub: "회백 종이에 먹" },
     { key: "blue",   label: "청사진",   sub: "청회 바탕에 청록" }
   ];
-  /* 모양마다 «태어날 때의 색». 색감을 따로 안 고르면 이 색으로 선다.
-     이 짝이 곧 v6 까지의 프리셋 일곱이라, 쓰던 사람에게는 아무것도 안 바뀐 것처럼 보인다. */
-  var TONE_OF = { play: "sunny", memo: "craft", brick: "craft", note: "craft",
+  /* 태어날 때의 색 · 색감을 따로 안 고르면 크래프트(크림 종이에 붉은 흙)로 선다.
+     첨부 시안의 색이 이것이다. 옛 모양을 쓰던 사람이 넘어올 때는 그 모양이 입던 색을 잇는다. */
+  var TONE_OF = { lego: "craft", play: "sunny", memo: "craft", brick: "craft", note: "craft",
                   base: "sky", paper: "ink", draft: "blue" };
   function toneOf(shapeKey, picked) {
     if (picked && TONES.some(function (t) { return t.key === picked; })) return picked;
-    return TONE_OF[shapeKey] || "sky";
+    return TONE_OF[shapeKey] || "craft";
   }
 
   /* 정리 방식은 «둘» 이다.
@@ -1651,8 +1606,15 @@
     }
     // 관계망(modal)은 «골라 두는 보기» 가 아니라서 저장된 값으로 받아들이지 않는다
     if (VIEW_MODES.some(function (v) { return !v.modal && v.key === s.viewMode; })) out.viewMode = s.viewMode;
-    if (typeof s.theme === "string" && (s.theme === "" || THEMES.some(function (t) { return t.key === s.theme; }))) out.theme = s.theme;
-    if (s.tone === "" || TONES.some(function (t) { return t.key === s.tone; })) out.tone = s.tone;
+    /* 모양은 레고 하나다. 옛 모양(play·paper …)을 쓰던 사람은 그대로 레고로 서되,
+       색감을 따로 안 골랐던 사람에게는 **그 모양이 입던 색**을 물려준다.
+       문서(먹)를 쓰던 사람이 어느 날 크래프트로 바뀌어 있으면 안 된다. */
+    out.theme = "lego";
+    if (typeof s.theme === "string" && s.theme && s.theme !== "lego" &&
+        (s.tone === "" || s.tone === undefined) && TONE_OF[s.theme]) {
+      out.tone = TONE_OF[s.theme];
+    }
+    if (s.tone && TONES.some(function (t) { return t.key === s.tone; })) out.tone = s.tone;
     if (s.mode === "" || s.mode === "light" || s.mode === "dark") out.mode = s.mode;
     if (s.fontSize === "" || s.fontSize === "big" || s.fontSize === "huge") out.fontSize = s.fontSize;
     if (typeof s.maskGrain === "number" && s.maskGrain >= 0 && s.maskGrain <= 2) out.maskGrain = s.maskGrain | 0;
@@ -1694,10 +1656,9 @@
     /* opt 를 주면 그것으로, 안 주면 저장된 설정으로 건다.
        설정 화면에서 «저장하기 전에 미리 보여 줄» 때 opt 를 쓴다. */
     opt = opt || settings;
-    var t = themeOf(key);
+    var t = themeOf(key);          // 모르는 옛 키도 여기서 레고로 선다
     var root = document.documentElement;
-    if (t.key === "base") root.removeAttribute("data-theme");
-    else root.setAttribute("data-theme", t.key);
+    root.setAttribute("data-theme", t.key);
     ensureThemeFont(t.key);
 
     // 색감 · 안 고르면 그 모양이 태어날 때의 색
@@ -1711,10 +1672,10 @@
     if (opt.fontSize === "big" || opt.fontSize === "huge") root.setAttribute("data-size", opt.fontSize);
     else root.removeAttribute("data-size");
 
-    // 폰 주소창 색까지 맞춰 준다. 안 맞추면 앱 위쪽에 딴 색 띠가 남는다.
+    // 폰 주소창 색까지 맞춰 준다. 머리띠가 강조색 판이라 주소창도 그 색이어야 한 몸으로 보인다.
     var meta = document.querySelector('meta[name="theme-color"]');
     if (meta) {
-      meta.content = getComputedStyle(root).getPropertyValue("--panel").trim() || "#ffffff";
+      meta.content = getComputedStyle(root).getPropertyValue("--brand").trim() || "#A8483C";
     }
   }
   /* 유형마다 색 한 자리. 유형은 사용자가 더 만들 수 있어서 여섯 자리를 차례로 돌려 쓴다.
@@ -2007,30 +1968,7 @@
     return box;
   }
 
-  /* 프리셋 미리보기 조각.
-     ⚠️ 여기에 색을 손으로 적지 마세요. 안쪽에 data-theme 을 걸어 «그 프리셋의 토큰» 을 그대로 쓰게 합니다.
-        그래야 프리셋 값을 고쳤을 때 미리보기가 저절로 따라옵니다. */
-  function themeAxis() {
-    var ax = el("div", "themeaxis");
-    ax.appendChild(el("span", null, "아이답게"));
-    ax.appendChild(el("span", "axisline"));
-    ax.appendChild(el("span", null, "정밀하게"));
-    return ax;
-  }
-  function themeSwatch(key) {
-    var box = el("div", "themeswatch");
-    if (key !== "base") box.setAttribute("data-theme", key);
-    var mini = el("div", "minicard");
-    mini.style.cssText += ";--c: var(--t1); --c-soft: var(--t1s);";
-    var row = el("div", "minirow");
-    row.appendChild(el("span", "badge", "경험"));
-    row.appendChild(el("span", "minititle", "수업 회고"));
-    mini.appendChild(row);
-    mini.appendChild(el("div", "miniline"));
-    mini.appendChild(el("div", "miniline short"));
-    box.appendChild(mini);
-    return box;
-  }
+  /* 모양 미리보기 조각들(themeAxis·themeSwatch)은 모양이 하나가 되면서 걷어냈다 */
   function saveSettingsLocal() { localStorage.setItem(LS.settings, JSON.stringify(settings)); }
 
   /* ---- 아직 업로드하지 않은 첨부는 IndexedDB 에 둔다 ----
@@ -3100,7 +3038,8 @@
       t: n.title || "",
       d: n.createdAt || Date.now(),
       g: (n.tags || []).slice(0, 12),
-      th: settings.theme || "base",
+      th: settings.theme || "lego",
+      tn: toneOf(settings.theme || "lego", settings.tone),   // 색감 · 받는 쪽도 같은 옷을 입는다
       b: []
     };
     (n.blocks || []).forEach(function (b) {
@@ -3335,7 +3274,10 @@
     '[data-theme="paper"]{--bg:#F4F2ED;--panel:#fff;--ink:#1F1D1A;--soft:#6B6660;--brand:#3A4A5C;',
     "--line:#DAD5CC;--font-body:'Gowun Batang',serif;--font-title:'Gowun Batang',serif;--radius:2px}",
     '[data-theme="draft"]{--bg:#EDF1F4;--panel:#fff;--ink:#16202B;--soft:#5A6B7C;--brand:#0E6FA8;',
-    "--line:#C6D2DC;--font-body:'IBM Plex Sans KR',sans-serif;--font-title:'IBM Plex Sans KR',sans-serif;--radius:0px}"
+    "--line:#C6D2DC;--font-body:'IBM Plex Sans KR',sans-serif;--font-title:'IBM Plex Sans KR',sans-serif;--radius:0px}",
+    /* 레고 · 지금의 단 하나의 모양. 옛 블록들은 옛 링크·옛 파일을 위해 남겨 둔다 */
+    '[data-theme="lego"]{--bg:#FBF6EE;--panel:#FFFDF8;--ink:#26221E;--soft:#6E6459;--brand:#A8483C;',
+    "--line:#E2D8C6;--font-title:'Jua',var(--font-body);--radius:20px;--bw:1px}"
   ].join("");
 
   function htmlPage(titleEsc, inner, book) {
@@ -3440,6 +3382,7 @@
       sharePubUrl: n.sharePubUrl || null,
       shareWebUrl: n.shareWebUrl || null,
       shareWebAt: n.shareWebAt || null, shareWebTheme: n.shareWebTheme || null,
+      shareWebTone: n.shareWebTone || null,
       shareFolderUrl: n.shareFolderUrl || null
     };
   }
@@ -6661,10 +6604,19 @@
         getUrl: function () { return n.shareWebUrl; },
         setUrl: function (u) { n.shareWebUrl = u; },
         /* 링크를 만든 «때» 와 그때의 «모양» 을 적어 둔다. 이게 있어야 낡았는지 알 수 있다. */
-        stamp: function () { n.shareWebAt = Date.now(); n.shareWebTheme = settings.theme || "base"; },
+        stamp: function () {
+          n.shareWebAt = Date.now();
+          n.shareWebTheme = settings.theme || "lego";
+          n.shareWebTone = toneOf(settings.theme || "lego", settings.tone);
+        },
         stale: function () {
           if (!n.shareWebUrl) return false;
-          if ((n.shareWebTheme || "base") !== (settings.theme || "base")) return true;
+          /* ⚠️ 키를 그대로 견주면 안 된다. 옛 모양 키(paper·memo …)로 만든 링크가
+             모양이 레고 하나가 된 뒤로 전부 «낡음» 이 되어, 멀쩡한 링크마다
+             「다시 만들기」 를 조르게 된다. 키가 아니라 «지금 무엇으로 서는가» 로 견준다. */
+          if (themeOf(n.shareWebTheme || "").key !== themeOf(settings.theme || "").key) return true;
+          // 색감이 실려 나간 링크는 색감이 바뀌어도 낡은 것이다 (색감 없던 옛 링크는 넘긴다)
+          if (n.shareWebTone && n.shareWebTone !== toneOf(settings.theme || "lego", settings.tone)) return true;
           var made = n.shareWebAt || 0;
           var edited = Date.parse(n.updatedAt) || n.updatedAt || 0;
           return edited > made + 1000;   // 링크를 만들며 찍힌 1초 안쪽 차이는 넘긴다
@@ -9357,38 +9309,13 @@
       else paintAdvanced();
     }
 
-    /* 모양 고르기 · 누르면 «그 자리에서» 화면이 바뀐다.
-       설명을 읽고 고르는 게 아니라, 바뀐 걸 보고 고르게 하려는 것이다. */
+    /* 보는 것 고르기 · 누르면 «그 자리에서» 화면이 바뀐다.
+       모양은 레고 하나라 고를 것이 없다. 고르는 것은 색감 · 밝기 · 글자 크기 셋이다. */
     function paintLook() {
-      var f = el("div", "field");
-      ensureAllThemeFonts();   // 일곱 갈래를 한눈에 보여 주려면 글꼴이 먼저 와 있어야 한다
-      f.appendChild(el("label", null, "① 모양"));
-      f.appendChild(el("p", "desc",
-        "왼쪽 위가 아이답고, 오른쪽 아래가 정밀합니다."));
-      f.appendChild(themeAxis());
-      var grid = el("div", "themegrid");
-      THEMES.forEach(function (t) {
-        var card = el("button", "themecard" + (draft.theme === t.key ? " on" : ""));
-        card.type = "button";
-        card.appendChild(themeSwatch(t.key));
-        var name = el("div", "themename");
-        name.appendChild(el("strong", null, t.label));
-        name.appendChild(el("span", null, t.sub));
-        card.appendChild(name);
-        card.appendChild(el("p", "desc", t.desc));
-        card.addEventListener("click", function () {
-          draft.theme = t.key;
-          applyTheme(t.key, draft);      // 미리 보여 준다
-          paint();
-        });
-        grid.appendChild(card);
-      });
-      f.appendChild(grid);
-      body.appendChild(f);
+      ensureThemeFont("lego");
 
-      /* ---- ② 밝기 · ③ 글자 크기 ----
-         모양과 «따로» 도는 축이다. 모양을 바꿔도 이 둘은 그대로 남고,
-         이 둘을 바꿔도 모양은 안 흔들린다. 그래야 고른 것이 어긋나지 않는다. */
+      /* ---- 밝기 · 글자 크기 ----
+         서로 «따로» 도는 축이다. 하나를 바꿔도 나머지는 안 흔들린다. */
       function axis(title, desc, field, opts) {
         var g = el("div", "field");
         g.appendChild(el("label", null, title));
@@ -9411,10 +9338,9 @@
         body.appendChild(g);
       }
 
-      /* ② 색감 · 모양과 따로 도는 축.
-         전에는 색이 모양에 붙어 있어서 「공책 모양에 청사진 색」 을 할 수 없었다. */
+      /* 색감 여섯 · 이 도구가 갈아입는 옷 */
       var gT = el("div", "field");
-      gT.appendChild(el("label", null, "② 색감"));
+      gT.appendChild(el("label", null, "① 색감"));
       gT.appendChild(el("p", "desc", ""));
       var tRow = el("div", "tonerow");
       var pickedTone = toneOf(draft.theme || "base", draft.tone);
@@ -9439,7 +9365,7 @@
         tRow.appendChild(b);
       });
       gT.appendChild(tRow);
-      var reset = el("button", "btn sm", "↩ 모양이 태어날 때의 색으로");
+      var reset = el("button", "btn sm", "↩ 처음 색으로");
       reset.style.marginTop = "8px";
       reset.addEventListener("click", function () {
         draft.tone = "";
@@ -9449,12 +9375,12 @@
       gT.appendChild(reset);
       body.appendChild(gT);
 
-      axis("③ 밝기", "", "mode", [
+      axis("② 밝기", "", "mode", [
         ["", "🖥️", "기기 따름", "기기가 어두우면 어둡게"],
         ["light", "☀️", "밝게", "언제나 밝은 종이"],
         ["dark", "🌙", "어둡게", "밤·강당·눈이 부실 때"]
       ]);
-      axis("④ 글자 크기", "", "fontSize", [
+      axis("③ 글자 크기", "", "fontSize", [
         ["", "가", "보통", "기본 15px"],
         ["big", "가", "크게", "약 17px"],
         ["huge", "가", "아주 크게", "약 19px"]
@@ -10036,93 +9962,9 @@
   render();
   updateChrome();
 
-  /* ---- 처음 온 사람에게 모양부터 묻는다 ----
-     settings.theme 이 «빈 값» 이면 아직 고른 적이 없다는 뜻이다.
-     ⚠️ "base" 와 "" 를 같게 두면 안 된다. 「기본을 고른 사람」에게 매번 또 묻게 된다. */
-  function openThemePicker(onDone) {
-    closeModal();
-    var picked = settings.theme || "base";
-    var bg = el("div", "modal-bg");
-    var m = el("div", "card modal"); m.style.maxWidth = "820px";
-    var head = el("div", "mhead");
-    head.appendChild(el("h3", null, "📝 어떤 모양으로 쓸까요?"));
-    m.appendChild(head);
-    var body = el("div", "mbody");
-    body.appendChild(el("p", "desc",
-      "나중에 설정에서 바꿀 수 있습니다."));
-    body.appendChild(themeAxis());
-    var grid = el("div", "themegrid");
-    function draw() {
-      grid.innerHTML = "";
-      THEMES.forEach(function (t) {
-        var card = el("button", "themecard" + (picked === t.key ? " on" : ""));
-        card.type = "button";
-        card.appendChild(themeSwatch(t.key));
-        var name = el("div", "themename");
-        name.appendChild(el("strong", null, t.label));
-        name.appendChild(el("span", null, t.sub));
-        card.appendChild(name);
-        card.appendChild(el("p", "desc", t.desc));
-        card.addEventListener("click", function () { picked = t.key; applyTheme(picked); draw(); });
-        grid.appendChild(card);
-      });
-    }
-    ensureAllThemeFonts();
-    draw();
-    body.appendChild(grid);
-    m.appendChild(body);
-    var foot = el("div", "mfoot");
-    foot.appendChild(el("span", "spacer"));
-    var go = el("button", "btn primary", "이걸로 시작하기");
-    go.addEventListener("click", function () {
-      settings.theme = picked;
-      saveSettingsLocal();
-      applyTheme(picked);
-      render(); renderTypeChips();
-      closeModal();
-      if (connected) saveSettingsRemote();
-      if (onDone) onDone();
-    });
-    foot.appendChild(go);
-    m.appendChild(foot);
-    bg.appendChild(m);
-    $("modalHost").appendChild(bg);
-    modalEl = bg;   // ⚠️ 이걸 빠뜨리면 closeModal() 이 지울 것을 못 찾아 창이 안 닫힌다
-    // 바깥을 눌러 넘기면 «기본» 으로 정해 준다. 물음이 매번 다시 뜨면 성가시다.
-    modalCleanup = function () {
-      if (!settings.theme) { settings.theme = "base"; saveSettingsLocal(); applyTheme("base"); }
-    };
-    bg.addEventListener("click", function (e) { if (e.target === bg) closeModal(); });
-  }
-  /* 처음 온 사람에게만 «묻고», 이미 쓰던 사람에게는 «알린다».
-     쌓아 둔 기록이 있는 사람 앞에 창을 띄워 막아서면 남의 일을 가로채는 것이다.
-     ⚠️ 다른 창이 열려 있으면 띄우지 않는다. 하던 일을 덮어 버린다. */
-  if (!settings.theme) {
-    setTimeout(function () {
-      if (modalEl || document.querySelector(".modal-bg")) return;
-      if (!entries.length) openThemePicker();
-      else showThemeNotice();
-    }, 400);
-  }
-  function showThemeNotice() {
-    var bar = $("draftBar");
-    if (!bar || !bar.classList.contains("hidden")) return;   // 쓰다 만 글 알림이 먼저다
-    bar.className = "banner draft";
-    bar.innerHTML = "";
-    var gr = el("div", "grow");
-    gr.appendChild(el("b", null, "화면 «모양» 을 고를 수 있게 되었습니다."));
-    gr.appendChild(el("span", null, " 메모지 · 블록 · 공책 · 기록은 그대로입니다."));
-    bar.appendChild(gr);
-    var go = el("button", "btn sm primary", "골라 보기");
-    go.addEventListener("click", function () { bar.className = "banner draft hidden"; openSettings("look"); });
-    var no = el("button", "btn sm ghost", "나중에");
-    no.addEventListener("click", function () {
-      settings.theme = "base"; saveSettingsLocal();
-      if (connected) saveSettingsRemote();
-      bar.className = "banner draft hidden";
-    });
-    bar.appendChild(go); bar.appendChild(no);
-  }
+  /* 처음 온 사람에게 모양을 묻던 창은 걷어냈다. 모양은 레고 하나라 물을 것이 없다.
+     색감·밝기·글자는 설정 → 모양에 있다. */
+
   rehydratePending();   // 지난번에 못 올린 사진·파일 되살리기
   restoreDraft();   // 쓰다 만 내용 되살리기
   intakeShared();   // 밖에서 «공유»·«웹 캡처» 로 보낸 것 받기 (쓰던 글 뒤에 이어 붙는다)

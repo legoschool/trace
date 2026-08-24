@@ -77,7 +77,7 @@ await wait(2400);
    ⚠️ 모양을 바꾸면 여기와 view.html 셋을 함께 고쳐야 한다. */
 const PACKET = {
   v: 1, t: "bookie 8.21. 협의회", d: Date.parse("2026-08-21"),
-  g: ["부기", "협의회"], th: "brick",
+  g: ["부기", "협의회"], th: "lego", tn: "forest",   // 색감까지 실려 가는지 본다
   b: [
     { k: "text", x: "오늘 협의회에서 나온 이야기를 그대로 옮겨 둔다." },
     { k: "heading", x: "사진" },
@@ -115,6 +115,7 @@ await wait(2600);
 const got = JSON.parse(await ev(`JSON.stringify({
   h1: (document.querySelector('h1')||{}).textContent || '',
   theme: document.documentElement.getAttribute('data-theme'),
+  tone: document.documentElement.getAttribute('data-tone'),
   video: document.querySelectorAll('iframe.player.video').length,
   audio: document.querySelectorAll('iframe.player.audio').length,
   ownAudio: document.querySelectorAll('audio.audioplayer').length,
@@ -133,7 +134,8 @@ const got = JSON.parse(await ev(`JSON.stringify({
 })`));
 
 check("보낸 글이 그대로 펴진다", got.h1 === "bookie 8.21. 협의회", got.h1);
-check("보낸 사람이 고른 «모양» 까지 따라간다", got.theme === "brick", String(got.theme));
+check("받는 쪽도 레고 모양으로 선다", got.theme === "lego", String(got.theme));
+check("보낸 사람이 고른 «색감» 까지 따라간다", got.tone === "forest", String(got.tone));
 check("제목·태그가 살아 있다", got.tags.join(",") === "#부기,#협의회" && got.heads.length === 3,
   `${got.tags.join(" ")} · 소제목 ${got.heads.length}개`);
 check("인용·구분선이 살아 있다", got.quotes === 1 && got.hrs === 1);

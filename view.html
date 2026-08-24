@@ -39,6 +39,13 @@
     --font-body: "Gowun Batang", serif; --font-title: "Gowun Batang", serif;
     --radius: 2px; --shadow: none;
   }
+  /* 레고 · 지금의 단 하나의 모양. 옛 블록들은 옛 링크를 위해 남겨 둔다 */
+  [data-theme="lego"] {
+    --bg: #FBF6EE; --panel: #FFFDF8; --ink: #26221E; --ink-soft: #6E6459;
+    --brand: #A8483C; --line: #E2D8C6; --line-soft: #EFE7DA;
+    --font-title: "Jua", var(--font-body); --radius: 20px; --bw: 1px;
+    --shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.07);
+  }
   [data-theme="draft"] {
     --bg: #EDF1F4; --panel: #fff; --ink: #16202B; --ink-soft: #5A6B7C;
     --brand: #0E6FA8; --line: #C6D2DC; --line-soft: #E6ECF1;
@@ -50,11 +57,208 @@
             --brand: #7d9dff; --line: #2b3242; --line-soft: #232936;
             --shadow: 0 1px 3px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.25); }
     [data-theme="memo"], [data-theme="brick"], [data-theme="note"], [data-theme="play"],
-    [data-theme="paper"], [data-theme="draft"] {
+    [data-theme="paper"], [data-theme="draft"], [data-theme="lego"] {
       --bg: #1C1917; --panel: #24201C; --ink: #F0E9DD; --ink-soft: #A79B8B;
       --brand: #E08A7C; --line: #4A423A; --line-soft: #332D27;
     }
   }
+  /* =========================================================
+     색감 여섯 · index.html 의 색감 블록을 그대로 옮겨 왔다.
+     보낸 사람이 고른 색감(tn)이 주소에 실려 오면 받는 쪽도 같은 옷을 입는다.
+     ⚠️ 손으로 고치지 말 것 · index.html 쪽과 같은 팔레트여야 한다.
+        고칠 일이 있으면 색감만들기.mjs 로 찍어 양쪽에 같이 심는다.
+     ========================================================= */
+  /* 크래프트 · 크림 종이에 붉은 흙 */
+  [data-tone="craft"] {
+    --bg: #FBF6EE; --panel: #FFFDF8; --ink: #26221E; --ink-soft: #685F54;
+    --brand: #A8483C; --brand-dark: #7F352C; --brand-soft: #F6E2DC;
+    --line: #DCD1BE; --line-soft: #E2D8C6; --hard: #26221E;
+    --warn-bg: #FBF3E0; --warn-line: #E8D9B4; --warn-ink: #6B5320;
+    --ok-bg: #EDF3E8; --ok-line: #CFDDC2; --ok-ink: #3F5A33; --pin-bg: #F7EBD2;
+    --t1: #4F6B3E; --t1s: #DFEAC8; --t2: #3A5D85; --t2s: #D6E6F2;
+    --t3: #7A5A12; --t3s: #FBE8BE; --t4: #8F5626; --t4s: #F7DFC4;
+    --t5: #8E4A60; --t5s: #F8DCE2; --t6: #4C4370; --t6s: #E5DDF0;
+  }
+  /* 볕 · 노란 종이에 빨강 */
+  [data-tone="sunny"] {
+    --bg: #FFF8E4; --panel: #FFFFFF; --ink: #2B2118; --ink-soft: #6C5D4B;
+    --brand: #D8402F; --brand-dark: #B22F21; --brand-soft: #FFE0DB;
+    --line: #E7D8B4; --line-soft: #F0E2C4; --hard: #2B2118;
+    --warn-bg: #FFF3D4; --warn-line: #EFDCA6; --warn-ink: #6B5117;
+    --ok-bg: #E9F6E4; --ok-line: #C6E2BC; --ok-ink: #33612F; --pin-bg: #FFEFC2;
+    --t1: #2B6F2F; --t1s: #CDEBC6; --t2: #1F63B8; --t2s: #CFE3F8;
+    --t3: #8C6300; --t3s: #FFEDB8; --t4: #A34615; --t4s: #FFDDC2;
+    --t5: #A83567; --t5s: #FFD6E6; --t6: #6B44B0; --t6s: #E4D8F8;
+  }
+  /* 하늘 · 흰 종이에 파랑 */
+  [data-tone="sky"] {
+    --bg: #F5F7FB; --panel: #FFFFFF; --ink: #1B2130; --ink-soft: #5A6478;
+    --brand: #2F5FD6; --brand-dark: #24499F; --brand-soft: #EAF0FF;
+    --line: #E3E8F2; --line-soft: #EEF1F7; --hard: #1B2130;
+    --warn-bg: #FFF8E6; --warn-line: #F0DCA8; --warn-ink: #6B4E00;
+    --ok-bg: #EAF7F0; --ok-line: #B9E3CD; --ok-ink: #0F5C39; --pin-bg: #FFF4D6;
+    --t1: #2F6D4A; --t1s: #E3F1E8; --t2: #2F5FD6; --t2s: #EAF0FF;
+    --t3: #7A5A12; --t3s: #F7EEDA; --t4: #9A4E24; --t4s: #FBE9DE;
+    --t5: #94406A; --t5s: #FBE4EE; --t6: #4F45A8; --t6s: #EAE7FA;
+  }
+  /* 먹 · 회백 종이에 먹 */
+  [data-tone="ink"] {
+    --bg: #F4F2ED; --panel: #FFFFFF; --ink: #1F1D1A; --ink-soft: #65605A;
+    --brand: #3A4A5C; --brand-dark: #2A3745; --brand-soft: #E7EBF0;
+    --line: #DAD5CC; --line-soft: #EDEAE3; --hard: #1F1D1A;
+    --warn-bg: #F6F1E4; --warn-line: #E0D6BE; --warn-ink: #6B5A32;
+    --ok-bg: #EBF0EB; --ok-line: #CBD8CB; --ok-ink: #3E5540; --pin-bg: #F2ECDC;
+    --t1: #3F5C3F; --t1s: #E6EDE5; --t2: #37506A; --t2s: #E4EBF1;
+    --t3: #6B5828; --t3s: #F0EADC; --t4: #6B4633; --t4s: #EFE5DE;
+    --t5: #5E3B4A; --t5s: #EDE3E7; --t6: #454063; --t6s: #E7E5EF;
+  }
+  /* 청사진 · 청회 바탕에 청록 */
+  [data-tone="blue"] {
+    --bg: #EDF1F4; --panel: #FFFFFF; --ink: #16202B; --ink-soft: #54636F;
+    --brand: #0E6FA8; --brand-dark: #0A5580; --brand-soft: #DCEDF8;
+    --line: #C6D2DC; --line-soft: #E6ECF1; --hard: #16202B;
+    --warn-bg: #EEF3F7; --warn-line: #C6D2DC; --warn-ink: #3E5468;
+    --ok-bg: #E9F2EC; --ok-line: #C2D8CA; --ok-ink: #2E5741; --pin-bg: #E4EDF4;
+    --t1: #2B764A; --t1s: #E2F0E8; --t2: #1B6FA8; --t2s: #DEEDF7;
+    --t3: #816613; --t3s: #F4EEDC; --t4: #9C5328; --t4s: #F7E9DE;
+    --t5: #9C3F63; --t5s: #F6E3EA; --t6: #55499B; --t6s: #E7E5F4;
+  }
+  /* 숲 · 연둣 종이에 짙은 초록 */
+  [data-tone="forest"] {
+    --bg: #F2F5EC; --panel: #FFFFFF; --ink: #1D241B; --ink-soft: #5A6455;
+    --brand: #2F6B3C; --brand-dark: #22522D; --brand-soft: #E2EFE2;
+    --line: #D6DECC; --line-soft: #E8EEE0; --hard: #1D241B;
+    --warn-bg: #F7F2E0; --warn-line: #DFD6B4; --warn-ink: #63541F;
+    --ok-bg: #E7F2E7; --ok-line: #C4DCC4; --ok-ink: #2E5537; --pin-bg: #EFF1D6;
+    --t1: #2F6B3C; --t1s: #E0EFDF; --t2: #2F5F86; --t2s: #E2EDF5;
+    --t3: #75620F; --t3s: #F5EFD8; --t4: #8A4E22; --t4s: #F6E7DA;
+    --t5: #8A3D5E; --t5s: #F6E1EA; --t6: #4A4478; --t6s: #E8E5F3;
+  }
+  @media (prefers-color-scheme: dark) {
+    [data-tone="craft"]:not([data-mode="light"]) {
+      --bg: #1C1917; --panel: #24201C; --ink: #F0E9DD; --ink-soft: #AEA394;
+      --brand: #E08A7C; --brand-dark: #C4705F; --brand-soft: #3A2B26;
+      --line: #4A423A; --line-soft: #332D27; --hard: #0F0D0B;
+      --warn-bg: #332911; --warn-line: #5A4715; --warn-ink: #F0D78F;
+      --ok-bg: #12301C; --ok-line: #1E5C3C; --ok-ink: #9AE0BB; --pin-bg: #3A2F12;
+      --t1: #C5DBA6; --t1s: #313B26; --t2: #A9C9E4; --t2s: #24313D;
+      --t3: #E8CE8C; --t3s: #3B3320; --t4: #E2B589; --t4s: #3B2C1E;
+      --t5: #E3AFC0; --t5s: #3A252C; --t6: #C2B6E0; --t6s: #2C2740;
+    }
+    [data-tone="sunny"]:not([data-mode="light"]) {
+      --bg: #1C1917; --panel: #24201C; --ink: #F0E9DD; --ink-soft: #AEA394;
+      --brand: #F07A6C; --brand-dark: #D4604F; --brand-soft: #3E2823;
+      --line: #4A423A; --line-soft: #332D27; --hard: #0F0D0B;
+      --warn-bg: #332911; --warn-line: #5A4715; --warn-ink: #F0D78F;
+      --ok-bg: #12301C; --ok-line: #1E5C3C; --ok-ink: #9AE0BB; --pin-bg: #3A2F12;
+      --t1: #9FD69B; --t1s: #24331F; --t2: #96C2F0; --t2s: #1E2C3D;
+      --t3: #F0D48C; --t3s: #3A3018; --t4: #F0B48C; --t4s: #3B2A1B;
+      --t5: #F0A8C4; --t5s: #3A2029; --t6: #C4AEEF; --t6s: #2B2440;
+    }
+    [data-tone="sky"]:not([data-mode="light"]) {
+      --bg: #12161F; --panel: #1B202B; --ink: #E8ECF4; --ink-soft: #98A2B3;
+      --brand: #7D9DFF; --brand-dark: #5F83F0; --brand-soft: #232C44;
+      --line: #2B3242; --line-soft: #232936; --hard: #05070B;
+      --warn-bg: #332911; --warn-line: #5A4715; --warn-ink: #F0D78F;
+      --ok-bg: #10321F; --ok-line: #1E5C3C; --ok-ink: #97E0BB; --pin-bg: #3A2F12;
+      --t1: #86D0A6; --t1s: #17301F; --t2: #7D9DFF; --t2s: #232C44;
+      --t3: #DFC582; --t3s: #332C18; --t4: #EFA277; --t4s: #33241A;
+      --t5: #EC93B8; --t5s: #331F29; --t6: #A99BF0; --t6s: #26224A;
+    }
+    [data-tone="ink"]:not([data-mode="light"]) {
+      --bg: #17181A; --panel: #202225; --ink: #E8E6E1; --ink-soft: #9C978F;
+      --brand: #A8BBD0; --brand-dark: #8FA3BA; --brand-soft: #262B33;
+      --line: #37393D; --line-soft: #2A2C2F; --hard: #08090A;
+      --warn-bg: #2B2718; --warn-line: #4C4423; --warn-ink: #E0CE96;
+      --ok-bg: #1B2A20; --ok-line: #33513E; --ok-ink: #A8CDB4; --pin-bg: #2E2A1E;
+      --t1: #A9C4A9; --t1s: #232A23; --t2: #A5BACD; --t2s: #212830;
+      --t3: #CDBB8C; --t3s: #2C2921; --t4: #CDAE96; --t4s: #2C2622;
+      --t5: #C4A2AF; --t5s: #2B2427; --t6: #ADA8C6; --t6s: #26242E;
+    }
+    [data-tone="blue"]:not([data-mode="light"]) {
+      --bg: #10161C; --panel: #182028; --ink: #DCE6EF; --ink-soft: #8FA2B3;
+      --brand: #5FB3E0; --brand-dark: #4593BC; --brand-soft: #1B2B37;
+      --line: #2C3945; --line-soft: #1E2833; --hard: #05080B;
+      --warn-bg: #22303B; --warn-line: #3C5062; --warn-ink: #B9CFE0;
+      --ok-bg: #162C22; --ok-line: #2C513E; --ok-ink: #9CCBB0; --pin-bg: #1D2A34;
+      --t1: #7CC49B; --t1s: #1A2B22; --t2: #6FB4DE; --t2s: #172833;
+      --t3: #D2BB78; --t3s: #2B2718; --t4: #DFA277; --t4s: #2F241B;
+      --t5: #D28FAA; --t5s: #2D1F26; --t6: #A79BDC; --t6s: #232040;
+    }
+    [data-tone="forest"]:not([data-mode="light"]) {
+      --bg: #141812; --panel: #1C211A; --ink: #E6EDE2; --ink-soft: #9AA495;
+      --brand: #8FCB96; --brand-dark: #6EAE77; --brand-soft: #22301F;
+      --line: #3A422F; --line-soft: #272D22; --hard: #080A07;
+      --warn-bg: #2C2913; --warn-line: #4C4523; --warn-ink: #DECB92;
+      --ok-bg: #172B1C; --ok-line: #2E5238; --ok-ink: #A3CCA9; --pin-bg: #2C2E16;
+      --t1: #9FD6A6; --t1s: #1F2E20; --t2: #93BEDE; --t2s: #1C2833;
+      --t3: #DCC585; --t3s: #2D2818; --t4: #DFA57C; --t4s: #2F241B;
+      --t5: #DA94B2; --t5s: #2D1F27; --t6: #A79CDA; --t6s: #242140;
+    }
+  }
+  /* ↑ 와 같은 색. 사람이 「어둡게」 를 고른 경우 (기기 설정과 무관하게) */
+  [data-tone="craft"][data-mode="dark"] {
+    --bg: #1C1917; --panel: #24201C; --ink: #F0E9DD; --ink-soft: #AEA394;
+    --brand: #E08A7C; --brand-dark: #C4705F; --brand-soft: #3A2B26;
+    --line: #4A423A; --line-soft: #332D27; --hard: #0F0D0B;
+    --warn-bg: #332911; --warn-line: #5A4715; --warn-ink: #F0D78F;
+    --ok-bg: #12301C; --ok-line: #1E5C3C; --ok-ink: #9AE0BB; --pin-bg: #3A2F12;
+    --t1: #C5DBA6; --t1s: #313B26; --t2: #A9C9E4; --t2s: #24313D;
+    --t3: #E8CE8C; --t3s: #3B3320; --t4: #E2B589; --t4s: #3B2C1E;
+    --t5: #E3AFC0; --t5s: #3A252C; --t6: #C2B6E0; --t6s: #2C2740;
+  }
+  [data-tone="sunny"][data-mode="dark"] {
+    --bg: #1C1917; --panel: #24201C; --ink: #F0E9DD; --ink-soft: #AEA394;
+    --brand: #F07A6C; --brand-dark: #D4604F; --brand-soft: #3E2823;
+    --line: #4A423A; --line-soft: #332D27; --hard: #0F0D0B;
+    --warn-bg: #332911; --warn-line: #5A4715; --warn-ink: #F0D78F;
+    --ok-bg: #12301C; --ok-line: #1E5C3C; --ok-ink: #9AE0BB; --pin-bg: #3A2F12;
+    --t1: #9FD69B; --t1s: #24331F; --t2: #96C2F0; --t2s: #1E2C3D;
+    --t3: #F0D48C; --t3s: #3A3018; --t4: #F0B48C; --t4s: #3B2A1B;
+    --t5: #F0A8C4; --t5s: #3A2029; --t6: #C4AEEF; --t6s: #2B2440;
+  }
+  [data-tone="sky"][data-mode="dark"] {
+    --bg: #12161F; --panel: #1B202B; --ink: #E8ECF4; --ink-soft: #98A2B3;
+    --brand: #7D9DFF; --brand-dark: #5F83F0; --brand-soft: #232C44;
+    --line: #2B3242; --line-soft: #232936; --hard: #05070B;
+    --warn-bg: #332911; --warn-line: #5A4715; --warn-ink: #F0D78F;
+    --ok-bg: #10321F; --ok-line: #1E5C3C; --ok-ink: #97E0BB; --pin-bg: #3A2F12;
+    --t1: #86D0A6; --t1s: #17301F; --t2: #7D9DFF; --t2s: #232C44;
+    --t3: #DFC582; --t3s: #332C18; --t4: #EFA277; --t4s: #33241A;
+    --t5: #EC93B8; --t5s: #331F29; --t6: #A99BF0; --t6s: #26224A;
+  }
+  [data-tone="ink"][data-mode="dark"] {
+    --bg: #17181A; --panel: #202225; --ink: #E8E6E1; --ink-soft: #9C978F;
+    --brand: #A8BBD0; --brand-dark: #8FA3BA; --brand-soft: #262B33;
+    --line: #37393D; --line-soft: #2A2C2F; --hard: #08090A;
+    --warn-bg: #2B2718; --warn-line: #4C4423; --warn-ink: #E0CE96;
+    --ok-bg: #1B2A20; --ok-line: #33513E; --ok-ink: #A8CDB4; --pin-bg: #2E2A1E;
+    --t1: #A9C4A9; --t1s: #232A23; --t2: #A5BACD; --t2s: #212830;
+    --t3: #CDBB8C; --t3s: #2C2921; --t4: #CDAE96; --t4s: #2C2622;
+    --t5: #C4A2AF; --t5s: #2B2427; --t6: #ADA8C6; --t6s: #26242E;
+  }
+  [data-tone="blue"][data-mode="dark"] {
+    --bg: #10161C; --panel: #182028; --ink: #DCE6EF; --ink-soft: #8FA2B3;
+    --brand: #5FB3E0; --brand-dark: #4593BC; --brand-soft: #1B2B37;
+    --line: #2C3945; --line-soft: #1E2833; --hard: #05080B;
+    --warn-bg: #22303B; --warn-line: #3C5062; --warn-ink: #B9CFE0;
+    --ok-bg: #162C22; --ok-line: #2C513E; --ok-ink: #9CCBB0; --pin-bg: #1D2A34;
+    --t1: #7CC49B; --t1s: #1A2B22; --t2: #6FB4DE; --t2s: #172833;
+    --t3: #D2BB78; --t3s: #2B2718; --t4: #DFA277; --t4s: #2F241B;
+    --t5: #D28FAA; --t5s: #2D1F26; --t6: #A79BDC; --t6s: #232040;
+  }
+  [data-tone="forest"][data-mode="dark"] {
+    --bg: #141812; --panel: #1C211A; --ink: #E6EDE2; --ink-soft: #9AA495;
+    --brand: #8FCB96; --brand-dark: #6EAE77; --brand-soft: #22301F;
+    --line: #3A422F; --line-soft: #272D22; --hard: #080A07;
+    --warn-bg: #2C2913; --warn-line: #4C4523; --warn-ink: #DECB92;
+    --ok-bg: #172B1C; --ok-line: #2E5238; --ok-ink: #A3CCA9; --pin-bg: #2C2E16;
+    --t1: #9FD6A6; --t1s: #1F2E20; --t2: #93BEDE; --t2s: #1C2833;
+    --t3: #DCC585; --t3s: #2D2818; --t4: #DFA57C; --t4s: #2F241B;
+    --t5: #DA94B2; --t5s: #2D1F27; --t6: #A79CDA; --t6s: #242140;
+  }
+
+
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; }
   body { background: var(--bg); color: var(--ink); font-family: var(--font-body);
@@ -122,8 +326,12 @@
     return out;
   }
   function decodePacket(raw) {
-    var mark = raw.charAt(0), body = raw.slice(1);
-    var bytes = b64urlToBytes(body);
+    /* ⚠️ atob 은 «약속» 이 아니라 그 자리에서 터진다. 잘린 주소의 글자 수가
+       4로 나눠 안 떨어지면 여기서 동기로 던져져, 아래 catch 를 지나쳐 버린다.
+       그러면 「펴지 못했습니다」 대신 조용한 빈 쪽이 된다. 잡아서 거절로 바꾼다. */
+    var mark = raw.charAt(0), body = raw.slice(1), bytes;
+    try { bytes = b64urlToBytes(body); }
+    catch (e) { return Promise.reject(new Error("주소가 중간에 잘린 것 같습니다.")); }
     if (mark !== "1") return Promise.resolve(new TextDecoder().decode(bytes));
     if (typeof DecompressionStream === "undefined") {
       return Promise.reject(new Error("이 브라우저는 압축을 못 풉니다. 크롬·엣지·사파리 최신판에서 열어 주세요."));
@@ -167,7 +375,7 @@
     if (b < 1048576) return Math.round(b / 1024) + "KB";
     return (b / 1048576).toFixed(1) + "MB";
   }
-  var FONT_OF = { memo: "Gaegu:wght@400;700", brick: "Gaegu:wght@400;700", note: "Gaegu:wght@400;700",
+  var FONT_OF = { lego: "Jua", memo: "Gaegu:wght@400;700", brick: "Gaegu:wght@400;700", note: "Gaegu:wght@400;700",
                   play: "Jua", paper: "Gowun+Batang", draft: "IBM+Plex+Sans+KR:wght@400;500;600" };
   function loadFont(theme) {
     var fam = FONT_OF[theme];
@@ -284,6 +492,7 @@
 
   function render(p) {
     if (p.th) { document.documentElement.setAttribute("data-theme", p.th); loadFont(p.th); }
+    if (p.tn) document.documentElement.setAttribute("data-tone", p.tn);
     document.title = (p.t || "기록") + " · 구글 기록장";
 
     var w = document.getElementById("wrap");

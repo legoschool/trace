@@ -688,12 +688,13 @@ const faked = await ev(`(() => {
   if (!n) return 'NO_ENTRY';
   n.shareWebUrl = location.origin + '/view.html#d=FAKE';
   n.shareWebAt = Date.now();
-  n.shareWebTheme = 'base';
+  n.shareWebTheme = 'lego';
+  n.shareWebTone = 'craft';   // 만들 때의 색감 · 이걸 바꾸면 낡음이 된다
   localStorage.setItem('trace.entries.v2', JSON.stringify(L));
   sessionStorage.setItem('keep', '1');   // 아래 새로고침에서 씨앗이 안 날아가게
   // ⚠️ 앞 점검이 보기 방식을 «목록» 으로 바꿔 놓았다. 목록에는 .card.entry 가 없다.
   const st = JSON.parse(localStorage.getItem('trace.settings.v1') || '{}');
-  st.viewMode = 'stream'; st.theme = 'base';
+  st.viewMode = 'stream';   // 모양은 이제 레고 하나라 따로 세울 것이 없다
   localStorage.setItem('trace.settings.v1', JSON.stringify(st));
   return n.title;
 })()`);
@@ -733,12 +734,12 @@ const fr = /^NO_/.test(fresh) ? null : JSON.parse(fresh);
 check("갓 만든 링크에는 «낡음» 경고가 없다",
   opened1 === "OK" && !!fr && !fr.warn && !fr.again, fresh);
 
-// ② 모양(프리셋)을 바꾸면 낡은 것이 되어야 한다
+// ② 색감을 바꾸면 낡은 것이 되어야 한다 · 링크에는 만든 그 순간의 색이 실려 있다
 await ev(`(() => { document.querySelectorAll('.modal-bg').forEach(b => b.remove()); return true; })()`);
 await wait(300);
 await ev(`(() => {
   const s = JSON.parse(localStorage.getItem('trace.settings.v1') || '{}');
-  s.theme = 'brick'; localStorage.setItem('trace.settings.v1', JSON.stringify(s));
+  s.tone = 'blue'; localStorage.setItem('trace.settings.v1', JSON.stringify(s));
   return true;
 })()`);
 await send("Page.reload", { ignoreCache: true });
@@ -754,7 +755,7 @@ const stale = await ev(`(() => {
   });
 })()`);
 const st = /^NO_/.test(stale) ? null : JSON.parse(stale);
-check("모양을 바꾸면 «다시 만들라» 고 알려 준다",
+check("색감을 바꾸면 «다시 만들라» 고 알려 준다",
   opened2 === "OK" && !!st && st.warn && st.again, stale);
 await ev(`(() => { document.querySelectorAll('.modal-bg').forEach(b => b.remove()); return true; })()`);
 await wait(300);

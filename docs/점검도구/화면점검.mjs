@@ -112,53 +112,40 @@ const b = JSON.parse(boot);
 check("첫 화면이 그려진다", b.editor && b.addButtons > 0, `＋버튼 ${b.addButtons}개`);
 check("자바스크립트 오류 없음", errors.length === 0, errors[0] || "");
 
-/* ---------- 1-2. 모양 프리셋 ----------
-   처음 온 사람(기록이 하나도 없는 사람)에게는 «어떤 모양으로 쓸까요?» 를 먼저 묻는다.
-   이걸 안 치우면 뒤따르는 점검이 전부 이 창에 가로막힌다. 실제 사람도 마찬가지다. */
+/* ---------- 1-2. 모양은 레고 하나 ----------
+   예전에는 처음 온 사람에게 «어떤 모양으로 쓸까요?» 를 물었다.
+   모양이 레고 하나가 되면서 물을 것이 없어졌다 · 창이 안 떠야 하고,
+   화면은 묻지 않아도 레고 모양·크래프트 색·큰 글자로 서 있어야 한다. */
 await wait(700);
-const askedLook = await evaluate(`(() => {
-  const m = Array.from(document.querySelectorAll('.card.modal')).find(x => (x.textContent||'').includes('어떤 모양으로'));
-  return m ? Array.from(m.querySelectorAll('.themecard .themename strong')).map(e => e.textContent).join(",") : 'NO_ASK';
-})()`);
-check("처음 오면 모양부터 묻는다", askedLook === "블록놀이,메모지,블록,공책,기본,문서,설계도", String(askedLook));
-
-// «블록» 을 골라 보고, 화면이 실제로 그 값으로 바뀌는지 본다
-const picked = await evaluate(`(() => {
-  const m = Array.from(document.querySelectorAll('.card.modal')).find(x => (x.textContent||'').includes('어떤 모양으로'));
-  if (!m) return 'NO_MODAL';
-  // 이름이 겹친다. '블록'을 찾으면 '블록놀이'가 먼저 잡힌다. 이름 칸만 정확히 견준다.
-  const c = Array.from(m.querySelectorAll('.themecard')).find(x => {
-    const n = x.querySelector('.themename strong');
-    return n && n.textContent === '블록';
-  });
-  if (!c) return 'NO_CARD';
-  c.click();
+const look = await evaluate(`(() => {
+  const asked = Array.from(document.querySelectorAll('.card.modal')).some(x => (x.textContent||'').includes('어떤 모양으로'));
   const cs = getComputedStyle(document.documentElement);
   return JSON.stringify({
+    asked: asked,
     attr: document.documentElement.getAttribute('data-theme'),
-    bg: cs.getPropertyValue('--bg').trim(),
-    bw: cs.getPropertyValue('--bw').trim(),
-    stud: cs.getPropertyValue('--stud').trim()
+    tone: document.documentElement.getAttribute('data-tone'),
+    size: document.documentElement.getAttribute('data-size'),
+    radius: cs.getPropertyValue('--radius').trim(),
+    stud: cs.getPropertyValue('--stud').trim(),
+    titleFont: cs.getPropertyValue('--font-title').trim()
   });
 })()`);
-const pk = /^NO_/.test(picked) ? null : JSON.parse(picked);
-check("고르면 그 자리에서 값이 바뀐다",
-  !!pk && pk.attr === "brick" && pk.bw === "2.5px" && pk.stud === "block",
-  pk ? `${pk.attr} · 테두리 ${pk.bw} · 돌기 ${pk.stud}` : String(picked));
-
-await evaluate(`(() => {
-  const m = Array.from(document.querySelectorAll('.card.modal')).find(x => (x.textContent||'').includes('어떤 모양으로'));
-  const go = Array.from(m.querySelectorAll('.mfoot button')).find(b => b.textContent.includes('시작하기'));
-  go.click(); return true;
+const lk = JSON.parse(look);
+check("모양을 묻는 창이 더는 없다", !lk.asked, lk.asked ? "아직 묻는다" : "안 묻는다");
+check("묻지 않아도 레고 모양으로 선다", lk.attr === "lego" && lk.stud === "block" && lk.radius === "20px",
+  `${lk.attr} · 모서리 ${lk.radius} · 돌기 ${lk.stud}`);
+check("태어날 때의 색은 크래프트다", lk.tone === "craft", String(lk.tone));
+check("처음 오는 사람은 큰 글자로 시작한다", lk.size === "big", String(lk.size || "보통"));
+check("제목 글꼴은 주아다", /Jua/.test(lk.titleFont), lk.titleFont.slice(0, 30));
+const headband = await evaluate(`(() => {
+  const h = document.querySelector('header.top');
+  const cs = getComputedStyle(h);
+  const brand = getComputedStyle(document.documentElement).getPropertyValue('--brand').trim();
+  return JSON.stringify({ bg: cs.backgroundColor, brand: brand });
 })()`);
-await wait(500);
-const kept = await evaluate(`JSON.stringify({
-  saved: (JSON.parse(localStorage.getItem('trace.settings.v1')||'{}')).theme || '',
-  open: !!document.querySelector('.modal-bg')
-})`);
-const kp = JSON.parse(kept);
-check("고른 모양이 설정에 남는다", kp.saved === "brick", kp.saved || "(빈 값)");
-check("고르고 나면 창이 닫힌다", !kp.open);
+const hb = JSON.parse(headband);
+check("머리띠가 강조색 판이다", !!hb.bg && hb.bg !== "rgba(0, 0, 0, 0)", `${hb.bg} (강조 ${hb.brand})`);
+
 
 /* 기록 카드가 «유형 색» 을 물려받는지 · 프리셋의 핵심이다.
    색을 유형 키로 정하면 사용자가 만든 유형에 색이 없어지므로, 차례(자리)로 돌려 쓴다. */
@@ -1096,7 +1083,8 @@ const axes = JSON.parse(await evaluate(`(() => {
   const okLight = press('밝게');    const d2 = now();
   return JSON.stringify({ labels, okDark, okHuge, okLight, a, b: b2, c: c2, d: d2 });
 })()`));
-check("모양 칸에 축 넷이 다 있다", !axes.err && axes.labels.length === 4,
+/* 모양이 레고 하나가 되며 «모양» 칸이 사라졌다. 남은 축은 셋이다 */
+check("모양 칸에 축 셋이 다 있다", !axes.err && axes.labels.length === 3,
   axes.err || (axes.labels || []).join(" / "));
 check("밝기를 고르면 그 자리에서 바뀐다", axes.b && axes.b.mode === "dark", (axes.b || {}).mode || "안 바뀜");
 check("밝기를 바꿔도 모양은 그대로다", axes.b && axes.b.theme === axes.a.theme, `${axes.a.theme} → ${(axes.b||{}).theme}`);
@@ -1127,7 +1115,7 @@ const tone = JSON.parse(await evaluate(`(() => {
   const okPick = pickTone('청사진');
   const b2 = now();                      // 공책 + 청사진
   // 「태어날 때의 색으로」 를 누르면 되돌아와야 한다
-  const back = Array.from(document.querySelectorAll('.mbody button')).find(x => (x.textContent||'').includes('태어날 때의 색'));
+  const back = Array.from(document.querySelectorAll('.mbody button')).find(x => (x.textContent||'').includes('처음 색으로'));
   if (back) back.click();
   const c2 = now();
   return JSON.stringify({ names, okPick, a, b: b2, c: c2 });
@@ -1138,7 +1126,7 @@ check("색감을 바꾸면 색이 바뀐다", tone.okPick && tone.b.tone === "bl
 check("색감을 바꿔도 모양은 그대로다",
   tone.b && tone.b.theme === tone.a.theme && tone.b.radius === tone.a.radius && tone.b.bw === tone.a.bw,
   `모서리 ${tone.a.radius}→${(tone.b||{}).radius} · 테두리 ${tone.a.bw}→${(tone.b||{}).bw}`);
-check("«태어날 때의 색으로» 가 되돌린다", tone.c && tone.c.bg === tone.a.bg && tone.c.tone === tone.a.tone,
+check("«처음 색으로» 가 되돌린다", tone.c && tone.c.bg === tone.a.bg && tone.c.tone === tone.a.tone,
   `${(tone.c||{}).tone} · ${(tone.c||{}).bg}`);
 await evaluate(`(() => { document.querySelectorAll('.modal-bg').forEach(b => b.remove()); return true; })()`);
 
