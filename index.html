@@ -129,6 +129,71 @@
   }
 
   /* =========================================================
+     왼쪽 · 폴더 구조
+     PC 에서는 늘 보이는 왼쪽 기둥, 폰에서는 줄 셋(☰)으로 여는 서랍.
+     같은 것을 자리만 달리해 보여 준다 · 배우는 것이 하나여야 한다.
+     ========================================================= */
+  .layout { display: grid; grid-template-columns: 264px minmax(0, 1fr); max-width: 1290px; margin: 0 auto; }
+  #sideNav { background: var(--panel); border-right: 1px solid var(--line-soft); padding: 16px 12px 20px;
+             align-self: start; position: sticky; top: 66px; max-height: calc(100vh - 78px); overflow: auto; }
+  #sideNav .sidehead { display: flex; align-items: center; gap: 8px; padding: 2px 8px 10px;
+                       font-family: var(--font-title); font-size: calc(16px * var(--fs)); letter-spacing: var(--title-spacing); }
+  #sideNav .sidehead svg { flex: 0 0 auto; }
+  #sideNav .sidehead .x { margin-left: auto; display: none; background: none; border: none;
+                          color: var(--ink-soft); font-size: calc(18px * var(--fs)); padding: 4px 8px; cursor: pointer; }
+  .siderow { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left;
+             background: none; border: none; font: inherit; color: var(--ink); cursor: pointer;
+             padding: 9px 10px; border-radius: var(--r-btn); font-size: calc(14.5px * var(--fs)); }
+  .siderow:hover { background: var(--brand-soft); }
+  .siderow svg { flex: 0 0 auto; color: var(--ink-soft); }
+  .siderow .n { flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .siderow .cnt { flex: 0 0 auto; font-size: calc(12px * var(--fs)); color: var(--ink-soft); }
+  .siderow.on { background: var(--brand-soft); color: var(--brand-dark); font-weight: 700; }
+  .siderow.on svg, .siderow.on .cnt { color: var(--brand); }
+  .siderow.d1 { padding-left: 26px; } .siderow.d2 { padding-left: 42px; } .siderow.d3 { padding-left: 58px; }
+  .sidenew { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
+             margin-top: 14px; background: var(--brand); color: var(--panel); border: none; cursor: pointer;
+             font-family: var(--font-title); letter-spacing: var(--title-spacing);
+             font-size: calc(16px * var(--fs)); border-radius: var(--r-btn); padding: 12px; }
+  .sidenew:hover { background: var(--brand-dark); }
+  .burgerbtn { display: none; }
+  #drawerScrim { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 59; }
+  #drawerScrim.hidden { display: none; }
+
+  @media (max-width: 1020px) {
+    .layout { display: block; }
+    /* 서랍 · 평소엔 왼쪽 밖에 숨어 있다가 줄 셋을 누르면 나온다.
+       ⚠️ align-self 를 되돌려야 한다. 기둥일 때 쓴 start 가 남아 있으면
+          고정(fixed) 요소가 위아래로 안 늘어나 서랍이 반토막이 된다. */
+    #sideNav { position: fixed; left: 0; top: 0; bottom: 0; align-self: auto;
+               max-height: none; width: 292px; z-index: 60;
+               border-right: none; border-radius: 0 var(--radius) var(--radius) 0;
+               box-shadow: 8px 0 32px rgba(0,0,0,.18);
+               transform: translateX(-105%); transition: transform .18s ease; }
+    #sideNav.open { transform: none; }
+    #sideNav .sidehead .x { display: block; }
+    .burgerbtn { display: flex; flex-direction: column; justify-content: center; align-items: center;
+                 gap: 4.5px; width: 40px; height: 40px; flex: 0 0 auto; cursor: pointer;
+                 background: var(--panel); border: var(--bw) solid var(--line); border-radius: var(--r-btn-sm); }
+    .burgerbtn i { display: block; width: 17px; height: 2.5px; border-radius: 2px; background: var(--ink); }
+    [data-theme="lego"] .burgerbtn { background: rgba(255,255,255,.16); border-color: transparent; }
+    [data-theme="lego"] .burgerbtn i { background: var(--panel); }
+  }
+
+  /* ---------- 빈 화면 · 브릭 셋과 단추 하나 ---------- */
+  .emptybricks { display: flex; gap: 8px; justify-content: center; margin-bottom: 10px; }
+  .emptybricks i { width: 46px; height: 30px; border-radius: 8px; position: relative; display: block; }
+  .emptybricks i::before { content: ""; position: absolute; top: -8px; left: 8px; width: 13px; height: 13px;
+                           border-radius: 50%; background: inherit; box-shadow: 17px 0 0 0; }
+  .emptytitle { font-family: var(--font-title); letter-spacing: var(--title-spacing);
+                font-size: calc(21px * var(--fs)); color: var(--ink); margin: 4px 0 14px; }
+  .emptybtn { background: var(--brand); color: var(--panel); border: none; cursor: pointer;
+              font-family: var(--font-title); letter-spacing: var(--title-spacing);
+              font-size: calc(18px * var(--fs)); border-radius: 14px; padding: 15px 30px;
+              box-shadow: 0 5px 16px rgba(0,0,0,.18); }
+  .emptybtn:hover { background: var(--brand-dark); }
+
+  /* =========================================================
      색감 여섯 · **모양은 한 톨도 없다.**
      한 벌이 밝을 때와 어두울 때를 «같은 자리» 에 갖는다.
      ⚠️ 어두울 때 값은 두 곳에 놓인다 (기기 따름 · 사람이 고름).
@@ -1132,6 +1197,8 @@
 
 <header class="top">
   <div class="top-inner">
+    <!-- 줄 셋 · 폰에서만 보인다. 누르면 폴더 구조 서랍이 왼쪽에서 나온다 -->
+    <button id="btnDrawer" class="burgerbtn" aria-label="폴더 구조 열기"><i></i><i></i><i></i></button>
     <div class="logo">📝 구글 기록장 <small>TRACE · 개인 지식·경험 관리 체계</small></div>
     <div class="spacer"></div>
     <span id="syncPill" class="syncpill"></span>
@@ -1144,6 +1211,11 @@
     <button id="btnLogin" class="btn sm primary">구글 로그인</button>
   </div>
 </header>
+
+<!-- 왼쪽 · 폴더 구조. PC 에서는 늘 보이고, 폰에서는 줄 셋(☰)으로 여는 서랍이 된다 -->
+<div class="layout">
+<aside id="sideNav" aria-label="폴더 구조"></aside>
+<div id="drawerScrim" class="hidden"></div>
 
 <div class="wrap">
 
@@ -1227,6 +1299,7 @@
     구글 기록장 · TRACE &nbsp;|&nbsp; <a href="privacy.html">개인정보처리방침</a>
   </footer>
 </div>
+</div><!-- /.layout -->
 
 <div id="wikiPop" class="hidden"></div>
 
@@ -7139,6 +7212,99 @@
     if (connected) saveIndex().catch(function () {});
   }
 
+  /* =========================================================
+     왼쪽 · 폴더 구조
+     드라이브를 부르지 않는다 · 색인이 아는 길(crumbsOf)로 세운다.
+     그래서 로그인 전에도, 오프라인에서도 선다. 칸을 누르면 그 아래만 남는다
+     (길찾기 줄과 같은 filterPath 를 쓴다 · 같은 일은 같은 길로).
+     ========================================================= */
+  function folderSvg(size) {
+    var ns = "http://www.w3.org/2000/svg";
+    var svg = document.createElementNS(ns, "svg");
+    svg.setAttribute("width", size); svg.setAttribute("height", size);
+    svg.setAttribute("viewBox", "0 0 24 24"); svg.setAttribute("fill", "none");
+    svg.setAttribute("stroke", "currentColor"); svg.setAttribute("stroke-width", "2");
+    svg.setAttribute("stroke-linecap", "round"); svg.setAttribute("stroke-linejoin", "round");
+    svg.setAttribute("aria-hidden", "true");
+    var p = document.createElementNS(ns, "path");
+    p.setAttribute("d", "M3 20v-14h6l2 2.5h10V20Z");
+    svg.appendChild(p);
+    return svg;
+  }
+  function closeDrawer() {
+    var nav = $("sideNav"), scrim = $("drawerScrim");
+    if (nav) nav.classList.remove("open");
+    if (scrim) scrim.classList.add("hidden");
+  }
+  var SIDE_DEPTH = 4;   // 이 아래는 접는다 · 왼쪽 기둥은 지도지 서랍장이 아니다
+  function renderSideNav() {
+    var host = $("sideNav");
+    if (!host) return;
+    host.innerHTML = "";
+
+    var head = el("div", "sidehead");
+    head.appendChild(folderSvg(18));
+    head.appendChild(document.createTextNode("폴더 구조"));
+    var x = el("button", "x", "✕");
+    x.type = "button"; x.setAttribute("aria-label", "닫기");
+    x.addEventListener("click", closeDrawer);
+    head.appendChild(x);
+    host.appendChild(head);
+
+    // 색인이 아는 길로 나무를 세운다
+    var root = { children: {}, order: [], count: 0 };
+    entries.forEach(function (n) {
+      var node = root;
+      crumbsOf(n).slice(0, SIDE_DEPTH).forEach(function (nm) {
+        if (!node.children[nm]) { node.children[nm] = { children: {}, order: [], count: 0 }; node.order.push(nm); }
+        node = node.children[nm];
+        node.count++;
+      });
+    });
+
+    function row(label, path, depth, count) {
+      var b = el("button", "siderow" + (depth > 0 ? " d" + Math.min(depth, 3) : "") +
+        (samePath(filterPath, path) ? " on" : ""));
+      b.type = "button";
+      b.appendChild(folderSvg(15));
+      var nm = el("span", "n", label); nm.title = label;
+      b.appendChild(nm);
+      b.appendChild(el("span", "cnt", String(count)));
+      b.addEventListener("click", function () {
+        filterPath = path.slice();
+        closeDrawer();
+        render();
+      });
+      host.appendChild(b);
+    }
+
+    row(folder.name || "내 폴더", [], 0, entries.length);
+    (function walk(node, path, depth) {
+      node.order.slice().sort(function (a, b) { return a.localeCompare(b, "ko"); }).forEach(function (nm) {
+        var kid = node.children[nm];
+        row(nm, path.concat([nm]), depth, kid.count);
+        walk(kid, path.concat([nm]), depth + 1);
+      });
+    })(root, [], 1);
+
+    var add = el("button", "sidenew", "＋ 새 기록");
+    add.type = "button";
+    add.addEventListener("click", function () {
+      closeDrawer();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      var t = $("title"); if (t) t.focus();
+    });
+    host.appendChild(add);
+  }
+  (function wireDrawer() {
+    var btn = $("btnDrawer"), scrim = $("drawerScrim");
+    if (btn) btn.addEventListener("click", function () {
+      $("sideNav").classList.add("open");
+      scrim.classList.remove("hidden");
+    });
+    if (scrim) scrim.addEventListener("click", closeDrawer);
+  })();
+
   function render() {
     invalidateLinks();
     renderFilters();
@@ -7146,6 +7312,7 @@
     var host = $("list");
     host.innerHTML = "";
     host.className = "";
+    renderSideNav();   // 왼쪽 폴더 구조도 같은 눈으로 그린다
     var shown = entries.filter(matches);
     // 고정한 기록을 맨 위로. 나머지 순서(최신순)는 그대로 둔다
     shown.sort(function (a, b) { return (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0); });
@@ -7156,9 +7323,22 @@
       var e = el("div", "empty");
       if (entries.length) { e.appendChild(el("span", "big", "🔍")); e.appendChild(document.createTextNode("조건에 맞는 기록이 없습니다.")); }
       else {
-        e.appendChild(el("span", "big", "🌱"));
-        e.appendChild(document.createTextNode("첫 기록을 남겨 보세요."));
-        e.appendChild(el("div", "desc", "글은 마크다운(.md)으로, 사진·파일은 정리된 이름으로 드라이브에 쌓입니다."));
+        /* 빈 화면 · 브릭 셋과 단추 하나. 설명은 안 붙인다 · 단추가 곧 설명이다 */
+        var bricks = el("div", "emptybricks");
+        ["var(--brand)", "var(--t3)", "var(--t1)"].forEach(function (c) {
+          var i = document.createElement("i");
+          i.style.background = c; i.style.color = c;   // 돌기(그림자)가 몸통 색을 따라온다
+          bricks.appendChild(i);
+        });
+        e.appendChild(bricks);
+        e.appendChild(el("div", "emptytitle", "블록 하나로 시작하는 기록"));
+        var go = el("button", "emptybtn", "✍️ 첫 기록 남기기");
+        go.type = "button";
+        go.addEventListener("click", function () {
+          window.scrollTo({ top: 0, behavior: "smooth" });
+          var t = $("title"); if (t) t.focus();
+        });
+        e.appendChild(go);
       }
       host.appendChild(e);
       return;

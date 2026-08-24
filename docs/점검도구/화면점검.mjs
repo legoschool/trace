@@ -1160,6 +1160,51 @@ check("녹음 창에 설명이 없다", !voiceWords.err && voiceWords.chars < 40
   voiceWords.err || `글자 ${voiceWords.chars}자`);
 await evaluate(`(() => { document.querySelectorAll('.modal-bg').forEach(b => b.remove()); return true; })()`);
 
+/* ---------- 10-9. 왼쪽 폴더 구조 · PC 기둥과 폰 서랍 ----------
+   같은 것을 자리만 달리해 보여 준다. PC 에서는 늘 보이는 왼쪽 기둥,
+   폰에서는 줄 셋(☰)으로 여는 서랍. 배우는 것이 하나여야 한다. */
+const side = JSON.parse(await evaluate(`(() => {
+  const nav = document.getElementById('sideNav');
+  if (!nav) return JSON.stringify({ err: 'NO_NAV' });
+  const cs = getComputedStyle(nav);
+  return JSON.stringify({
+    visible: cs.display !== 'none' && cs.transform === 'none',
+    rows: nav.querySelectorAll('.siderow').length,
+    root: (nav.querySelector('.siderow .n') || {}).textContent || '',
+    add: !!nav.querySelector('.sidenew'),
+    burger: getComputedStyle(document.getElementById('btnDrawer')).display
+  });
+})()`));
+check("PC 에서는 왼쪽에 폴더 구조 기둥이 선다", !side.err && side.visible && side.rows >= 1,
+  side.err || `줄 ${side.rows}개 · 뿌리 「${side.root}」`);
+check("기둥 맨 아래에 «＋ 새 기록» 이 있다", !!side.add);
+check("PC 에서는 줄 셋(☰)이 없다", side.burger === "none", String(side.burger));
+/* 빈 화면의 긴 설명도 걷어냈다 · 그 글이 돌아오면 안 된다 */
+const oldEmptyDesc = await evaluate(`/마크다운\\(.md\\)으로, 사진·파일은 정리된 이름/.test(document.body.textContent)`);
+check("빈 화면의 긴 설명이 돌아오지 않았다", !oldEmptyDesc);
+
+/* 폰 너비로 줄여 서랍을 겪어 본다 · CSS 는 창 너비에 바로 반응한다 */
+await send("Emulation.setDeviceMetricsOverride", { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
+await wait(600);
+const drawer = JSON.parse(await evaluate(`(() => {
+  const nav = document.getElementById('sideNav');
+  const btn = document.getElementById('btnDrawer');
+  const before = getComputedStyle(nav).transform;
+  const shown = getComputedStyle(btn).display;
+  btn.click();
+  const opened = nav.classList.contains('open');
+  const scrim = getComputedStyle(document.getElementById('drawerScrim')).display;
+  document.getElementById('drawerScrim').click();
+  const closed = !nav.classList.contains('open');
+  return JSON.stringify({ hidden: before !== 'none', shown, opened, scrim, closed });
+})()`));
+check("폰에서는 기둥이 서랍으로 숨는다", drawer.hidden, drawer.hidden ? "숨음" : "그대로 보임");
+check("줄 셋(☰)이 보이고 누르면 서랍이 열린다", drawer.shown !== "none" && drawer.opened && drawer.scrim === "block",
+  `줄셋 ${drawer.shown} · 열림 ${drawer.opened}`);
+check("바깥을 누르면 닫힌다", drawer.closed);
+await send("Emulation.clearDeviceMetricsOverride");
+await wait(500);
+
 /* ---------- 11. 끝난 뒤에도 오류가 없어야 한다 ---------- */
 check("끝까지 오류 없음", errors.length === 0 && logs.length === 0, [...errors, ...logs][0] || "");
 
