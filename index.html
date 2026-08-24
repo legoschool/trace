@@ -2419,14 +2419,18 @@
   }
 
   // 폴더 방식을 바꿨거나 새로 폴더가 생겼으면, 기존 파일도 그리로 옮긴다
+  /* ⚠️ 폴더에서 끌어온 것(srcId)은 제자리에 둔다 · 글도, 자료도.
+     십삼 년 동안 있던 자리에서 끌어내면 그 폴더를 쓰던 다른 길이 다 끊긴다.
+     「기존 파일도 새 방식으로 옮기기」 를 누른 사람이 바라는 것은
+     «내가 앱으로 만든 것들을 새 방식대로 다시 담아라» 이지,
+     «십삼 년치 원본을 기록마다 폴더로 흩어라» 가 아니다.
+     밖에서 온 것의 자리는 사람이 드라이브에서 정한다. */
   function relocateEntryFiles(n, t) {
+    if (n.srcId) return Promise.resolve();
     var jobs = [];
     if (n.mdId) jobs.push(moveToParent(n.mdId, t.md));
     (n.blocks || []).forEach(function (b) {
-      /* ⚠️ 폴더에서 끌어온 원본은 제자리에 둔다.
-         십삼 년 동안 있던 자리에서 끌어내면, 그 폴더를 쓰던 다른 길이 다 끊긴다.
-         옮기는 것은 「📛 파일 이름 정리」처럼 사람이 시켰을 때만 할 일이다. */
-      if (b.fileId && b.fileId !== n.srcId) jobs.push(moveToParent(b.fileId, t.file));
+      if (b.fileId) jobs.push(moveToParent(b.fileId, t.file));
     });
     return Promise.all(jobs);
   }
@@ -9561,9 +9565,18 @@
       reorg.addEventListener("click", function () {
         settings = normalizeSettings(draft);
         saveSettingsLocal();
-        entries.forEach(function (n) { n._relocate = true; n._dirty = true; });
+        var kept = 0;
+        entries.forEach(function (n) {
+          if (n.srcId) kept++;              // 밖에서 온 것은 제자리에 둔다
+          n._relocate = true; n._dirty = true;
+        });
         status.textContent = "옮기는 중…";
-        syncPending().then(function () { status.textContent = "정리했습니다."; updateChrome(); });
+        syncPending().then(function () {
+          // 안 옮긴 것이 있으면 그 사실을 그대로 말한다. 조용히 빼놓으면 «안 됐나» 가 된다
+          status.textContent = "정리했습니다." +
+            (kept ? "  밖에서 가져온 " + kept + "개는 제자리에 두었습니다." : "");
+          updateChrome();
+        });
       });
       f3.appendChild(reorg);
       body.appendChild(f3);

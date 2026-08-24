@@ -927,6 +927,94 @@ const afterReload = await ev(`(() => {
 check("⑲ 새로고침해도 도로 사라지지 않는다", afterReload.has,
   afterReload.has ? "그대로 있음" : `사라짐 · 남은 기록 ${afterReload.n}편`);
 
+/* =========================================================
+   상황 ⑳ · 드라이브에서 옮겨 둔 글을 앱에서 고쳐 저장한다
+   여기가 예전에 «가져온 뒤 고치면 원본이 딸려 옴» 이 났던 바로 그 자리다.
+   기록마다 폴더 하나 방식에서는 가져온 기록에 제 폴더가 없어서,
+   한 번 고치는 것만으로 폴더가 새로 생기고 원본이 그리로 끌려 들어갔다.
+   ========================================================= */
+await ev(`(() => { sessionStorage.setItem('keep', '1'); window.__drive.reset(); return true; })()`);
+const whereWas = await ev(`window.__drive.parentOf('MD1')`);
+await ev(`window.__drive.move('MD1', 'DSCI'); true`);   // 사람이 「과학」 으로 끌어다 놓았다
+await runImport();                                        // 앱이 새 자리를 배운다
+await closeModals();
+const mdTitle2 = await ev(`(() => {
+  const L = JSON.parse(localStorage.getItem('trace.entries.v2') || '[]');
+  const e = L.find(x => x.mdId === 'MD1');
+  return e ? e.title : '';
+})()`);
+await setSearch(mdTitle2);
+await wait(700);
+const opened20 = await openEditor();
+await wait(800);
+await ev(`(() => {
+  const ta = document.querySelector('#blocks textarea, textarea');
+  if (ta) { ta.value = (ta.value || '') + ' 한 줄 더.'; ta.dispatchEvent(new Event('input', { bubbles: true })); }
+  return true;
+})()`);
+await wait(300);
+await pressSave();
+await wait(3500);
+await closeModals();
+const where20 = await ev(`window.__drive.parentOf('MD1')`);
+const moved20 = await ev(`JSON.stringify(window.__drive.moved)`);
+check("⑳ 옮겨 둔 글을 고쳐 저장할 수 있다", opened20 === "OPEN", String(opened20));
+check("⑳ 고쳐 저장해도 원본이 딸려 오지 않는다", where20 === "DSCI" && moved20 === "[]",
+  `지금 자리 ${where20} (처음 ${whereWas}) · 옮긴 기록 ${moved20}`);
+await setSearch('');
+await wait(300);
+
+/* =========================================================
+   상황 ㉑ · 「기존 파일도 새 방식으로 옮기기」 를 사람이 누르면
+   앱이 만든 것은 새 방식대로 옮기고, 밖에서 온 것은 제자리에 둔다.
+   ⚠️ 「사람이 시켰을 때만 옮긴다」 로 고치면서 이 길이 통째로 죽을 수 있었다.
+      그런데 여태 아무 점검도 이 단추를 눌러 본 적이 없었다.
+   ========================================================= */
+await ev(`(() => { window.__drive.reset(); return true; })()`);
+await closeModals();
+await ev(`document.getElementById('btnSettings').click(); true`);
+await wait(500);
+await ev(`(() => {
+  const t = Array.from(document.querySelectorAll('.tabs .tab')).find(x => x.textContent === '저장 위치');
+  if (t) t.click(); return true;
+})()`);
+await wait(700);
+const pressedReorg = await ev(`(() => {
+  const b = Array.from(document.querySelectorAll('.mbody button')).find(x => (x.textContent||'').includes('기존 파일도 새 방식으로'));
+  if (!b) return 'NO_BUTTON';
+  if (b.disabled) return 'DISABLED';
+  b.click(); return 'CLICKED';
+})()`);
+check("㉑ 「기존 파일도 새 방식으로 옮기기」 를 누를 수 있다", pressedReorg === "CLICKED", String(pressedReorg));
+let saidDone = "";
+for (let i = 0; i < 50; i++) {
+  await wait(400);
+  saidDone = await ev(`(() => {
+    const box = document.querySelector('.card.modal');
+    const t = box ? box.textContent : '';
+    const m = /정리했습니다[^]{0,60}/.exec(t || '');
+    return m ? m[0] : '';
+  })()`);
+  if (saidDone) break;
+}
+// 안 끝났으면 화면이 무슨 말을 하고 있는지 그대로 가져온다. 짐작으로 고치지 않으려고
+const tabText = await ev(`(() => {
+  const b = document.querySelector('.mbody');
+  return b ? (b.textContent || '').replace(/\s+/g, ' ').slice(-160) : '창이 없다';
+})()`);
+check("㉑ 끝나면 끝났다고 말해 준다", /정리했습니다/.test(saidDone),
+  saidDone.replace(/\s+/g, " ").slice(0, 70) || ("지금 글: " + tabText));
+check("㉑ 밖에서 가져온 것은 제자리에 두었다고 말해 준다",
+  /제자리에 두었습니다/.test(saidDone), saidDone.replace(/\s+/g, " ").slice(0, 70));
+
+const moved21 = await ev(`JSON.stringify(window.__drive.moved)`).then((x) => JSON.parse(x));
+const src = ["MD1", "H1", "P1"];
+check("㉑ 밖에서 온 원본은 한 개도 안 옮겼다",
+  !moved21.some((m) => src.indexOf(m.id) >= 0),
+  moved21.map((m) => m.id).join(",") || "한 개도 안 옮김");
+await closeModals();
+await wait(300);
+
 const realErrors = errors.filter((e) => !/GSI_LOGGER|popup|ERR_INTERNET|ERR_NAME|gsi\/client|404/i.test(String(e)));
 check("옮기고 바꾸고 버리는 내내 오류 없음", realErrors.length === 0, realErrors[0] || "");
 
