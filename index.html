@@ -122,6 +122,23 @@
     background: var(--panel); opacity: .45; margin-right: 32px;
     box-shadow: 15px 0 0 var(--panel), 30px 0 0 var(--panel);
   }
+  /* ---------- 선 아이콘 · 그림글자 대신 ----------
+     currentColor 를 쓰므로 어느 색감·밝기에서도 글자와 같은 색으로 선다. */
+  .bico { width: calc(19px * var(--fs)); height: calc(19px * var(--fs)); flex: 0 0 auto;
+          fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .top-inner .btn.sm { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px; }
+  .vbtn .bico { width: calc(16px * var(--fs)); height: calc(16px * var(--fs)); vertical-align: -3px; }
+  .vbtn { display: inline-flex; align-items: center; gap: 5px; }
+  .logomark { width: calc(21px * var(--fs)); height: calc(21px * var(--fs)); flex: 0 0 auto;
+              fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  /* 키보드로 다니는 사람에게도 «지금 어디» 가 보여야 한다 */
+  .btn:focus-visible, .siderow:focus-visible, .vbtn:focus-visible, .burgerbtn:focus-visible,
+  .chip:focus-visible, .tonebtn:focus-visible, .pickbtn:focus-visible {
+    outline: 2.5px solid var(--brand); outline-offset: 2px;
+  }
+  [data-theme="lego"] header.top .btn:focus-visible,
+  [data-theme="lego"] .burgerbtn:focus-visible { outline-color: var(--panel); }
+
   /* 머리띠 위 단추 · 흰 알약 (시안의 「교사용 지도안」) · 로그인만 진하게 */
   [data-theme="lego"] header.top .btn.sm { border-color: transparent; }
   [data-theme="lego"] header.top .btn.primary {
@@ -1215,15 +1232,17 @@
   <div class="top-inner">
     <!-- 줄 셋 · 폰에서만 보인다. 누르면 폴더 구조 서랍이 왼쪽에서 나온다 -->
     <button id="btnDrawer" class="burgerbtn" aria-label="폴더 구조 열기"><i></i><i></i><i></i></button>
-    <div class="logo">📝 구글 기록장 <small>TRACE · 개인 지식·경험 관리 체계</small></div>
+    <!-- 로고도 그림글자 대신 브릭 한 조각 · 이 도구의 정체성이다 -->
+    <div class="logo"><svg class="logomark" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="9.5" width="18" height="10" rx="2.5"/><path d="M7 9.5V6.8h4v2.7M13 9.5V6.8h4v2.7"/></svg> 구글 기록장 <small>TRACE · 개인 지식·경험 관리 체계</small></div>
     <div class="spacer"></div>
     <span id="syncPill" class="syncpill"></span>
     <span id="acct" class="acct"></span>
-    <button id="btnHelp" class="btn sm" title="연결·백링크·관계망 사용법">❔</button>
-    <button id="btnInstall" class="btn sm" style="display:none" title="이 기록장을 내 컴퓨터에 앱으로 설치합니다">⬇<span class="lbl"> 앱으로 설치</span></button>
-    <button id="btnMap" class="btn sm" title="폴더 구조">🗂<span class="lbl"> 폴더 구조</span></button>
-    <button id="btnGraph" class="btn sm" title="관계망">🕸️<span class="lbl"> 관계망</span></button>
-    <button id="btnSettings" class="btn sm" title="설정">⚙️<span class="lbl"> 설정</span></button>
+    <!-- 그림글자 대신 선 아이콘 · 이모지는 색이 우리 색을 안 따라와서 판 위에서 안 읽힌다 -->
+    <button id="btnHelp" class="btn sm" title="연결·백링크·관계망 사용법"><svg class="bico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.4 9.3a2.7 2.7 0 1 1 3.6 2.6c-.8.3-1 .9-1 1.9"/><circle cx="12" cy="17" r=".6" fill="currentColor" stroke="none"/></svg></button>
+    <button id="btnInstall" class="btn sm" style="display:none" title="이 기록장을 내 컴퓨터에 앱으로 설치합니다"><svg class="bico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v10"/><path d="m7.5 10.5 4.5 4 4.5-4"/><path d="M5 19.5h14"/></svg><span class="lbl"> 앱으로 설치</span></button>
+    <button id="btnMap" class="btn sm" title="폴더 구조"><svg class="bico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20v-14h6l2 2.5h10V20Z"/></svg><span class="lbl"> 폴더 구조</span></button>
+    <button id="btnGraph" class="btn sm" title="관계망"><svg class="bico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5.5" r="2.4"/><circle cx="5.5" cy="17.5" r="2.4"/><circle cx="18.5" cy="17.5" r="2.4"/><path d="M10.9 7.6 6.7 15.4M13.1 7.6l4.2 7.8M7.9 17.5h8.2"/></svg><span class="lbl"> 관계망</span></button>
+    <button id="btnSettings" class="btn sm" title="설정"><svg class="bico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5h9"/><circle cx="16.5" cy="7.5" r="2.4"/><path d="M20 16.5h-9"/><circle cx="7.5" cy="16.5" r="2.4"/></svg><span class="lbl"> 설정</span></button>
     <button id="btnLogin" class="btn sm primary">구글 로그인</button>
   </div>
 </header>
@@ -7210,11 +7229,31 @@
     });
   }
 
+  /* 보기 넷의 선 아이콘 · 이모지는 색이 우리 색을 안 따라온다 */
+  function viewIconSvg(key) {
+    var d = {
+      stream: "M5 5h14M5 9.5h14M5 14h9M5 18.5h11",
+      grid: "M4.5 4.5h6v6h-6ZM13.5 4.5h6v6h-6ZM4.5 13.5h6v6h-6ZM13.5 13.5h6v6h-6Z",
+      list: "M8.5 6h11M8.5 12h11M8.5 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01",
+      graph: "M12 5.5m-2.2 0a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0-4.4 0M5.5 17.5m-2.2 0a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0-4.4 0M18.5 17.5m-2.2 0a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0-4.4 0M10.9 7.5 6.7 15.5M13.1 7.5l4.2 8M7.7 17.5h8.6"
+    }[key];
+    var ns = "http://www.w3.org/2000/svg";
+    var svg = document.createElementNS(ns, "svg");
+    svg.setAttribute("class", "bico");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("aria-hidden", "true");
+    var p = document.createElementNS(ns, "path");
+    p.setAttribute("d", d || "");
+    svg.appendChild(p);
+    return svg;
+  }
   function renderViewSwitch() {
     var host = $("viewSwitch");
     host.innerHTML = "";
     VIEW_MODES.forEach(function (v) {
-      var b = el("button", "vbtn" + (!v.modal && settings.viewMode === v.key ? " on" : ""), v.icon + " " + v.label);
+      var b = el("button", "vbtn" + (!v.modal && settings.viewMode === v.key ? " on" : ""));
+      b.appendChild(viewIconSvg(v.key));
+      b.appendChild(document.createTextNode(" " + v.label));
       b.type = "button";
       b.title = v.desc;
       b.addEventListener("click", function () {

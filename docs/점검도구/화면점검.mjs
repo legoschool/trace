@@ -619,14 +619,18 @@ check("«＋ 녹음» 판이 열린다", voiceOpen === "OPEN", String(voiceOpen)
 
 if (voiceOpen === "OPEN") {
   await evaluate(`Array.from(document.querySelectorAll('.mfoot button')).find(b => b.textContent.includes('녹음 시작')).click(); true`);
-  await wait(3200);
-  const rec = await evaluate(`JSON.stringify({
-    clock: (document.querySelector('.voiceclock')||{}).textContent,
-    btn: (Array.from(document.querySelectorAll('.mfoot button')).find(b => b.offsetParent) || {}).textContent || '',
-    meter: parseFloat((document.querySelector('.voicebar')||{}).style.width) || 0,
-    status: (document.querySelector('.mfoot .desc')||{}).textContent || ''
-  })`);
-  const rc = JSON.parse(rec);
+  /* 가짜 마이크의 소리 막대는 뜨는 때가 판마다 다르다. 흔들리는 점검은 못 믿는 점검이라
+     «움직일 때까지» 본다. 시계·상태도 같은 눈으로 함께 걷는다. */
+  let rc = { clock: '0:00', meter: 0, status: '' };
+  for (let vk = 0; vk < 20; vk++) {
+    await wait(400);
+    rc = JSON.parse(await evaluate(`JSON.stringify({
+      clock: (document.querySelector('.voiceclock')||{}).textContent,
+      meter: parseFloat((document.querySelector('.voicebar')||{}).style.width) || 0,
+      status: (document.querySelector('.mfoot .desc')||{}).textContent || ''
+    })`));
+    if (rc.meter > 0 && rc.clock !== '0:00' && rc.status.includes('녹음 중')) break;
+  }
   check("시계가 돈다", rc.clock !== "0:00", rc.clock);
   check("녹음 중 표시가 뜬다", rc.status.includes("녹음 중"), rc.status);
   check("소리 크기 막대가 움직인다", rc.meter > 0, `${rc.meter}%`);
