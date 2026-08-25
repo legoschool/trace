@@ -1415,6 +1415,70 @@ check("태그 칩과 나무가 같은 수를 말한다", (tally.bad || []).lengt
     return nm + " · 칩 " + tally.chips[nm] + " / 나무 " + tally.tree[nm] + " / 눌러서 " + tally.clicked[nm];
   }).join(" · ") || ("수업 " + (tally.tree || {})["수업"] + "편으로 일치"));
 
+/* ---------- 10-5. 방금 만든 태그가 «가장 안 보이는» 자리로 가면 안 된다 ----------
+   태그 칩은 「많이 쓴 순」 하나로만 세우고 열두 개에서 잘랐다. 그러면 새로 만든 태그는
+   언제나 하나짜리라 맨 뒤로 밀려 「더 보기」 뒤에 숨는다. 새 태그를 붙인 «바로 그때» 가
+   그 태그를 가장 찾고 싶은 때인데 말이다 — 「배움 이라고 넣었는데 안 뜬다」 가 그것이었다. */
+await evaluate(`(() => {
+  const old = ['수업','평가','연수','질문','대학원','아이디어','업무','성찰','부기','독서','기록','도구','회의','학부모'];
+  const list = [];
+  old.forEach((t, i) => {
+    for (let k = 0; k < (14 - i); k++) list.push({
+      id: 'o' + i + '_' + k, type: '', title: t + ' 기록 ' + k, tags: [t],
+      blocks: [], relations: [], pinned: false, createdAt: 1700000000000, updatedAt: 1700000000000
+    });
+  });
+  list.unshift({ id: 'fresh1', type: '', title: '오늘 쓴 배움 기록', tags: ['배움'],
+    blocks: [], relations: [], pinned: false, createdAt: Date.now(), updatedAt: Date.now() });
+  localStorage.setItem('trace.entries.v2', JSON.stringify(list));
+  ['trace.desk.v1','trace.deskList.v1','trace.sideOpen.v1','trace.draft.v1'].forEach(k => localStorage.removeItem(k));
+  return true;
+})()`);
+await send("Page.navigate", { url: URL_ });
+await wait(2500);
+const freshTag = JSON.parse(await evaluate(`(() => {
+  const chips = Array.from(document.querySelectorAll('#tagFilters .chip')).map(c => c.textContent.trim());
+  const idx = chips.findIndex(c => c.indexOf('배움') >= 0);
+  const tree = Array.from(document.querySelectorAll('#sideNav .siderow'))
+    .map(r => (r.querySelector('.n') || {}).textContent);
+  return JSON.stringify({ chips, idx, inTree: tree.indexOf('배움') >= 0, total: chips.length });
+})()`));
+check("방금 만든 태그가 칩에 보인다", freshTag.idx >= 0,
+  freshTag.idx >= 0 ? (freshTag.idx + 1) + "번째" : "「더 보기」 뒤에 숨음 · " + (freshTag.chips || []).join(" "));
+check("방금 만든 태그가 앞줄에 선다", freshTag.idx === 0, "자리 " + (freshTag.idx + 1));
+check("칩에 보이는 태그는 나무에도 있다", !!freshTag.inTree);
+
+/* 태그는 폴더 이름이 된다. 폴더로 못 쓰는 글자가 들어오면 칩과 드라이브가 어긋난다.
+   같은 태그를 두 번 적은 것도 하나로 만든다. */
+const tagClean = JSON.parse(await evaluate(`(() => {
+  const t = document.getElementById('title'); t.value = '태그 정리';
+  t.dispatchEvent(new Event('input', { bubbles: true }));
+  const g = document.getElementById('tags');
+  g.value = ' 배움 , 배움,  수업/평가 , , 배움 ';
+  g.dispatchEvent(new Event('input', { bubbles: true }));
+  document.getElementById('btnSave').click();
+  const n = JSON.parse(localStorage.getItem('trace.entries.v2'))[0];
+  return JSON.stringify({ tags: n.tags || [] });
+})()`));
+check("같은 태그를 두 번 적어도 하나로 든다", (tagClean.tags || []).filter(function (t) { return t === "배움"; }).length === 1,
+  JSON.stringify(tagClean.tags));
+check("폴더로 못 쓰는 글자는 들어올 때 정리된다", (tagClean.tags || []).indexOf("수업 평가") >= 0,
+  JSON.stringify(tagClean.tags));
+
+/* 거르개는 다 같이 걸려야 한다 · 폴더를 골랐으면 칩도 그 폴더 기준으로 센다 */
+const chipScope = JSON.parse(await evaluate(`(() => {
+  const before = Array.from(document.querySelectorAll('#tagFilters .chip')).map(c => c.textContent.trim());
+  const row = Array.from(document.querySelectorAll('#sideNav .siderow')).find(r => ((r.querySelector('.n') || {}).textContent) === '연수');
+  if (!row) return JSON.stringify({ err: 'NO_ROW' });
+  row.click();
+  const after = Array.from(document.querySelectorAll('#tagFilters .chip'))
+    .map(c => c.textContent.trim()).filter(c => c.charAt(0) === '#');
+  return JSON.stringify({ before: before.length, after });
+})()`));
+check("폴더를 고르면 태그 칩도 그 폴더 기준으로 센다",
+  !chipScope.err && (chipScope.after || []).length === 1 && /연수/.test((chipScope.after || [])[0] || ""),
+  (chipScope.after || []).join(" ") || chipScope.err);
+
 /* 빈 화면의 긴 설명도 걷어냈다 · 그 글이 돌아오면 안 된다 */
 const oldEmptyDesc = await evaluate(`/마크다운\\(.md\\)으로, 사진·파일은 정리된 이름/.test(document.body.textContent)`);
 check("빈 화면의 긴 설명이 돌아오지 않았다", !oldEmptyDesc);

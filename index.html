@@ -747,6 +747,8 @@
   .filters { margin-bottom: 14px; }
   .tagfilters { margin: -8px 0 14px; align-items: center; }
   .flabel { font-size: calc(12px * var(--fs)); color: var(--ink-soft); font-weight: 700; padding-right: 2px; align-self: center; }
+  /* 태그가 스무 개를 넘으면 눈으로 훑는 것은 «찾기» 가 아니다. 그때만 나오는 칸 */
+  .tagfind { flex: 0 1 160px; padding: 5px 10px; font-size: calc(13px * var(--fs)); border-radius: 99px; }
   .chip.tagchip { font-size: calc(12.5px * var(--fs)); padding: 5px 11px; }
   .chip.ghostchip { border-style: dashed; }
   .chip.clearchip { border-color: var(--danger); color: var(--danger); }
@@ -2633,6 +2635,21 @@
         n.folderId = f.id; n.folderName = f.name; n._dirty = true;
         return { md: f.id, file: f.id, created: true };
       });
+  }
+  /* 태그 한 줄을 «쓸 수 있는 태그들» 로 정리한다.
+     ⚠️ 태그는 이 앱에서 그냥 딱지가 아니라 «폴더 이름» 이 된다 (태그가 곧 폴더).
+        그래서 폴더 이름으로 못 쓰는 글자(\ / : * ? " < > |)가 들어오면
+        칩에는 「수업/평가」 라고 뜨고 드라이브에는 「수업 평가」 폴더가 생겨 서로 어긋난다.
+        들어올 때 한 번 정리해 두면 그 어긋남이 아예 안 생긴다.
+     같은 태그를 두 번 적은 것도 여기서 하나로 만든다. */
+  function cleanTags(raw) {
+    var seen = {}, out = [];
+    String(raw == null ? "" : raw).split(",").forEach(function (s) {
+      var t = safeName(s, 60);
+      if (!t || seen[t]) return;
+      seen[t] = 1; out.push(t);
+    });
+    return out;
   }
   var NO_TAG_FOLDER = "태그없음";
   function primaryTagFolder(n) {
@@ -6231,7 +6248,7 @@
 
     n.type = currentType;
     n.title = title || "(제목 없음)";
-    n.tags = $("tags").value.split(",").map(function (s) { return s.trim(); }).filter(Boolean);
+    n.tags = cleanTags($("tags").value);
     n.updatedAt = now;
     n._dirty = true;
 
@@ -6464,6 +6481,7 @@
 
   var tagsExpanded = false;
   var TAGS_SHOWN = 12;
+  var tagQuery = "", tagFindFocus = false;   // 펴 놓고 태그를 찾을 때 쓰는 칸
 
   function renderFilters() {
     var host = $("typeFilters");
@@ -6496,17 +6514,41 @@
     var host = $("tagFilters");
     host.innerHTML = "";
 
-    // 지금 유형·검색 조건을 통과한 기록들의 태그만 센다 (없는 태그를 보여줘야 소용없다)
-    var count = {};
+    /* 지금 보고 있는 것들의 태그만 센다 (없는 태그를 보여 줘야 소용없다).
+       ⚠️ 유형·검색만 보고 폴더(filterPath)·고정은 안 봤다. 그래서 「부기」 폴더를
+          보고 있는데 칩은 «전체 기준» 숫자를 말했다. 거르개는 다 같이 걸려야 한다.
+       한 기록에 같은 태그가 두 번 들어 있어도 한 번만 센다. */
+    var count = {}, last = {};
     entries.forEach(function (n) {
+      if (filterPinned && !n.pinned) return;
       if (filterType !== "all" && n.type !== filterType) return;
+      if (filterPath.length && !underPath(n, filterPath)) return;
       if (searchQ && entryText(n).indexOf(searchQ.toLowerCase()) < 0) return;
-      (n.tags || []).forEach(function (t) { count[t] = (count[t] || 0) + 1; });
+      var seen = {};
+      (n.tags || []).forEach(function (t) {
+        if (!t || seen[t]) return;
+        seen[t] = 1;
+        count[t] = (count[t] || 0) + 1;
+        var at = n.updatedAt || n.createdAt || 0;
+        at = typeof at === "number" ? at : (Date.parse(at) || 0);
+        if (at > (last[t] || 0)) last[t] = at;      // 이 태그를 «마지막으로 쓴 때»
+      });
     });
     // 고른 태그는 셈에서 빠져도 자리를 지킨다
     filterTags.forEach(function (t) { if (!(t in count)) count[t] = 0; });
 
+    /* ⚠️ 예전에는 «많이 쓴 순» 하나로만 세우고 열두 개에서 잘랐다.
+       그러면 방금 만든 태그는 언제나 하나짜리라 맨 뒤로 밀려 「더 보기」 뒤에 숨는다.
+       새 태그를 붙인 «바로 그때» 가 그 태그를 가장 찾고 싶은 때인데 말이다.
+       («배움» 이라고 넣었는데 안 뜬다는 이야기가 실제로 그것이었다.)
+       그래서 최근에 쓴 태그를 앞줄에 세운다. 자주 쓰는 태그는 어차피 최근에도 쓴다. */
+    var FRESH = 14 * 24 * 3600 * 1000;   // 최근 두 주
+    var now = Date.now();
     var names = Object.keys(count).sort(function (a, b) {
+      var fa = (now - (last[a] || 0)) < FRESH ? 1 : 0;
+      var fb = (now - (last[b] || 0)) < FRESH ? 1 : 0;
+      if (fa !== fb) return fb - fa;                       // 최근에 쓴 것이 앞
+      if (fa) return (last[b] || 0) - (last[a] || 0);      // 최근끼리는 더 최근이 앞
       if (count[b] !== count[a]) return count[b] - count[a];
       return a.localeCompare(b, "ko");
     });
@@ -6515,7 +6557,24 @@
 
     host.appendChild(el("span", "flabel", "🏷 태그"));
 
-    var shown = tagsExpanded ? names : names.slice(0, TAGS_SHOWN);
+    /* 펴 놓고도 태그가 스무 개를 넘으면 눈으로 훑는 것이 «찾기» 가 아니게 된다.
+       그때는 고르는 것이 아니라 찾는 것이 맞다. 한 칸을 열어 준다. */
+    if (tagsExpanded && names.length > 20) {
+      var find = el("input", "inp tagfind");
+      find.type = "search";
+      find.placeholder = "태그 찾기";
+      find.value = tagQuery;
+      find.addEventListener("input", function () { tagQuery = this.value; renderTagFilters(); });
+      host.appendChild(find);
+      setTimeout(function () { var f = host.querySelector(".tagfind"); if (f && tagFindFocus) f.focus(); }, 0);
+      find.addEventListener("focus", function () { tagFindFocus = true; });
+    }
+    var q = tagsExpanded ? tagQuery.trim().toLowerCase() : "";
+    var pool = q ? names.filter(function (t) { return t.toLowerCase().indexOf(q) >= 0; }) : names;
+    var shown = tagsExpanded ? pool : pool.slice(0, TAGS_SHOWN);
+    if (tagsExpanded && q && !shown.length) {
+      host.appendChild(el("span", "flabel", "「" + tagQuery.trim() + "」 이 든 태그가 없습니다"));
+    }
     shown.forEach(function (t) {
       var on = filterTags.indexOf(t) >= 0;
       var b = el("button", "chip tagchip" + (on ? " on" : ""), "#" + t + " " + count[t]);
@@ -6532,7 +6591,11 @@
       var more = el("button", "chip ghostchip",
         tagsExpanded ? "접기 ▲" : "더 보기 +" + (names.length - TAGS_SHOWN));
       more.type = "button";
-      more.addEventListener("click", function () { tagsExpanded = !tagsExpanded; renderTagFilters(); });
+      more.addEventListener("click", function () {
+        tagsExpanded = !tagsExpanded;
+        if (!tagsExpanded) { tagQuery = ""; tagFindFocus = false; }
+        renderTagFilters();
+      });
       host.appendChild(more);
     }
 
