@@ -3255,15 +3255,87 @@
       body: JSON.stringify({ published: true, publishAuto: true, publishedOutsideDomain: true })
     });
   }
-  function unpublishDoc(docId) {
+  /* ---- 게시 내리기 ----
+     ⚠️ 「내렸다」 와 「이제 안 보인다」 는 다른 말이다.
+        구글은 게시한 쪽(/pub)을 저장해 두었다가 내린 뒤에도 한동안 계속 내준다.
+        그래서 우리가 할 수 있는 일이 셋이다 · 이 순서로 다 한다.
+          ① 저절로 다시 게시되는 것을 먼저 끊는다 (publishAuto)
+          ② 게시를 내린다
+          ③ 정말 내려갔는지 «되읽어» 확인한다 — 「껐습니다」 는 틀리게 말하면 안 되는 말이다
+        그래도 남는 것이 구글 쪽 저장본이다. 그것까지 없애려면 가리킬 문서 자체를
+        없애는 수밖에 없다 (hard). 기록은 그대로 있고, 문서는 다시 만들 수 있다.
+     ⚠️ 오류를 삼키면 안 된다. 못 껐는데 껐다고 말하는 쪽이 훨씬 나쁘다. */
+  function unpublishDoc(docId, hard) {
     if (!docId) return Promise.resolve();
-    return driveJson("https://www.googleapis.com/drive/v3/files/" + docId + "/revisions/head?fields=id", {
+    var head = "https://www.googleapis.com/drive/v3/files/" + docId + "/revisions/head";
+    return driveJson(head + "?fields=id", {
       method: "PATCH", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ published: false, publishAuto: false, publishedOutsideDomain: false })
+      body: JSON.stringify({ publishAuto: false })
+    }).catch(function () { /* 이 한 줄이 막혀도 아래 진짜 내리기는 해봐야 한다 */ })
+      .then(function () {
+        return driveJson(head + "?fields=id", {
+          method: "PATCH", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ published: false, publishAuto: false, publishedOutsideDomain: false })
+        });
+      })
+      .then(function () {
+        // 되읽어 확인 · 구글이 아직 «게시 중» 이라고 하면 껐다고 말하면 안 된다
+        return driveJson(head + "?fields=published").then(function (r) {
+          if (r && r.published) throw new Error("구글이 아직 «게시 중» 이라고 답합니다");
+        }).catch(function (e) {
+          if (/게시 중/.test(e.message || "")) throw e;   // 진짜 안 꺼진 것
+          return null;                                     // 되읽기만 실패한 것은 넘긴다
+        });
+      })
+      .then(function () {
+        if (!hard) return null;
+        /* 구글이 저장해 둔 쪽까지 끊는 길은 «가리킬 것을 없애는 것» 뿐이다.
+           문서를 휴지통으로 보낸다 · 기록도 사진도 그대로다. 다시 공유하면 새로 만든다. */
+        return trashFile(docId);
+      });
+  }
+  /* 끄기 전에 한 번 묻는다 · 「빨리」 와 「같은 주소를 지키기」 는 같이 못 가진다 */
+  function askUnpublish() {
+    return new Promise(function (res) {
+      var bg = el("div", "modal-bg");
+      var m = el("div", "card modal sheet"); m.style.maxWidth = "520px";
+      var h = el("div", "mhead"); h.appendChild(el("h3", null, "게시를 끕니다"));
+      m.appendChild(h);
+      var b = el("div", "mbody");
+      b.appendChild(el("div", "sheetnote",
+        "구글은 게시한 쪽을 저장해 두었다가, 내린 뒤에도 한동안 계속 내줍니다. " +
+        "«내리기» 만으로는 그 저장본이 언제 사라질지 우리가 정할 수 없습니다."));
+      var done = false;
+      function pick(v) { if (done) return; done = true; bg.remove(); res(v); }
+      function opt(em, label, note, v) {
+        var btn = el("button", "sheetbtn");
+        btn.type = "button";
+        btn.appendChild(el("span", "em", em));
+        var box = el("span");
+        box.appendChild(document.createTextNode(label));
+        box.appendChild(el("small", null, note));
+        btn.appendChild(box);
+        btn.addEventListener("click", function () { pick(v); });
+        b.appendChild(btn);
+      }
+      opt("🔒", "문서를 지우고 확실히 끄기",
+        "게시를 내리고, 게시한 구글 문서를 휴지통으로 보냅니다. 링크가 가리킬 것이 없어집니다. " +
+        "기록과 사진은 그대로입니다 · 다시 공유하면 새 주소가 만들어집니다.", { go: true, arg: true });
+      opt("⏳", "게시만 내리기",
+        "문서는 그대로 두고 게시만 내립니다. 같은 주소를 나중에 다시 쓸 수 있지만, " +
+        "구글이 저장해 둔 쪽이 사라질 때까지 한동안 계속 보일 수 있습니다.", { go: true, arg: false });
+      m.appendChild(b);
+      var f = el("div", "mfoot");
+      f.appendChild(el("span", "spacer"));
+      var no = el("button", "btn", "취소");
+      no.addEventListener("click", function () { pick({ go: false }); });
+      f.appendChild(no);
+      m.appendChild(f);
+      bg.appendChild(m);
+      bg.style.zIndex = "180";   // 공유 창(170) 위에 서야 한다
+      bg.addEventListener("click", function (e) { if (e.target === bg) pick({ go: false }); });
+      $("modalHost").appendChild(bg);
     });
-    /* ⚠️ 여기서 오류를 삼키면 안 된다.
-       못 껐는데 «껐습니다. 이제 링크로는 열리지 않습니다» 라고 말하게 된다.
-       공개 여부는 사람이 남에게 약속하는 것이라, 틀리게 말하는 쪽이 훨씬 나쁘다. */
   }
 
   /* =========================================================
@@ -6769,17 +6841,24 @@
         op.href = url; op.target = "_blank"; op.rel = "noopener noreferrer"; op.style.textDecoration = "none";
         var off = el("button", "btn sm danger", "공유 끄기");
         off.addEventListener("click", function () {
-          off.disabled = true; off.textContent = "끄는 중…";
-          opt.stop().then(function () {
-            opt.setUrl(null);
-            n.updatedAt = new Date().toISOString();
-            saveLocal(); if (connected) saveIndex();
-            toast("공유를 껐습니다. 이제 링크로는 열리지 않습니다.");
-            if (after) after();
-            draw();
-          }).catch(function (e) {
-            off.disabled = false; off.textContent = "공유 끄기";
-            toast("끄지 못했습니다: " + errText(e));
+          /* 끄는 길이 하나뿐이 아닌 줄(구글 문서 게시)은 먼저 묻는다.
+             ⚠️ 끄고 나서 하는 말도 줄마다 다르다. 「이제 링크로는 열리지 않습니다」 는
+                구글 캐시가 남는 자리에서는 거짓말이 된다. 그래서 stop 이 할 말을 돌려준다. */
+          var ask = opt.confirmStop ? opt.confirmStop() : Promise.resolve({ go: true });
+          ask.then(function (a) {
+            if (!a || !a.go) return;
+            off.disabled = true; off.textContent = "끄는 중…";
+            opt.stop(a.arg).then(function (msg) {
+              opt.setUrl(null);
+              n.updatedAt = new Date().toISOString();
+              saveLocal(); if (connected) saveIndex();
+              toast(msg || "공유를 껐습니다. 이제 링크로는 열리지 않습니다.");
+              if (after) after();
+              draw();
+            }).catch(function (e) {
+              off.disabled = false; off.textContent = "공유 끄기";
+              toast("끄지 못했습니다: " + errText(e));
+            });
           });
         });
         /* ⚠️ 주소에 담아 보내는 길은 «누른 그 순간의 사진» 이다.
@@ -6957,7 +7036,17 @@
             .then(function (docId) { return publishDocToWeb(docId).then(function () { return docId; }); })
             .then(function (docId) { return "https://docs.google.com/document/d/" + docId + "/pub"; });
         },
-        stop: function () { return unpublishDoc(n.docId); }
+        confirmStop: askUnpublish,
+        stop: function (hard) {
+          var id = n.docId;
+          return unpublishDoc(id, hard).then(function () {
+            if (!hard) return "게시를 내렸습니다. 구글이 저장해 둔 쪽이 사라지기까지 조금 걸릴 수 있습니다.";
+            /* 문서를 버렸으니 그 문서를 가리키던 다른 링크(③)도 같이 죽는다.
+               죽은 주소를 화면에 남겨 두면 «아직 열려 있나» 를 알 수 없다. 같이 지운다. */
+            n.docId = null; n.shareUrl = null; n.sharePubUrl = null;
+            return "게시를 내리고 문서를 휴지통으로 보냈습니다. 링크가 가리킬 것이 없어졌습니다.";
+          });
+        }
       });
 
       shareRow({
