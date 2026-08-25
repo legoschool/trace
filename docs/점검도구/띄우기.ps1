@@ -1,10 +1,12 @@
-﻿$ErrorActionPreference = "Stop"
+﻿param([int]$Port = 0)
+if ($Port -le 0) { if ($env:TRACE_PORT) { $Port = [int]$env:TRACE_PORT } else { $Port = 8000 } }
+$ErrorActionPreference = "Stop"
 # 이 스크립트가 docs\점검도구\ 안에 있으므로, 두 단계 위가 저장소 뿌리다
 $root = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
 $listener = New-Object System.Net.HttpListener
-$listener.Prefixes.Add("http://localhost:8000/")
+$listener.Prefixes.Add("http://localhost:$Port/")
 $listener.Start()
-Write-Host "serving $root on http://localhost:8000/"
+Write-Host "serving $root on http://localhost:$Port/"
 
 $types = @{
   ".html" = "text/html; charset=utf-8"

@@ -1195,6 +1195,169 @@ const folded = JSON.parse(await evaluate(`(() => {
 })()`));
 check("누르면 기둥이 접힌다", folded.closed);
 check("다시 누르면 펴진다", folded.back);
+
+/* ---------- 10-2. 자리 · 왼쪽에서 고른 폴더가 곧 «다음 기록이 갈 자리» ----------
+   기둥은 원래도 목록을 좁혀 주고 있었다. 그런데 작성칸이 화면 한 장 반을 먹고 있어서
+   좁혀진 목록이 «안 보이는 자리» 에 있었고, 누른 사람 눈에는 아무 일도 안 일어났다.
+   이제 볼 때는 작성칸이 접히고, 고른 폴더가 그대로 쓰는 자리가 된다. */
+const deskPick = JSON.parse(await evaluate(`(() => {
+  const nav = document.getElementById('sideNav');
+  const rows = Array.from(nav.querySelectorAll('.siderow'));
+  const target = rows.find(r => ((r.querySelector('.n')||{}).textContent) === '평가');
+  if (!target) return JSON.stringify({ err: 'NO_ROW', names: rows.map(r => (r.querySelector('.n')||{}).textContent) });
+  const treeCount = parseInt(((target.querySelector('.cnt')||{}).textContent) || '0', 10);
+  // 앞선 점검이 남긴 거르개가 있으면 걷어낸다 · 자리 점검은 «폴더 하나» 만 재는 자리다
+  const clear = Array.from(document.querySelectorAll('.filters .chip'))
+    .find(c => c.textContent.indexOf('필터 지우기') >= 0);
+  if (clear) clear.click();
+  target.click();
+  const c = document.getElementById('composer');
+  const shown = Array.from(c.children).filter(ch => getComputedStyle(ch).display !== 'none');
+  const now = Array.from(nav.querySelectorAll('.siderow')).find(r => ((r.querySelector('.n')||{}).textContent) === '평가');
+  return JSON.stringify({
+    collapsed: c.classList.contains('collapsed'),
+    onlyFold: shown.length === 1 && shown[0].className === 'cfold',
+    height: Math.round(c.getBoundingClientRect().height),
+    where: (document.getElementById('cfoldWhere')||{}).textContent || '',
+    marked: !!now && now.className.indexOf('desk') >= 0,
+    treeCount,
+    shown: document.querySelectorAll('#list .entry').length,
+    total: JSON.parse(localStorage.getItem('trace.entries.v2') || '[]').length,
+    desk: localStorage.getItem('trace.desk.v1') || ''
+  });
+})()`));
+check("폴더를 누르면 작성칸이 접힌다", !deskPick.err && deskPick.collapsed && deskPick.height < 140,
+  deskPick.err ? JSON.stringify(deskPick.names) : `${deskPick.height}px`);
+check("접힌 자리에는 «＋ 새 기록» 한 줄만 남는다", !!deskPick.onlyFold);
+check("접힌 줄이 어디에 쓰는지 말해 준다", /평가/.test(deskPick.where), (deskPick.where || "").trim());
+check("고른 폴더가 곧 쓰는 자리가 된다", /"path":\["평가"\]/.test(deskPick.desk), deskPick.desk);
+check("왼쪽에도 «여기에 씁니다» 가 표시된다", !!deskPick.marked);
+/* ⚠️ «몇 개인지» 까지 재야 한다. 예전에는 거르는 자가 srcPath 만 보아서, 나무에는 7개라고
+   적혀 있는 폴더를 눌러도 목록이 텅 비었다 (앱이 만든 기록은 srcPath 가 비어 있다).
+   숫자를 안 재면 «좁혀지긴 했다» 로 통과해 버린다. 0개로 좁혀진 것도 좁혀진 것이다. */
+check("목록이 그 폴더 아래로 좁혀진다", deskPick.shown > 0 && deskPick.shown < deskPick.total,
+  `${deskPick.shown} / ${deskPick.total}개 · 나무엔 ${deskPick.treeCount}개`);
+check("좁혀진 수가 나무에 적힌 수와 같다", deskPick.shown === deskPick.treeCount,
+  `목록 ${deskPick.shown} · 나무 ${deskPick.treeCount}`);
+
+const unfold = JSON.parse(await evaluate(`(() => {
+  document.getElementById('btnUnfold').click();
+  const c = document.getElementById('composer');
+  return JSON.stringify({
+    open: !c.classList.contains('collapsed'),
+    line: (document.getElementById('deskLine')||{}).textContent || ''
+  });
+})()`));
+check("«＋ 새 기록» 을 누르면 다시 펴진다", unfold.open);
+check("작성칸 맨 위가 갈 자리를 적어 둔다", /평가/.test(unfold.line), (unfold.line || "").trim());
+
+/* 쓰던 글이 있는데 접으면 사라진 줄 안다. 그때는 자리만 바뀌고 작성칸은 그대로 둔다 */
+const busy = JSON.parse(await evaluate(`(() => {
+  const t = document.getElementById('title');
+  t.value = '쓰다 만 것';
+  t.dispatchEvent(new Event('input', { bubbles: true }));
+  const rows = Array.from(document.querySelectorAll('#sideNav .siderow'));
+  const other = rows.find(r => ((r.querySelector('.n')||{}).textContent) === '연수');
+  if (other) other.click();
+  return JSON.stringify({
+    stillOpen: !document.getElementById('composer').classList.contains('collapsed'),
+    kept: document.getElementById('title').value
+  });
+})()`));
+check("쓰던 글이 있으면 접지 않는다", busy.stillOpen && busy.kept === "쓰다 만 것", busy.kept);
+
+const savedDesk = JSON.parse(await evaluate(`(() => {
+  document.getElementById('btnSave').click();
+  const list = JSON.parse(localStorage.getItem('trace.entries.v2') || '[]');
+  const n = list[0] || {};
+  return JSON.stringify({ title: n.title || '', deskPath: n.deskPath || [], folderId: n.folderId || null });
+})()`));
+check("새 기록에 고른 자리가 찍힌다", savedDesk.deskPath[0] === "연수", JSON.stringify(savedDesk.deskPath));
+/* ⚠️ 이것이 이 기능의 핵심 안전장치다. folderId 는 «기록 하나가 통째로 가진 폴더» 라
+   지우기가 그리로 향한다(removeEntry). 여러 기록이 함께 쓰는 사업 폴더를 거기에 걸면
+   한 편을 지웠을 때 폴더가 통째로 휴지통에 간다. 그래서 칸을 따로 두었다. */
+check("자리를 folderId 에 걸지 않는다 (한 편 지워도 폴더가 안 날아간다)",
+  savedDesk.folderId === null, String(savedDesk.folderId));
+
+const deskMenuChk = JSON.parse(await evaluate(`(() => {
+  document.querySelector('#sideNav .sidenewmore').click();
+  const m = document.querySelector('#sideNav .sidemenu');
+  if (!m) return JSON.stringify({ err: 'NO_MENU' });
+  return JSON.stringify({
+    items: Array.from(m.querySelectorAll('button')).map(b => (b.firstChild||{}).textContent || ''),
+    note: (m.querySelector('.note')||{}).textContent || ''
+  });
+})()`));
+check("▾ 안에 자리 바꾸는 길 셋이 있다", !deskMenuChk.err && deskMenuChk.items.length === 3,
+  (deskMenuChk.items || []).join(" / "));
+/* 실측해 둔 한계다 · 안 적으면 «앱이 고장났다» 가 된다 */
+check("고른 폴더에 원래 있던 것은 안 보인다고 미리 말한다", /원래 있던 파일은/.test(deskMenuChk.note || ""));
+
+const deskHome = JSON.parse(await evaluate(`(() => {
+  const btns = Array.from(document.querySelectorAll('#sideNav .sidemenu button'));
+  const h = btns.find(b => b.textContent.indexOf('기본 자리') >= 0);
+  if (h) h.click();
+  return JSON.stringify({
+    desk: localStorage.getItem('trace.desk.v1') || '',
+    marked: Array.from(document.querySelectorAll('#sideNav .siderow')).filter(r => r.className.indexOf('desk') >= 0).length
+  });
+})()`));
+check("«기본 자리» 로 되돌아온다", deskHome.desk === "" && deskHome.marked === 0, deskHome.desk);
+
+/* 나무는 처음부터 두 겹까지 펴져 있어야 한다 · 접힌 지도는 지도 구실을 못 한다 */
+const deskDepth = JSON.parse(await evaluate(`(() => {
+  const rows = Array.from(document.querySelectorAll('#sideNav .siderow'));
+  return JSON.stringify({ depths: rows.map(r => (r.className.match(/\\bd(\\d)\\b/) || [0, 0])[1]) });
+})()`));
+check("나무가 처음부터 한 겹 더 펴져 있다", deskDepth.depths.filter((d) => String(d) === "1").length >= 2,
+  deskDepth.depths.join(","));
+/* ---------- 10-3. 폴더 «밖» 으로 나간 것과 «정말 없는» 것을 가른다 ----------
+   drive.file 권한은 파일 하나하나에 붙는다 · 폴더에 붙는 것이 아니다. 그래서 앱이 만든 파일은
+   사람이 드라이브에서 딴 데로 옮겨도 계속 열린다 (이 앱은 글도 사진도 파일 ID 로 읽는다).
+   ⚠️ 폴더 훑기가 못 찾았다고 곧바로 「안 보입니다」 를 띄우면, 멀쩡히 읽히는 기록을
+      고장난 것처럼 보여 준다. 그래서 파일에게 직접 물어본 뒤에 가른다. 두 말은 달라야 한다. */
+await evaluate(`(() => {
+  const mk = (id, title, extra) => Object.assign({
+    id, type: '', title, tags: ['수업'], blocks: [{ id: 'b' + id, kind: 'text', text: title }],
+    relations: [], pinned: false, createdAt: 1755000000000, updatedAt: 1755000000000,
+    srcPath: ['수업'], mdId: 'MD_' + id
+  }, extra || {});
+  localStorage.setItem('trace.entries.v2', JSON.stringify([
+    mk('w1', '밖으로 옮겨진 기록', { _away: true, _awayName: '수업_회고.md' }),
+    mk('w2', '정말 사라진 기록', { _missing: true }),
+    mk('w3', '멀쩡한 기록', {})
+  ]));
+  localStorage.removeItem('trace.draft.v1');
+  localStorage.removeItem('trace.desk.v1');
+  return true;
+})()`);
+await send("Page.navigate", { url: URL_ });
+await wait(2500);
+const away = JSON.parse(await evaluate(`(() => {
+  const out = {};
+  Array.from(document.querySelectorAll('#list .entry')).forEach(card => {
+    const b = card.querySelector('.banner');
+    const key = card.textContent.indexOf('밖으로 옮겨진') >= 0 ? 'moved'
+              : card.textContent.indexOf('정말 사라진') >= 0 ? 'gone' : 'fine';
+    out[key] = {
+      cls: b ? b.className : '',
+      text: b ? b.textContent.replace(/\\s+/g, ' ').trim() : '',
+      href: (b && b.querySelector('a')) ? b.querySelector('a').getAttribute('href') : '',
+      readable: card.textContent.length > 20
+    };
+  });
+  return JSON.stringify(out);
+})()`));
+check("폴더 밖으로 나간 것을 «없다» 고 하지 않는다",
+  (away.moved || {}).cls === "banner away" && /문제없습니다/.test((away.moved || {}).text || ""),
+  (away.moved || {}).text || "(배너 없음)");
+check("밖에 있는 것도 그대로 읽힌다", !!(away.moved || {}).readable);
+check("밖에 있는 파일로 바로 가는 문이 있다", /drive\.google\.com\/file\/d\/MD_w1/.test((away.moved || {}).href || ""),
+  (away.moved || {}).href || "");
+check("정말 못 여는 것은 따로 말한다", (away.gone || {}).cls === "banner gone" && /안 보입니다/.test((away.gone || {}).text || ""),
+  (away.gone || {}).text || "(배너 없음)");
+check("멀쩡한 기록에는 아무 말도 안 붙인다", (away.fine || {}).cls === "", (away.fine || {}).cls || "(없음)");
+
 /* 빈 화면의 긴 설명도 걷어냈다 · 그 글이 돌아오면 안 된다 */
 const oldEmptyDesc = await evaluate(`/마크다운\\(.md\\)으로, 사진·파일은 정리된 이름/.test(document.body.textContent)`);
 check("빈 화면의 긴 설명이 돌아오지 않았다", !oldEmptyDesc);

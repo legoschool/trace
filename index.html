@@ -184,6 +184,49 @@
              font-family: var(--font-title); letter-spacing: var(--title-spacing);
              font-size: calc(16px * var(--fs)); border-radius: var(--r-btn); padding: 12px; }
   .sidenew:hover { background: var(--brand-dark); }
+  /* ＋ 새 기록 옆에 붙은 ▾ · 열에 아홉은 그냥 왼쪽을 누른다.
+     자리를 바꾸는 일은 드무니 ▾ 뒤에 접어 둔다. 자주 안 쓰는 것을 앞에 세우지 않는다. */
+  .sidenewrow { display: flex; gap: 2px; margin-top: 14px; }
+  .sidenewrow .sidenew { margin-top: 0; border-radius: var(--r-btn) 0 0 var(--r-btn); flex: 1 1 auto; }
+  .sidenewmore { flex: 0 0 auto; width: 42px; background: var(--brand-dark); color: var(--panel);
+                 border: none; cursor: pointer; border-radius: 0 var(--r-btn) var(--r-btn) 0;
+                 font-size: calc(13px * var(--fs)); }
+  .sidenewmore:hover { filter: brightness(1.14); }
+  .sidemenu { margin: 6px 0 0; border: 1px solid var(--line); border-radius: var(--r-btn);
+              background: var(--panel); overflow: hidden; }
+  .sidemenu button { display: block; width: 100%; text-align: left; background: none; border: none;
+                     font: inherit; color: var(--ink); cursor: pointer; padding: 10px 12px;
+                     font-size: calc(13.5px * var(--fs)); line-height: 1.5; }
+  .sidemenu button:hover { background: var(--brand-soft); color: var(--brand-dark); }
+  .sidemenu button small { display: block; color: var(--ink-soft); font-size: calc(11.5px * var(--fs)); }
+  .sidemenu button:hover small { color: inherit; }
+  .sidemenu .sep { height: 1px; background: var(--line-soft); }
+  .sidemenu .note { padding: 9px 12px; font-size: calc(11.5px * var(--fs)); color: var(--ink-soft);
+                    line-height: 1.65; background: var(--bg); }
+  /* 지금 «여기에 쓴다» 는 자리 · 보고 있는 자리(on)와 눈으로 구분되어야 한다 */
+  .siderow.desk { box-shadow: inset 3px 0 0 var(--brand); }
+  .siderow .pin { flex: 0 0 auto; font-size: calc(11px * var(--fs)); color: var(--brand); font-weight: 700; }
+
+  /* 작성칸 접기 · 폴더를 볼 때는 목록이 위로 올라온다 */
+  .cfold { display: none; }
+  .composer.collapsed { padding-top: 14px; padding-bottom: 14px; }
+  .composer.collapsed > *:not(.cfold) { display: none; }
+  .composer.collapsed .cfold { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .cfoldbtn { display: flex; align-items: center; gap: 8px; background: var(--brand); color: var(--panel);
+              border: none; cursor: pointer; padding: 11px 20px; border-radius: var(--r-btn);
+              font-family: var(--font-title); letter-spacing: var(--title-spacing);
+              font-size: calc(16px * var(--fs)); }
+  .cfoldbtn:hover { background: var(--brand-dark); }
+  .cfoldwhere { font-size: calc(13px * var(--fs)); color: var(--ink-soft); }
+  .cfoldwhere b { color: var(--ink); }
+
+  /* 이 기록이 갈 자리 · 작성칸 맨 위 한 줄. 쓰기 전에 어디로 가는지 늘 보인다 */
+  .deskline { display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+              font-size: calc(13px * var(--fs)); color: var(--ink-soft);
+              background: var(--bg); border: 1px solid var(--line-soft);
+              border-radius: var(--r-btn); padding: 9px 12px; margin: 0 0 12px; }
+  .deskline b { color: var(--ink); }
+  .deskline .spacer { flex: 1 1 auto; }
   /* 줄 셋(☰) · 어디서나 «폴더 구조를 열고 닫는» 단추다.
      PC 에서는 기둥을 접었다 펴고, 폰에서는 서랍을 연다. 한 단추, 한 뜻. */
   .burgerbtn { display: flex; flex-direction: column; justify-content: center; align-items: center;
@@ -517,6 +560,10 @@
   /* 드라이브에서 안 보이게 된 기록. 카드 «안» 에 들어가므로 배너보다 좁다 */
   .banner.gone { margin: 8px 0 0; padding: 8px 11px; font-size: calc(12.5px * var(--fs));
                  background: var(--warn-bg); border-color: var(--warn-line); color: var(--warn-ink); }
+  /* 폴더 «밖» 으로 나갔지만 멀쩡히 읽히는 기록. 이건 사고가 아니라 사실 안내다 ·
+     노란 경고를 띄우면 고장난 줄 안다. 같은 크기, 조용한 색으로 적는다. */
+  .banner.away { margin: 8px 0 0; padding: 8px 11px; font-size: calc(12.5px * var(--fs));
+                 background: var(--bg); border-color: var(--line); color: var(--ink-soft); }
   .banner .grow { flex: 1 1 240px; }
   .banner.draft { background: var(--brand-soft); border-color: var(--brand); color: var(--brand);
                   font-weight: 600; margin: 16px 0 -6px; padding: 10px 14px; }
@@ -1259,8 +1306,15 @@
   <!-- ================= 에디터 ================= -->
   <div id="draftBar" class="banner draft hidden"></div>
 
-  <section class="card composer">
+  <section class="card composer" id="composer">
+    <!-- 접혔을 때 남는 한 줄. 폴더를 보는 동안은 이것만 보인다 -->
+    <div class="cfold">
+      <button type="button" class="cfoldbtn" id="btnUnfold">＋ 새 기록</button>
+      <span class="cfoldwhere" id="cfoldWhere"></span>
+    </div>
     <h2 id="composerTitle">✍️ 새 기록</h2>
+    <!-- 이 기록이 갈 자리. 쓰기 전에 보여야 한다 · 쓰고 나서 알면 늦다 -->
+    <div id="deskLine" class="deskline hidden"></div>
 
     <div class="chips" id="typeChips" style="margin-bottom:12px;"></div>
 
@@ -1681,6 +1735,57 @@
   var searchQ = "";
   var expanded = {};
 
+  /* ---- 책상(desk) · «다음 기록이 갈 자리» ----
+     사업이 바뀌면 자리도 바뀐다. 그래서 자리는 설정이 아니라 «지금 고른 것» 이다.
+     ⚠️ folderId 와 절대 섞지 말 것. 이 앱에서 folderId 는 «기록 하나가 통째로 가진 폴더»
+        라는 뜻이라 지우기·공유가 전부 그리로 향한다 (removeEntry 참고).
+        책상은 여러 기록이 «함께 쓰는» 자리다. 한 편을 지웠다고 사업 폴더가
+        휴지통에 가면 안 된다. 그래서 이름을 달리해 따로 들고, 지우기는 여기를 안 본다.
+     id 가 없을 수도 있다 · 왼쪽 나무에서 고른 자리는 이름길만 안다.
+     그때는 저장하는 순간 ensureNamedFolder 로 찾아(없으면 만들어) 쓴다. */
+  var desk = safeParse(localStorage.getItem("trace.desk.v1")) || null;   // {id,name,path:[]}
+  var deskList = safeParse(localStorage.getItem("trace.deskList.v1")) || []; // 손으로 고른 자리들
+  function saveDesk() {
+    try {
+      localStorage.setItem("trace.desk.v1", desk ? JSON.stringify(desk) : "");
+      localStorage.setItem("trace.deskList.v1", JSON.stringify(deskList));
+    } catch (e) {}
+  }
+  function deskLabel(d) {
+    if (!d) return (folder.name || "기본 폴더") + " (기본 자리)";
+    return (d.path && d.path.length) ? d.path.join(" › ") : (d.name || "고른 폴더");
+  }
+  function rememberDesk(d) {
+    if (!d || !d.id) return;
+    deskList = deskList.filter(function (x) { return x.id !== d.id; });
+    deskList.unshift({ id: d.id, name: d.name, path: (d.path || []).slice() });
+    if (deskList.length > 12) deskList.length = 12;
+  }
+  /* 자리를 정한다. 정하기만 한다 · 그리는 것은 부르는 쪽이 한다 */
+  function setDesk(d, quiet) {
+    desk = d || null;
+    if (d) rememberDesk(d);
+    saveDesk();
+    if (!quiet) toast(d ? "「" + deskLabel(d) + "」 에 씁니다." : "기본 자리에 씁니다.");
+  }
+  /* 저장할 때 진짜 폴더 ID 로 바꾼다.
+     id 를 이미 아는 자리는 그대로 쓰고, 이름길만 아는 자리는 뿌리부터 한 칸씩 내려간다.
+     ensureNamedFolder 는 «있으면 쓰고 없으면 만든다» · 태그·월별 방식이 이미 쓰는 길과 같다. */
+  function resolveDeskId() {
+    if (!desk) return Promise.resolve(null);
+    if (desk.id) return Promise.resolve(desk.id);
+    var path = (desk.path || []).filter(Boolean);
+    if (!path.length || !folder.id) return Promise.resolve(null);
+    return path.reduce(function (chain, nm) {
+      return chain.then(function (pid) { return ensureNamedFolder(safeName(nm, 60), pid); });
+    }, Promise.resolve(folder.id))
+      .then(function (id) {
+        if (id) { desk.id = id; rememberDesk(desk); saveDesk(); }
+        return id;
+      })
+      .catch(function () { return null; });
+  }
+
   var tokenClient = null, accessToken = null, connected = false, userEmail = "";
   var needReconnect = false;   // 토큰이 풀렸는데 조용히 다시 받지 못한 상태
   var indexFileId = null, settingsFileId = null, subFolderId = null;
@@ -1809,6 +1914,10 @@
   function crumbsOf(n) {
     var path = (n.srcPath || []).slice();
     if (path.length) return path;
+    /* 손으로 자리를 골라 쓴 기록 · 정리 방식보다 사람이 고른 것이 먼저다.
+       이것이 없으면 「부기」 폴더에 쓴 글이 태그 이름으로 나무에 잡힌다. */
+    if (n.deskPath && n.deskPath.length) return n.deskPath.slice();
+    if (n.deskName) return [n.deskName];
     if (n.folderName) return [n.folderName];
     /* 앱이 만든 기록인데 폴더 이름이 아직 안 적혀 있다.
        «정리 방식이 정한 자리» 를 그대로 보여 준다. 태그·월별 방식은 폴더 이름을
@@ -1824,9 +1933,28 @@
      이 앱의 권한(drive.file)은 파일 하나하나 허락받는 방식이라, 연결한 폴더 «밖» 으로
      나간 파일은 아예 안 보인다. 조용히 안 열리게 두면 «앱이 고장났다» 가 된다.
      허락은 고르기 창을 한 번 지나면 다시 생긴다. 그래서 말과 단추를 같이 둔다. */
+  /* 폴더 밖으로 나갔지만 «살아 있다» 고 드라이브가 답한 것.
+     이건 사고가 아니다. 읽기도 쓰기도 그대로 된다 · 자리만 우리가 모를 뿐이다.
+     그러니 경고가 아니라 사실만 조용히 적고, 그리로 가는 문을 열어 둔다. */
+  function awayNote(n) {
+    var box = el("div", "banner away");
+    box.appendChild(el("span", "grow",
+      "연결한 폴더 «밖» 에 있습니다" + (n._awayName ? " · " + safeName(n._awayName, 40) : "") +
+      " · 읽고 쓰는 데는 문제없습니다."));
+    var id = anchorIdOf(n);
+    if (id) {
+      var a = el("a", "btn sm", "드라이브에서 열기");
+      a.href = "https://drive.google.com/file/d/" + id + "/view";
+      a.target = "_blank"; a.rel = "noopener noreferrer";
+      a.addEventListener("click", function (e) { e.stopPropagation(); });
+      box.appendChild(a);
+    }
+    return box;
+  }
   function missingNote(n) {
+    if (n._away) return awayNote(n);
     var box = el("div", "banner gone");
-    box.appendChild(el("span", "grow", "드라이브에서 안 보입니다 · 폴더 밖으로 나갔거나 지워졌습니다."));
+    box.appendChild(el("span", "grow", "드라이브에서 안 보입니다 · 지워졌거나, 이 앱이 열 수 없는 자리로 갔습니다."));
     var b = el("button", "btn sm", "드라이브에서 고르기");
     b.type = "button";
     b.addEventListener("click", function (e) {
@@ -2410,7 +2538,39 @@
   function entryFolderName(n) {
     return applyPattern(settings.folderPattern, nameContext(n, 1, "", ""));
   }
+  /* 이 기록이 골라 둔 자리의 진짜 폴더 ID.
+     id 를 이미 알면 그대로, 이름길만 알면 뿌리부터 한 칸씩 내려가 찾는다(없으면 만든다).
+     못 찾으면 null 을 준다 · 그러면 아래에서 «정리 방식대로» 로 되돌아간다.
+     기록이 저장 못 되는 일은 없어야 한다. */
+  function ensureEntryDesk(n) {
+    if (n.deskId) return Promise.resolve(n.deskId);
+    var path = (n.deskPath || []).filter(Boolean);
+    if (!path.length || !folder.id) return Promise.resolve(null);
+    return path.reduce(function (chain, nm) {
+      return chain.then(function (pid) { return ensureNamedFolder(safeName(nm, 60), pid); });
+    }, Promise.resolve(folder.id))
+      .then(function (id) { if (id) { n.deskId = id; n._dirty = true; } return id || null; })
+      .catch(function () { return null; });
+  }
   function resolveTargets(n) {
+    var mode = settings.folderMode;
+    /* 사람이 고른 자리가 맨 앞이다.
+       「부기 사업」 폴더를 골라 놓고 저장했는데 태그 폴더로 끌려가면, 고른 뜻이 없어진다.
+       ⚠️ 여기서도 folderId 는 건드리지 않는다. 지우기가 따라오면 안 되는 자리다. */
+    if (n.deskId || (n.deskPath && n.deskPath.length)) {
+      return ensureEntryDesk(n).then(function (did) {
+        if (!did) return byMode(n);
+        if (mode === "materials") {
+          return ensureNamedFolder(settings.materialsFolderName || "자료", did)
+            .then(function (sub) { return { md: did, file: sub }; })
+            .catch(function () { return { md: did, file: did }; });
+        }
+        return { md: did, file: did };
+      });
+    }
+    return byMode(n);
+  }
+  function byMode(n) {
     var mode = settings.folderMode;
     if (mode === "flat") return Promise.resolve({ md: folder.id, file: folder.id });
     if (mode === "materials") {
@@ -2458,7 +2618,10 @@
   function syncTagShortcuts(n) {
     if (settings.folderMode !== "tag" || !n.mdId) return Promise.resolve();
     var tags = (n.tags || []).filter(Boolean).map(function (t) { return safeName(String(t), 60); });
-    var extra = tags.slice(1).filter(function (t, i, a) { return t && a.indexOf(t) === i; });
+    /* 보통은 첫 태그 폴더가 «진짜 자리» 라 거기엔 바로가기를 안 놓는다.
+       그런데 자리를 손으로 골라 쓴 기록은 진짜 파일이 그 자리에 있으므로,
+       첫 태그 폴더에도 표지판이 있어야 «태그가 곧 폴더» 라는 약속이 안 깨진다. */
+    var extra = (n.deskId ? tags : tags.slice(1)).filter(function (t, i, a) { return t && a.indexOf(t) === i; });
     if (!extra.length) return Promise.resolve();
     var linkName = n.mdName || (stemOf(mdName(n)) + ".md");
     return extra.reduce(function (chain, tag) {
@@ -3495,6 +3658,9 @@
       srcFolderId: n.srcFolderId || null, srcFolderName: n.srcFolderName || null,
       srcPath: (n.srcPath || []).slice(),
       folderId: n.folderId || null, folderName: n.folderName || null,
+      /* 골라 둔 자리 · 지우기는 이 칸을 절대 안 본다 (folderId 와 다른 이유) */
+      deskId: n.deskId || null, deskName: n.deskName || null,
+      deskPath: (n.deskPath || []).slice(),
       shareUrl: n.shareUrl || null,
       sharePubUrl: n.sharePubUrl || null,
       shareWebUrl: n.shareWebUrl || null,
@@ -5896,6 +6062,7 @@
     $("composerTitle").textContent = "✍️ 새 기록";
     $("btnSave").textContent = "기록 저장";
     $("btnCancelEdit").classList.add("hidden");
+    renderDeskLine();   // 자리는 그대로 · 이어서 같은 폴더에 한 편 더 쓰는 것이 보통이다
   }
 
   function loadIntoComposer(n) {
@@ -5908,6 +6075,10 @@
     $("composerTitle").textContent = "✏️ 기록 편집";
     $("btnSave").textContent = "수정 저장";
     $("btnCancelEdit").classList.remove("hidden");
+    // 고치러 왔는데 작성칸이 접혀 있으면 아무 데도 못 쓴다
+    composerFolded = false;
+    applyComposerFold();
+    renderDeskLine();
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -5938,6 +6109,13 @@
       });
     } else {
       n = { id: uid("k_"), createdAt: now };
+      /* 새 기록에만 자리를 찍는다. 고쳐 쓰는 기록은 제 자리에 그대로 둔다 ·
+         「부기」에 쓴 글이 나중에 「수업」을 보다가 고쳤다고 옮겨 가면 안 된다. */
+      if (desk) {
+        n.deskId = desk.id || null;
+        n.deskName = desk.name || "";
+        n.deskPath = (desk.path || []).slice();
+      }
       entries.unshift(n);
     }
 
@@ -6275,9 +6453,14 @@
   function matches(n) {
     if (filterPinned && !n.pinned) return false;
     if (filterType !== "all" && n.type !== filterType) return false;
-    // 폴더 길은 «앞에서부터» 같아야 한다. 2019/3학년 을 고르면 2019/4학년 은 빠진다.
+    /* 폴더 길은 «앞에서부터» 같아야 한다. 2019/3학년 을 고르면 2019/4학년 은 빠진다.
+       ⚠️ 반드시 crumbsOf 로 잰다. 나무도, 길찾기 줄도 그것으로 서기 때문이다.
+          예전에는 여기서만 srcPath 를 바로 봤다. 그러면 «폴더에서 끌어온 기록» 만 걸리고
+          앱이 만든 기록은 하나도 안 걸린다 — 태그·월별 방식은 srcPath 가 아예 비어 있다.
+          그래서 왼쪽에서 「평가」를 눌러도 목록이 텅 비었고, 누른 사람에게는
+          «폴더 구조는 보기만 하는 칸» 으로 보였다. 재는 자가 그리는 자와 달랐던 것이다. */
     if (filterPath.length) {
-      var mp = n.srcPath || [];
+      var mp = crumbsOf(n);
       if (mp.length < filterPath.length) return false;
       for (var k = 0; k < filterPath.length; k++) if (mp[k] !== filterPath[k]) return false;
     }
@@ -6854,6 +7037,8 @@
     if (n.htmlId) linkBtn("🌐 HTML 파일", driveLink(n.htmlId), "드라이브에 저장된 HTML 파일");
     if (n.mdId) linkBtn("📝 .md", driveLink(n.mdId), "마크다운 원본");
     if (n.folderId) linkBtn("📁 폴더", "https://drive.google.com/drive/folders/" + n.folderId, "이 기록의 드라이브 폴더");
+    else if (n.deskId) linkBtn("📁 폴더", "https://drive.google.com/drive/folders/" + n.deskId,
+      "이 기록을 넣어 둔 폴더 (여러 기록이 함께 씁니다)");
     // 끌어온 것은 «원본이 있던 곳» 으로 데려다 준다. 이 기록이 가진 폴더가 아니므로 말을 다르게 쓴다.
     else if (n.srcFolderId) linkBtn("📁 원본 폴더", "https://drive.google.com/drive/folders/" + n.srcFolderId,
       "이 자료가 원래 있던 폴더" + (n.srcFolderName ? " · " + n.srcFolderName : ""));
@@ -6878,7 +7063,7 @@
     var paper = el("article", "vpaper");
 
     if (crumbsOf(n).length) paper.appendChild(buildCrumbs(n, { self: true }));
-    if (n._missing) paper.appendChild(missingNote(n));
+    if (n._missing || n._away) paper.appendChild(missingNote(n));
     paper.appendChild(paintType(el("span", "badge", t.icon + " " + t.label), t.key));
     paper.appendChild(el("h1", null, n.title || "(제목 없음)"));
     var metaLine = formatDate(n.createdAt);
@@ -7310,12 +7495,21 @@
   }
   function sideOpenOf(key, path) {
     if (Object.prototype.hasOwnProperty.call(sideOpen, key)) return !!sideOpen[key];
-    // 고른 길 위에 있으면 저절로 펴진다
-    if (filterPath.length >= path.length) {
-      for (var i = 0; i < path.length; i++) if (filterPath[i] !== path[i]) return false;
+    /* ⚠️ «안 겹친다» 를 «접어라» 로 읽으면 안 된다.
+       한쪽 길만 보고 바로 접으면, 수업을 고른 순간 부기 아래가 통째로 사라진다.
+       겹칠 때만 «펴라» 를 내놓고, 아니면 다음 자를 자에게 넘긴다. */
+    function under(of) {
+      if (!of || of.length < path.length) return false;
+      for (var i = 0; i < path.length; i++) if (of[i] !== path[i]) return false;
       return true;
     }
-    return false;
+    // 보고 있는 길, 그리고 쓰고 있는 자리는 저절로 펴진다
+    if (under(filterPath)) return true;
+    if (desk && under(desk.path)) return true;
+    /* 첫 두 겹은 처음부터 펴 둔다.
+       지도인데 접혀 있으면 지도 구실을 못 한다 · 「수업 5」 만 보이고 안이 안 보이면
+       무엇이 들었는지 알 길이 없어서 결국 아무도 안 편다. */
+    return path.length <= 1;
   }
   function caretSvg() {
     var ns = "http://www.w3.org/2000/svg";
@@ -7346,18 +7540,45 @@
 
     // 색인이 아는 길로 나무를 세운다
     var root = { children: {}, order: [], count: 0 };
+    function nodeAt(path, make) {
+      var node = root;
+      for (var i = 0; i < path.length; i++) {
+        var nm = path[i];
+        if (!node.children[nm]) {
+          if (!make) return null;
+          node.children[nm] = { children: {}, order: [], count: 0, fid: null };
+          node.order.push(nm);
+        }
+        node = node.children[nm];
+      }
+      return node;
+    }
     entries.forEach(function (n) {
       var node = root;
       crumbsOf(n).slice(0, SIDE_DEPTH).forEach(function (nm) {
-        if (!node.children[nm]) { node.children[nm] = { children: {}, order: [], count: 0 }; node.order.push(nm); }
+        if (!node.children[nm]) { node.children[nm] = { children: {}, order: [], count: 0, fid: null }; node.order.push(nm); }
         node = node.children[nm];
         node.count++;
       });
+      /* 이 칸의 «진짜 드라이브 폴더 ID» 를 아는 기록이 있으면 적어 둔다.
+         알고 나면 그 칸에 쓸 때 이름으로 다시 찾을 필요가 없다 ·
+         이름으로 찾다 못 찾으면 같은 이름 폴더가 하나 더 생겨 버린다. */
+      var last = nodeAt(crumbsOf(n).slice(0, SIDE_DEPTH), false);
+      if (last && !last.fid) last.fid = n.deskId || n.srcFolderId || null;
+    });
+    /* 손으로 골라 둔 자리는 아직 기록이 한 편도 없어도 나무에 세운다.
+       방금 만든 폴더가 안 보이면 «만들어졌나?» 하고 한 번 더 만들게 된다. */
+    deskList.concat(desk ? [desk] : []).forEach(function (d) {
+      var p = (d.path && d.path.length ? d.path : (d.name ? [d.name] : [])).slice(0, SIDE_DEPTH);
+      if (!p.length) return;
+      var node = nodeAt(p, true);
+      if (node && !node.fid) node.fid = d.id || null;
     });
 
-    function row(label, path, depth, count, hasKids, open) {
+    function row(label, path, depth, count, hasKids, open, fid) {
+      var isDesk = desk && samePath(desk.path || [], path) && path.length > 0;
       var b = el("button", "siderow" + (depth > 0 ? " d" + Math.min(depth, 3) : "") +
-        (samePath(filterPath, path) ? " on" : ""));
+        (samePath(filterPath, path) ? " on" : "") + (isDesk ? " desk" : ""));
       b.type = "button";
       /* ▸ 자리 · 자식이 없어도 칸은 차지한다. 안 그러면 이름들이 들쭉날쭉 선다 */
       var tg = el("span", "sidetog" + (open ? " open" : "") + (hasKids ? "" : " none"));
@@ -7375,35 +7596,190 @@
       b.appendChild(folderSvg(15));
       var nm = el("span", "n", label); nm.title = label;
       b.appendChild(nm);
+      if (isDesk) { var pn = el("span", "pin", "✎"); pn.title = "여기에 씁니다"; b.appendChild(pn); }
       b.appendChild(el("span", "cnt", String(count)));
+      b.title = path.length ? (path.join(" / ") + " 아래를 보고, 여기에 씁니다") : "모든 기록 보기";
+      /* 한 번 누르면 두 가지가 같이 일어난다 · «여기를 본다» 와 «여기에 쓴다».
+         이 둘을 갈라 놓으면 폴더를 고른 뒤 저장 위치를 또 골라야 한다. */
       b.addEventListener("click", function () {
         filterPath = path.slice();
+        setDesk(path.length ? { id: fid || null, name: label, path: path.slice() } : null, true);
+        sideMenuOpen = false;    // 자리를 골랐으니 ▾ 는 할 일이 끝났다
         closeDrawer();
+        foldComposer();          // 볼 때는 목록이 위로 온다
         render();
+        gotoList();
       });
       host.appendChild(b);
     }
 
-    row(folder.name || "내 폴더", [], 0, entries.length, false, true);
+    row(folder.name || "내 폴더", [], 0, entries.length, false, true, folder.id || null);
     (function walk(node, path, depth) {
       node.order.slice().sort(function (a, b) { return a.localeCompare(b, "ko"); }).forEach(function (nm) {
         var kid = node.children[nm];
         var p = path.concat([nm]);
         var hasKids = kid.order.length > 0;
         var open = hasKids && sideOpenOf(p.join("/"), p);
-        row(nm, p, depth, kid.count, hasKids, open);
+        row(nm, p, depth, kid.count, hasKids, open, kid.fid);
         if (open) walk(kid, p, depth + 1);
       });
     })(root, [], 1);
 
+    /* ＋ 새 기록 · 지금 고른 자리에 바로 쓴다.
+       옆의 ▾ 는 «자리를 바꾸는» 자리다. 사업이 바뀔 때만 누른다. */
+    var newrow = el("div", "sidenewrow");
     var add = el("button", "sidenew", "＋ 새 기록");
     add.type = "button";
-    add.addEventListener("click", function () {
-      closeDrawer();
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      var t = $("title"); if (t) t.focus();
+    add.title = "「" + deskLabel(desk) + "」 에 새 기록을 씁니다";
+    add.addEventListener("click", function () { closeDrawer(); openComposer(); });
+    newrow.appendChild(add);
+    var more = el("button", "sidenewmore", "▾");
+    more.type = "button";
+    more.setAttribute("aria-label", "다른 폴더에 쓰기");
+    more.title = "다른 폴더를 골라 거기서 시작합니다";
+    more.addEventListener("click", function (e) {
+      e.stopPropagation();
+      sideMenuOpen = !sideMenuOpen;
+      renderSideNav();
     });
-    host.appendChild(add);
+    newrow.appendChild(more);
+    host.appendChild(newrow);
+    if (sideMenuOpen) host.appendChild(deskMenu());
+  }
+
+  /* ▾ 안에 든 것 · 자리를 바꾸는 세 가지 길 */
+  var sideMenuOpen = false;
+  function deskMenu() {
+    var box = el("div", "sidemenu");
+    function item(label, note, fn) {
+      var b = el("button", null, null);
+      b.type = "button";
+      b.appendChild(document.createTextNode(label));
+      if (note) b.appendChild(el("small", null, note));
+      b.addEventListener("click", function () {
+        sideMenuOpen = false;
+        fn();
+      });
+      box.appendChild(b);
+      return b;
+    }
+    item("📂 새 폴더 만들어 쓰기…", "「" + (folder.name || "연결한 폴더") + "」 안에 만듭니다", function () {
+      createDeskFolder();
+    });
+    item("📁 다른 폴더 골라 쓰기…", "드라이브에서 이미 있는 폴더를 고릅니다", function () {
+      pickDeskFolder();
+    });
+    box.appendChild(el("div", "sep"));
+    item("🏠 기본 자리에 쓰기", folderModeLabel(settings.folderMode) + " · 설정이 정한 대로", function () {
+      setDesk(null);
+      renderSideNav(); renderDeskLine();
+    });
+    /* 실측해 둔 것을 여기 한 줄로 적는다. 안 적으면 «앱이 고장났다» 가 된다. */
+    box.appendChild(el("div", "note",
+      "⚠️ 이미 있는 폴더를 고르면 «앞으로 쓰는 것» 만 그 안에 담깁니다. " +
+      "폴더에 원래 있던 파일은 이 앱 권한으로는 안 보입니다 · 그건 설정 → 가져오기로 따로 끌어옵니다."));
+    return box;
+  }
+  /* 새 폴더를 만들어 그 자리로 삼는다.
+     고르기 창은 폴더를 «만들지» 못한다. 만들기는 우리가 맡는다 ·
+     앱이 만든 폴더라 권한이 저절로 따라오고, 안에 든 것도 다 보인다. */
+  function createDeskFolder() {
+    if (!connected || !folder.id) { toast("드라이브에 연결한 뒤에 폴더를 만들 수 있습니다."); return; }
+    var name = window.prompt("새로 만들 폴더 이름 (「" + (folder.name || "연결한 폴더") + "」 안에 만듭니다)", "");
+    if (!name || !name.trim()) return;
+    var clean = safeName(name, 60);
+    toast("폴더를 만드는 중…");
+    ensureNamedFolder(clean, folder.id)
+      .then(function (id) {
+        setDesk({ id: id, name: clean, path: [clean] });
+        filterPath = [clean];
+        render();
+        openComposer();
+      })
+      .catch(function (e) { toast("폴더를 못 만들었습니다: " + errText(e)); });
+  }
+  function pickDeskFolder() {
+    if (!connected) { toast("드라이브에 연결한 뒤에 고를 수 있습니다."); return; }
+    openFolderBrowser(function (f) {
+      /* 고른 폴더가 연결 폴더 «안» 인지 «밖» 인지는 알 길이 없다. 길은 이름 하나로 둔다.
+         밖이어도 상관없다 · 이 앱이 만든 파일은 어디에 두든 이 앱이 다시 찾는다. */
+      setDesk({ id: f.id, name: f.name, path: [f.name] });
+      filterPath = [];
+      render();
+      openComposer();
+      toast2("「" + f.name + "」 에 원래 있던 파일은 여기 목록에 안 나옵니다.");
+    });
+  }
+
+  /* ---- 작성칸 접기·펴기 ----
+     이 도구는 쓰는 도구다. 그런데 화면 맨 위를 작성칸이 한 장 반 먹고 있어서,
+     왼쪽에서 폴더를 눌러도 «아무 일도 안 일어난 것» 처럼 보였다.
+     좁혀진 목록이 안 보이는 자리에 있었을 뿐이다. 그래서 볼 때는 접고, 쓸 때는 편다. */
+  var composerFolded = false;
+  function composerBusy() {
+    // 고쳐 쓰는 중이거나 쓰다 만 것이 있으면 절대 접지 않는다. 접는 순간 사라진 줄 안다.
+    if (editingId) return true;
+    if (hasContent()) return true;
+    var t = $("title"), g = $("tags");
+    return !!(t && t.value.trim()) || !!(g && g.value.trim());
+  }
+  function applyComposerFold() {
+    var c = $("composer");
+    if (c) c.classList.toggle("collapsed", composerFolded);
+    var w = $("cfoldWhere");
+    if (w) {
+      w.innerHTML = "";
+      w.appendChild(document.createTextNode("📍 "));
+      w.appendChild(el("b", null, deskLabel(desk)));
+      w.appendChild(document.createTextNode(" 에 씁니다"));
+    }
+  }
+  function foldComposer() {
+    if (composerBusy()) return;
+    composerFolded = true;
+    applyComposerFold();
+  }
+  function openComposer() {
+    composerFolded = false;
+    applyComposerFold();
+    renderDeskLine();
+    var c = $("composer");
+    if (c) c.scrollIntoView({ behavior: "smooth", block: "start" });
+    var t = $("title");
+    if (t) setTimeout(function () { t.focus(); }, 240);
+  }
+  function gotoList() {
+    var tb = document.querySelector(".toolbar");
+    if (tb) tb.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  /* 이 기록이 갈 자리 · 작성칸 맨 위 한 줄. 저장한 뒤에 알면 늦다 */
+  function renderDeskLine() {
+    var host = $("deskLine");
+    if (!host) return;
+    host.innerHTML = "";
+    host.classList.remove("hidden");
+    if (editingId) {
+      // 고쳐 쓰는 중에는 자리를 안 건드린다 · 이미 어딘가에 살고 있는 글이다
+      host.appendChild(document.createTextNode("✏️ 이미 저장된 기록을 고치는 중입니다 · 있던 자리 그대로 둡니다."));
+      return;
+    }
+    host.appendChild(document.createTextNode("📍 이 기록이 갈 자리 · "));
+    host.appendChild(el("b", null, deskLabel(desk)));
+    host.appendChild(el("span", "spacer"));
+    var b = el("button", "btn xs", "자리 바꾸기");
+    b.type = "button";
+    b.addEventListener("click", function () {
+      sideMenuOpen = true;
+      renderSideNav();
+      var nav = $("sideNav");
+      if (window.matchMedia("(max-width: 1020px)").matches && nav) {
+        nav.classList.add("open");
+        var sc = $("drawerScrim"); if (sc) sc.classList.remove("hidden");
+      }
+      var m = nav && nav.querySelector(".sidemenu");
+      if (m) m.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    });
+    host.appendChild(b);
   }
   /* ☰ 한 단추가 두 자리에서 같은 뜻으로 돈다.
      PC · 기둥을 접었다 편다 (접은 것은 기기에 남는다)
@@ -7437,6 +7813,8 @@
     host.innerHTML = "";
     host.className = "";
     renderSideNav();   // 왼쪽 폴더 구조도 같은 눈으로 그린다
+    renderDeskLine();  // 「이 기록이 갈 자리」 도 같은 눈으로
+    applyComposerFold();
     var shown = entries.filter(matches);
     // 고정한 기록을 맨 위로. 나머지 순서(최신순)는 그대로 둔다
     shown.sort(function (a, b) { return (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0); });
@@ -7521,7 +7899,7 @@
 
       var head = el("div", "head");
       if (crumbsOf(n).length) card.appendChild(buildCrumbs(n));
-      if (n._missing) card.appendChild(missingNote(n));
+      if (n._missing || n._away) card.appendChild(missingNote(n));
       head.appendChild(el("span", "badge", t.icon + " " + t.label));
       head.appendChild(el("h3", null, n.title));
       var line2 = el("span", "when");
@@ -7781,6 +8159,42 @@
     (n.blocks || []).some(function (b) { if (b.fileId) { got = b.fileId; return true; } return false; });
     return got;
   }
+  /* ---- 안 보이는 것을 «없다» 고 단정하지 않는다 ----
+     폴더를 훑어서 못 찾았다는 것은 «연결한 폴더 아래에 없다» 는 뜻일 뿐이다.
+     이 앱의 권한(drive.file)은 «파일 하나하나» 에 붙는다 · 폴더에 붙는 것이 아니다.
+     그래서 앱이 만든 파일은 사람이 드라이브에서 딴 데로 옮겨도 그 파일 자체는 계속 열린다.
+     실제로 이 앱은 글도 사진도 전부 «파일 ID» 로 읽는다 (files/{id}?alt=media).
+     자리를 아는 것은 훑기뿐이다. 그러니 훑기가 못 찾았을 때 곧바로 「안 보입니다」 를 띄우면
+     ⚠️ 멀쩡히 읽히는 기록을 고장난 것처럼 보여 주게 된다.
+     그래서 단정하기 전에 파일 ID 로 «너 살아 있니» 를 한 번 직접 물어본다.
+     드라이브가 «있다» 고 하면 그것이 진실이다 · «없다·못 준다» 고 할 때만 안 보인다고 적는다. */
+  var PROBE_MAX = 40;   // 한 번에 물어볼 수 · 수천 편이 걸려도 드라이브를 두들기지 않는다
+  function probeFile(id) {
+    if (!id) return Promise.resolve(null);
+    return driveJson("https://www.googleapis.com/drive/v3/files/" + id +
+      "?fields=id,name,trashed&supportsAllDrives=true")
+      .then(function (f) { return (f && !f.trashed) ? f : null; })
+      .catch(function () { return null; });   // 404·403 · 정말로 못 여는 것
+  }
+  function probeStrays(list) {
+    if (!list.length || !connected) {
+      list.forEach(function (n) { n._missing = true; });
+      return Promise.resolve(0);
+    }
+    var ask = list.slice(0, PROBE_MAX), rest = list.slice(PROBE_MAX), alive = 0;
+    rest.forEach(function (n) { n._missing = true; });   // 못 물어본 것은 판단을 미루지 않고 예전처럼 둔다
+    return ask.reduce(function (chain, n) {
+      return chain.then(function () {
+        return probeFile(anchorIdOf(n)).then(function (f) {
+          if (!f) { n._missing = true; delete n._away; return; }
+          delete n._missing;
+          n._away = true;                    // 살아 있다 · 다만 연결한 폴더 밖이다
+          n._awayName = f.name || "";
+          alive++;
+        });
+      });
+    }, Promise.resolve()).then(function () { return alive; });
+  }
   function relearnPlaces(scan) {
     if (!folder.id) return 0;
     var files = (scan && scan.files) || [];
@@ -7789,19 +8203,20 @@
     /* 끝까지 다 훑었을 때만 «없다» 고 말할 수 있다.
        한도에 걸려 중간에 멈췄으면 «안 보이는 것» 과 «못 본 것» 을 가릴 수 없다. */
     var complete = !!scan && !scan.truncated;
-    var fixed = 0;
+    var fixed = 0, strays = [];
     entries.forEach(function (n) {
       var anchor = anchorIdOf(n);
       if (!anchor) return;                        // 아직 드라이브에 안 올라간 기록
       var f = byId[anchor];
       if (!f || !f._parent) {
-        /* 연결한 폴더 어디에도 없다. 지워졌거나, 폴더 «밖» 으로 나갔거나.
-           밖으로 나간 것은 이 앱의 권한(drive.file)으로는 아예 안 보인다.
+        /* 연결한 폴더 어디에도 없다. 지워졌거나, 폴더 «밖» 으로 나갔거나 · 아직 모른다.
+           여기서 가르지 않는다 · 파일에게 직접 물어본 뒤에 가른다 (probeStrays).
            ⚠️ 이 표시는 색인에 안 적는다. 훑을 때마다 다시 재는 것이라 낡을 일이 없어야 한다. */
-        if (complete && !n._missing) { n._missing = true; fixed++; }
+        if (complete) strays.push(n);
         return;
       }
-      if (n._missing) { delete n._missing; fixed++; }   // 다시 보인다
+      // 돌아왔다 · 밖에 있다는 표시도 함께 걷는다
+      if (n._missing || n._away) { delete n._missing; delete n._away; delete n._awayName; fixed++; }
       var deep = f._parent !== folder.id;
       var path = (f._path || []).slice();
       var wantId = deep ? f._parent : null;
@@ -7811,6 +8226,11 @@
       n.srcFolderName = deep ? (f._parentName || null) : null;
       fixed++;
     });
+    /* 못 찾은 것들에게 직접 물어본다. 답이 늦게 오므로 화면은 답이 온 뒤에 한 번 더 그린다.
+       ⚠️ 여기서 saveIndex 를 부르지 않는다 · _missing·_away 는 색인에 안 적는 표시다. */
+    if (strays.length) {
+      probeStrays(strays).then(function () { render(); }, function () { render(); });
+    }
     return fixed;
   }
   function fetchText(id) {
@@ -10206,6 +10626,7 @@
 
   $("btnSave").addEventListener("click", saveEntry);
   $("btnCancelEdit").addEventListener("click", function () { clearDraft(true); resetComposer(); });
+  $("btnUnfold").addEventListener("click", openComposer);
   $("search").addEventListener("input", function () { searchQ = this.value.trim(); render(); });
   $("btnCompile").addEventListener("click", openCompile);
   document.addEventListener("keydown", function (e) {
