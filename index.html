@@ -1911,23 +1911,59 @@
      앱이 직접 만든 기록은 제 폴더 이름 한 칸만 있다.
      칸을 누르면 그 아래에 있는 기록만 남는다.
      ========================================================= */
-  function crumbsOf(n) {
-    var path = (n.srcPath || []).slice();
-    if (path.length) return path;
-    /* 손으로 자리를 골라 쓴 기록 · 정리 방식보다 사람이 고른 것이 먼저다.
-       이것이 없으면 「부기」 폴더에 쓴 글이 태그 이름으로 나무에 잡힌다. */
-    if (n.deskPath && n.deskPath.length) return n.deskPath.slice();
-    if (n.deskName) return [n.deskName];
-    if (n.folderName) return [n.folderName];
-    /* 앱이 만든 기록인데 폴더 이름이 아직 안 적혀 있다.
-       «정리 방식이 정한 자리» 를 그대로 보여 준다. 태그·월별 방식은 폴더 이름을
-       기록에 안 적어 두는데, 그러면 나무에도 길찾기 줄에도 그 기록이 안 잡혀서
-       «연수 폴더에 넣었는데 왜 안 보이나» 가 된다 (실제로 그렇게 물어봤다). */
+  /* 이 기록이 «어느 폴더들에» 서 있는가 · 언제나 «여러 곳» 을 돌려준다.
+     대개 한 곳이다. 그런데 「태그가 곧 폴더」 에서는 여러 곳이다 —
+     진짜 파일은 첫 태그 폴더에 놓이고, 나머지 태그 폴더에는 바로가기가 놓인다
+     (syncTagShortcuts). 드라이브가 그렇게 생겼으므로 나무도 그렇게 서야 한다.
+     ⚠️ 전에는 첫 태그 하나만 돌려주었다. 그래서 같은 화면에서
+        태그 칩은 「#수업 4」, 왼쪽 나무는 「수업 2」 라고 했고,
+        두 번째 태그로만 쓰인 「질문」 폴더는 나무에 아예 없었다.
+        드라이브에는 있는 폴더가 앱에는 없었던 것이다. */
+  function placesOf(n) {
+    var out = [];
+    /* ① 진짜 파일이 놓인 자리 · 이것이 대표 자리(길찾기 줄)가 된다.
+       손으로 고른 자리는 정리 방식보다 먼저다 · 「부기」에 쓴 글이 태그 이름으로 잡히면 안 된다. */
+    var srcp = (n.srcPath || []).slice();
+    if (srcp.length) out.push(srcp);
+    else if (n.deskPath && n.deskPath.length) out.push(n.deskPath.slice());
+    else if (n.deskName) out.push([n.deskName]);
+    else if (n.folderName) out.push([n.folderName]);
+
     var mode = settings.folderMode;
-    if (mode === "tag") return [primaryTagFolder(n)];
-    if (mode === "monthly") return [dateStamp(n.createdAt).slice(0, 7)];
-    if (mode === "perEntry") return [entryFolderName(n)];   // 아직 안 올라간 기록 · 갈 자리로
-    return [];   // flat · materials 의 글은 뿌리에 산다
+    /* ② 태그 폴더 · 진짜 자리가 따로 있어도 태그 폴더마다 «바로가기» 가 놓인다.
+       그러니 태그로도 찾혀야 한다. 안 그러면 「#수업 5」 인데 「수업 4」 가 된다.
+       ⚠️ 폴더에서 끌어온 기록(srcId)은 빼 둔다. 그건 앱이 만든 것이 아니라
+          십삼 년 동안 있던 자리에 그대로 있는 남의 파일이다 · 바로가기도 안 놓인다. */
+    if (mode === "tag" && !n.srcId) {
+      var seen = {};
+      out.forEach(function (p) { if (p.length === 1) seen[p[0]] = 1; });
+      (n.tags || []).forEach(function (t) {
+        var nm = safeName(String(t || ""), 60);
+        if (!nm || seen[nm]) return;
+        seen[nm] = 1; out.push([nm]);
+      });
+      return out.length ? out : [[NO_TAG_FOLDER]];
+    }
+    if (out.length) return out;
+    /* ③ 폴더 이름이 아직 안 적힌 기록 · «정리 방식이 정한 자리» 를 그대로 보여 준다.
+       이게 없으면 «연수 폴더에 넣었는데 왜 안 보이나» 가 된다 (실제로 그렇게 물어봤다). */
+    if (mode === "monthly") return [[dateStamp(n.createdAt).slice(0, 7)]];
+    if (mode === "perEntry") return [[entryFolderName(n)]];   // 아직 안 올라간 기록 · 갈 자리로
+    return [[]];   // flat · materials 의 글은 뿌리에 산다
+  }
+  /* 길찾기 줄에 쓰는 «대표 자리» · 진짜 파일이 놓이는 그 한 곳 */
+  function crumbsOf(n) {
+    var p = placesOf(n)[0];
+    return p ? p.slice() : [];
+  }
+  /* 고른 폴더 아래에 이 기록이 «있는가» · 여러 자리 중 하나만 걸리면 있는 것이다 */
+  function underPath(n, want) {
+    if (!want.length) return true;
+    return placesOf(n).some(function (p) {
+      if (p.length < want.length) return false;
+      for (var i = 0; i < want.length; i++) if (p[i] !== want[i]) return false;
+      return true;
+    });
   }
   /* 드라이브에서 안 보이게 된 기록 · 한 줄만, 그때만.
      이 앱의 권한(drive.file)은 파일 하나하나 허락받는 방식이라, 연결한 폴더 «밖» 으로
@@ -3073,13 +3109,15 @@
      화면과 드라이브가 어긋나지 않는다. */
   var listOpen = {};          // 목록 보기에서 접은 폴더
   var linkOpen = {};          // 목록 보기에서 «연결» 을 펼쳐 둔 기록
-  function listFolderOf(n) {
-    var mode = settings.folderMode;
-    if (mode === "perEntry") return entryFolderName(n);
-    if (mode === "materials") return "";                       // 글은 맨 위에 놓인다
-    if (mode === "monthly") return dateStamp(n.createdAt).slice(0, 7);
-    if (mode === "tag") return primaryTagFolder(n);
-    return "";                                                 // flat
+  /* 목록 보기 = «디렉토리» · 나무와 같은 자를 써야 한다.
+     ⚠️ 전에는 여기서 정리 방식만 보고 폴더를 정했다. 그래서
+        · 「부기」 자리를 골라 쓴 글이 목록 보기에서는 태그 이름 아래로 갔고
+        · 태그가 여럿인 글은 첫 태그 폴더에만 나왔다
+        같은 기록이 어느 보기냐에 따라 다른 폴더에 앉아 있었다. */
+  function listFoldersOf(n) {
+    if (settings.folderMode === "materials" && !(n.srcPath || []).length &&
+        !(n.deskPath || []).length && !n.deskName) return [""];   // 글은 맨 위에 놓인다
+    return placesOf(n).map(function (p) { return p.join(" / "); });
   }
 
   /* 목록 한 줄. 연결(🔗)을 눌러 «누구와 이어져 있는지» 그 자리에서 펼쳐 본다.
@@ -6531,11 +6569,7 @@
           앱이 만든 기록은 하나도 안 걸린다 — 태그·월별 방식은 srcPath 가 아예 비어 있다.
           그래서 왼쪽에서 「평가」를 눌러도 목록이 텅 비었고, 누른 사람에게는
           «폴더 구조는 보기만 하는 칸» 으로 보였다. 재는 자가 그리는 자와 달랐던 것이다. */
-    if (filterPath.length) {
-      var mp = crumbsOf(n);
-      if (mp.length < filterPath.length) return false;
-      for (var k = 0; k < filterPath.length; k++) if (mp[k] !== filterPath[k]) return false;
-    }
+    if (filterPath.length && !underPath(n, filterPath)) return false;
     if (filterTags.length) {
       var mine = n.tags || [];
       for (var i = 0; i < filterTags.length; i++) {
@@ -7643,17 +7677,23 @@
       return node;
     }
     entries.forEach(function (n) {
-      var node = root;
-      crumbsOf(n).slice(0, SIDE_DEPTH).forEach(function (nm) {
-        if (!node.children[nm]) { node.children[nm] = { children: {}, order: [], count: 0, fid: null }; node.order.push(nm); }
-        node = node.children[nm];
-        node.count++;
+      /* 한 기록이 여러 자리에 설 수 있다 (태그가 곧 폴더).
+         드라이브에도 태그 폴더마다 바로가기가 놓이므로, 나무도 그만큼 세야
+         「#수업 4」 와 「수업 4」 가 같은 수가 된다. */
+      placesOf(n).forEach(function (place) {
+        var cut = place.slice(0, SIDE_DEPTH);
+        var node = root;
+        cut.forEach(function (nm) {
+          if (!node.children[nm]) { node.children[nm] = { children: {}, order: [], count: 0, fid: null }; node.order.push(nm); }
+          node = node.children[nm];
+          node.count++;
+        });
+        /* 이 칸의 «진짜 드라이브 폴더 ID» 를 아는 기록이 있으면 적어 둔다.
+           알고 나면 그 칸에 쓸 때 이름으로 다시 찾을 필요가 없다 ·
+           이름으로 찾다 못 찾으면 같은 이름 폴더가 하나 더 생겨 버린다. */
+        var last = nodeAt(cut, false);
+        if (last && !last.fid) last.fid = n.deskId || n.srcFolderId || null;
       });
-      /* 이 칸의 «진짜 드라이브 폴더 ID» 를 아는 기록이 있으면 적어 둔다.
-         알고 나면 그 칸에 쓸 때 이름으로 다시 찾을 필요가 없다 ·
-         이름으로 찾다 못 찾으면 같은 이름 폴더가 하나 더 생겨 버린다. */
-      var last = nodeAt(crumbsOf(n).slice(0, SIDE_DEPTH), false);
-      if (last && !last.fid) last.fid = n.deskId || n.srcFolderId || null;
     });
     /* 손으로 골라 둔 자리는 아직 기록이 한 편도 없어도 나무에 세운다.
        방금 만든 폴더가 안 보이면 «만들어졌나?» 하고 한 번 더 만들게 된다. */
@@ -7942,9 +7982,10 @@
       var table = el("div", "card listview");
       var groups = {}, order = [];
       shown.forEach(function (n) {
-        var key = listFolderOf(n);
-        if (!groups[key]) { groups[key] = []; order.push(key); }
-        groups[key].push(n);
+        listFoldersOf(n).forEach(function (key) {
+          if (!groups[key]) { groups[key] = []; order.push(key); }
+          groups[key].push(n);
+        });
       });
       /* 폴더 이름이 날짜로 시작하므로 «내림차순» 이라야 최신이 위로 온다.
          목록의 다른 보기들이 전부 최신순인데 여기만 뒤집히면 «어제 것이 사라졌다» 고 여긴다. */

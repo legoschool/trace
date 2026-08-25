@@ -1358,6 +1358,63 @@ check("정말 못 여는 것은 따로 말한다", (away.gone || {}).cls === "ba
   (away.gone || {}).text || "(배너 없음)");
 check("멀쩡한 기록에는 아무 말도 안 붙인다", (away.fine || {}).cls === "", (away.fine || {}).cls || "(없음)");
 
+/* ---------- 10-4. 같은 이름이면 같은 수여야 한다 ----------
+   「태그가 곧 폴더」 에서 태그 칩과 왼쪽 나무는 «같은 것» 을 센다. 그런데 예전에는
+   나무가 첫 태그 하나만 세어서, 한 화면에 「#수업 4」 와 「수업 2」 가 나란히 떴다.
+   두 번째 태그로만 쓰인 태그는 폴더 자체가 나무에 없었다 — 드라이브에는 바로가기가
+   놓여 있는데도. 화면이 드라이브와 어긋나 있었던 것이다.
+   ⚠️ 세 숫자(칩·나무·눌렀을 때 나오는 수)가 전부 같아야 한다. 하나라도 다르면
+      쓰는 사람은 «뭐가 맞는 거냐» 가 된다. */
+await evaluate(`(() => {
+  const mk = (id, title, tags) => ({
+    id, type: '', title, tags, blocks: [{ id: 'b' + id, kind: 'text', text: title }],
+    relations: [], pinned: false, createdAt: 1755000000000, updatedAt: 1755000000000
+  });
+  localStorage.setItem('trace.entries.v2', JSON.stringify([
+    mk('g1', '질문중심 수업 설계', ['수업', '질문']),
+    mk('g2', '배움중심 평가 논의', ['수업', '평가']),
+    mk('g3', '서논술형 문항', ['평가', '수업']),
+    mk('g4', '연수 회고', ['연수', '수업'])
+  ]));
+  const s = JSON.parse(localStorage.getItem('trace.settings.v1') || '{}');
+  s.folderMode = 'tag';
+  localStorage.setItem('trace.settings.v1', JSON.stringify(s));
+  ['trace.desk.v1','trace.deskList.v1','trace.sideOpen.v1','trace.draft.v1'].forEach(k => localStorage.removeItem(k));
+  return true;
+})()`);
+await send("Page.navigate", { url: URL_ });
+await wait(2500);
+const tally = JSON.parse(await evaluate(`(() => {
+  const clr = () => { const c = Array.from(document.querySelectorAll('.filters .chip')).find(x => x.textContent.indexOf('필터 지우기') >= 0); if (c) c.click(); };
+  clr();
+  const chips = {};
+  Array.from(document.querySelectorAll('#tagFilters .chip')).forEach(c => {
+    const m = c.textContent.trim().match(/^#(\\S+)\\s+(\\d+)$/);
+    if (m) chips[m[1]] = +m[2];
+  });
+  const tree = {};
+  Array.from(document.querySelectorAll('#sideNav .siderow')).forEach(r => {
+    const nm = (r.querySelector('.n') || {}).textContent;
+    const c = (r.querySelector('.cnt') || {}).textContent;
+    if (nm && r.className.indexOf('d1') >= 0) tree[nm] = +c;
+  });
+  const clicked = {};
+  Object.keys(tree).forEach(nm => {
+    const row = Array.from(document.querySelectorAll('#sideNav .siderow')).find(r => ((r.querySelector('.n') || {}).textContent) === nm);
+    if (row) { row.click(); clicked[nm] = document.querySelectorAll('#list .entry').length; }
+  });
+  clr();
+  const names = Object.keys(chips).concat(Object.keys(tree)).filter((v, i, a) => a.indexOf(v) === i);
+  const bad = names.filter(nm => !(chips[nm] === tree[nm] && tree[nm] === clicked[nm]));
+  return JSON.stringify({ chips, tree, clicked, bad });
+})()`));
+check("두 번째 태그도 나무에 폴더로 선다", tally.tree && tally.tree["질문"] === 1,
+  "질문 " + (tally.tree ? (tally.tree["질문"] === undefined ? "폴더 없음" : tally.tree["질문"]) : "?"));
+check("태그 칩과 나무가 같은 수를 말한다", (tally.bad || []).length === 0,
+  (tally.bad || []).map(function (nm) {
+    return nm + " · 칩 " + tally.chips[nm] + " / 나무 " + tally.tree[nm] + " / 눌러서 " + tally.clicked[nm];
+  }).join(" · ") || ("수업 " + (tally.tree || {})["수업"] + "편으로 일치"));
+
 /* 빈 화면의 긴 설명도 걷어냈다 · 그 글이 돌아오면 안 된다 */
 const oldEmptyDesc = await evaluate(`/마크다운\\(.md\\)으로, 사진·파일은 정리된 이름/.test(document.body.textContent)`);
 check("빈 화면의 긴 설명이 돌아오지 않았다", !oldEmptyDesc);
