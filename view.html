@@ -6,6 +6,9 @@
 <meta name="theme-color" content="#ffffff" />
 <meta name="robots" content="noindex, nofollow" />
 <title>기록 보기 · 구글 기록장</title>
+<!-- 보내는 쪽(index.html)과 같은 글꼴로 서야 «같은 기록» 처럼 보인다 -->
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
 <link rel="icon" href="icons/favicon-32.png" sizes="32x32" />
 <style>
   /* ─────────────────────────────────────────────────────────
@@ -16,7 +19,8 @@
   :root {
     --bg: #f5f7fb; --panel: #fff; --ink: #1b2130; --ink-soft: #667085;
     --brand: #2f5fd6; --line: #e3e8f2; --line-soft: #eef1f7;
-    --font-body: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+    --font-body: "Pretendard Variable", "Pretendard", -apple-system, BlinkMacSystemFont,
+                 "Apple SD Gothic Neo", "Segoe UI", "Malgun Gothic", system-ui, sans-serif;
     --font-title: var(--font-body);
     --radius: 14px; --bw: 1px;
     --shadow: 0 1px 3px rgba(20,30,60,.06), 0 8px 24px rgba(20,30,60,.06);
@@ -79,6 +83,17 @@
     --t3: #7A5A12; --t3s: #FBE8BE; --t4: #8F5626; --t4s: #F7DFC4;
     --t5: #8E4A60; --t5s: #F8DCE2; --t6: #4C4370; --t6s: #E5DDF0;
   }
+  /* 깔끔 · 흰 종이에 청록 */
+  [data-tone="clean"] {
+    --bg: #F6F7F8; --panel: #FFFFFF; --ink: #1A1D1F; --ink-soft: #6B7280;
+    --brand: #0F8F84; --brand-dark: #0B6E66; --brand-soft: #E3F3F1;
+    --line: #E5E7EA; --line-soft: #F0F1F3; --hard: #1A1D1F;
+    --warn-bg: #FFF7E6; --warn-line: #F0DCA8; --warn-ink: #6B4E00;
+    --ok-bg: #E9F6EF; --ok-line: #BCE2CE; --ok-ink: #10603C; --pin-bg: #FFF3D6;
+    --t1: #2F7A55; --t1s: #E6F2EB; --t2: #2563C4; --t2s: #E7EFFB;
+    --t3: #8A6414; --t3s: #F7EFDC; --t4: #A05226; --t4s: #FAEADF;
+    --t5: #98436D; --t5s: #FAE6F0; --t6: #56499E; --t6s: #ECE9F8;
+  }
   /* 볕 · 노란 종이에 빨강 */
   [data-tone="sunny"] {
     --bg: #FFF8E4; --panel: #FFFFFF; --ink: #2B2118; --ink-soft: #6C5D4B;
@@ -135,6 +150,16 @@
     --t5: #8A3D5E; --t5s: #F6E1EA; --t6: #4A4478; --t6s: #E8E5F3;
   }
   @media (prefers-color-scheme: dark) {
+    [data-tone="clean"]:not([data-mode="light"]) {
+      --bg: #16181A; --panel: #1E2124; --ink: #E9EBED; --ink-soft: #9BA1A8;
+      --brand: #4FC5B7; --brand-dark: #35A99C; --brand-soft: #1B3330;
+      --line: #2C3034; --line-soft: #24282B; --hard: #08090A;
+      --warn-bg: #33290F; --warn-line: #5A4715; --warn-ink: #F0D78F;
+      --ok-bg: #103021; --ok-line: #1E5C3C; --ok-ink: #97E0BB; --pin-bg: #3A2F12;
+      --t1: #86D0A6; --t1s: #17301F; --t2: #8AB4F8; --t2s: #1E2A3D;
+      --t3: #DFC582; --t3s: #332C18; --t4: #EFA277; --t4s: #33241A;
+      --t5: #EC93B8; --t5s: #331F29; --t6: #A99BF0; --t6s: #26224A;
+    }
     [data-tone="craft"]:not([data-mode="light"]) {
       --bg: #1C1917; --panel: #24201C; --ink: #F0E9DD; --ink-soft: #AEA394;
       --brand: #E08A7C; --brand-dark: #C4705F; --brand-soft: #3A2B26;
@@ -197,6 +222,16 @@
     }
   }
   /* ↑ 와 같은 색. 사람이 「어둡게」 를 고른 경우 (기기 설정과 무관하게) */
+  [data-tone="clean"][data-mode="dark"] {
+    --bg: #16181A; --panel: #1E2124; --ink: #E9EBED; --ink-soft: #9BA1A8;
+    --brand: #4FC5B7; --brand-dark: #35A99C; --brand-soft: #1B3330;
+    --line: #2C3034; --line-soft: #24282B; --hard: #08090A;
+    --warn-bg: #33290F; --warn-line: #5A4715; --warn-ink: #F0D78F;
+    --ok-bg: #103021; --ok-line: #1E5C3C; --ok-ink: #97E0BB; --pin-bg: #3A2F12;
+    --t1: #86D0A6; --t1s: #17301F; --t2: #8AB4F8; --t2s: #1E2A3D;
+    --t3: #DFC582; --t3s: #332C18; --t4: #EFA277; --t4s: #33241A;
+    --t5: #EC93B8; --t5s: #331F29; --t6: #A99BF0; --t6s: #26224A;
+  }
   [data-tone="craft"][data-mode="dark"] {
     --bg: #1C1917; --panel: #24201C; --ink: #F0E9DD; --ink-soft: #AEA394;
     --brand: #E08A7C; --brand-dark: #C4705F; --brand-soft: #3A2B26;

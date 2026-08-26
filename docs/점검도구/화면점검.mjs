@@ -154,7 +154,9 @@ check("묻지 않아도 한 모양으로 선다", lk.attr === "lego", String(lk.
 /* 돌기와 큰 모서리는 걷어냈다 · 돌아오면 안 된다 */
 check("장식 돌기가 없다", lk.stud === "none", String(lk.stud));
 check("모서리가 조용하다", parseFloat(lk.radius) <= 12, lk.radius);
-check("태어날 때의 색은 크래프트다", lk.tone === "craft", String(lk.tone));
+/* ⚠️ 태어날 때의 색을 «깔끔»(흰 종이에 청록)으로 옮겼다 · 업노트가 서 있는 자리다.
+   이미 색을 고른 사람의 설정은 안 건드린다 (settings.tone 이 이긴다). */
+check("태어날 때의 색은 깔끔이다", lk.tone === "clean", String(lk.tone));
 check("처음 오는 사람은 큰 글자로 시작한다", lk.size === "big", String(lk.size || "보통"));
 /* 제목 글꼴도 본문과 같은 것으로 · 글꼴이 둘이면 화면이 시끄럽다 */
 check("제목 글꼴이 본문과 같다", !/Jua|Gaegu/.test(lk.titleFont), lk.titleFont.slice(0, 30));
@@ -1162,13 +1164,15 @@ const tone = JSON.parse(await evaluate(`(() => {
   const c2 = now();
   return JSON.stringify({ names, okPick, a, b: b2, c: c2 });
 })()`));
-check("색감 여섯이 다 있다", (tone.names || []).length === 6, (tone.names || []).join(" · "));
+check("색감 일곱이 다 있다", (tone.names || []).length === 7, (tone.names || []).join(" · "));
 check("색감을 바꾸면 색이 바뀐다", tone.okPick && tone.b.tone === "blue" && tone.b.bg !== tone.a.bg,
   `${tone.a.bg} → ${(tone.b||{}).bg}`);
 check("색감을 바꿔도 모양은 그대로다",
   tone.b && tone.b.theme === tone.a.theme && tone.b.radius === tone.a.radius && tone.b.bw === tone.a.bw,
   `모서리 ${tone.a.radius}→${(tone.b||{}).radius} · 테두리 ${tone.a.bw}→${(tone.b||{}).bw}`);
-check("«처음 색으로» 가 되돌린다", tone.c && tone.c.bg === tone.a.bg && tone.c.tone === tone.a.tone,
+/* «처음 색으로» 는 «지금 색» 이 아니라 «태어날 때의 색» 으로 되돌리는 단추다.
+   앞선 점검이 딴 색을 골라 두었을 수 있으므로, 태어날 때의 색으로 견준다. */
+check("«처음 색으로» 가 되돌린다", tone.c && tone.c.tone === "clean",
   `${(tone.c||{}).tone} · ${(tone.c||{}).bg}`);
 await evaluate(`(() => { document.querySelectorAll('.modal-bg').forEach(b => b.remove()); return true; })()`);
 

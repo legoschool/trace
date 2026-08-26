@@ -5,6 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <meta name="description" content="글·사진·링크·파일을 블로그처럼 이어 쓰고, 내 구글 드라이브 폴더에 마크다운으로 쌓는 개인 지식·경험 관리 체계 TRACE 의 기록 도구" />
 <meta name="theme-color" content="#2f5fd6" />
+<!-- 글꼴 · 프리텐다드. 업노트가 서 있는 «군더더기 없는 고딕» 자리다.
+     ⚠️ 지금까지는 이름만 적어 두어서, 이 글꼴이 «깔려 있는 기기» 에서만 떴고
+        나머지는 맑은 고딕으로 떨어져 화면이 기기마다 달라 보였다. 받아 와서 맞춘다.
+     못 받아 와도(오프라인·차단) 아래 시스템 글꼴로 그대로 떨어진다 · 글이 안 보이는 일은 없다. -->
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
 <link rel="manifest" href="manifest.json" />
 <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png" />
 <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png" />
@@ -54,7 +60,8 @@
     --shadow: 0 1px 3px rgba(20,30,60,.06), 0 8px 24px rgba(20,30,60,.06);
 
     /* 글꼴 */
-    --font-body: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", "맑은 고딕", system-ui, sans-serif;
+    --font-body: "Pretendard Variable", "Pretendard", -apple-system, BlinkMacSystemFont,
+                 "Apple SD Gothic Neo", "Segoe UI", "Malgun Gothic", "맑은 고딕", system-ui, sans-serif;
     --font-title: var(--font-body);
     --title-spacing: -.3px;
 
@@ -395,6 +402,18 @@
     --t3: #7A5A12; --t3s: #FBE8BE; --t4: #8F5626; --t4s: #F7DFC4;
     --t5: #8E4A60; --t5s: #F8DCE2; --t6: #4C4370; --t6s: #E5DDF0;
   }
+  /* 깔끔 · 흰 종이에 청록 (업노트가 서 있는 자리) ·
+     바탕과 종이를 아주 옅게만 갈라 두어, 화면이 «색 이야기» 를 안 하게 한다 */
+  [data-tone="clean"] {
+    --bg: #F6F7F8; --panel: #FFFFFF; --ink: #1A1D1F; --ink-soft: #6B7280;
+    --brand: #0F8F84; --brand-dark: #0B6E66; --brand-soft: #E3F3F1;
+    --line: #E5E7EA; --line-soft: #F0F1F3; --hard: #1A1D1F;
+    --warn-bg: #FFF7E6; --warn-line: #F0DCA8; --warn-ink: #6B4E00;
+    --ok-bg: #E9F6EF; --ok-line: #BCE2CE; --ok-ink: #10603C; --pin-bg: #FFF3D6;
+    --t1: #2F7A55; --t1s: #E6F2EB; --t2: #2563C4; --t2s: #E7EFFB;
+    --t3: #8A6414; --t3s: #F7EFDC; --t4: #A05226; --t4s: #FAEADF;
+    --t5: #98436D; --t5s: #FAE6F0; --t6: #56499E; --t6s: #ECE9F8;
+  }
   /* 볕 · 노란 종이에 빨강 */
   [data-tone="sunny"] {
     --bg: #FFF8E4; --panel: #FFFFFF; --ink: #2B2118; --ink-soft: #6C5D4B;
@@ -481,6 +500,16 @@
       --t3: #DFC582; --t3s: #332C18; --t4: #EFA277; --t4s: #33241A;
       --t5: #EC93B8; --t5s: #331F29; --t6: #A99BF0; --t6s: #26224A;
     }
+    [data-tone="clean"]:not([data-mode="light"]) {
+      --bg: #16181A; --panel: #1E2124; --ink: #E9EBED; --ink-soft: #9BA1A8;
+      --brand: #4FC5B7; --brand-dark: #35A99C; --brand-soft: #1B3330;
+      --line: #2C3034; --line-soft: #24282B; --hard: #08090A;
+      --warn-bg: #33290F; --warn-line: #5A4715; --warn-ink: #F0D78F;
+      --ok-bg: #103021; --ok-line: #1E5C3C; --ok-ink: #97E0BB; --pin-bg: #3A2F12;
+      --t1: #86D0A6; --t1s: #17301F; --t2: #8AB4F8; --t2s: #1E2A3D;
+      --t3: #DFC582; --t3s: #332C18; --t4: #EFA277; --t4s: #33241A;
+      --t5: #EC93B8; --t5s: #331F29; --t6: #A99BF0; --t6s: #26224A;
+    }
     [data-tone="ink"]:not([data-mode="light"]) {
       --bg: #17181A; --panel: #202225; --ink: #E8E6E1; --ink-soft: #9C978F;
       --brand: #A8BBD0; --brand-dark: #8FA3BA; --brand-soft: #262B33;
@@ -540,6 +569,16 @@
     --warn-bg: #332911; --warn-line: #5A4715; --warn-ink: #F0D78F;
     --ok-bg: #10321F; --ok-line: #1E5C3C; --ok-ink: #97E0BB; --pin-bg: #3A2F12;
     --t1: #86D0A6; --t1s: #17301F; --t2: #7D9DFF; --t2s: #232C44;
+    --t3: #DFC582; --t3s: #332C18; --t4: #EFA277; --t4s: #33241A;
+    --t5: #EC93B8; --t5s: #331F29; --t6: #A99BF0; --t6s: #26224A;
+  }
+  [data-tone="clean"][data-mode="dark"] {
+    --bg: #16181A; --panel: #1E2124; --ink: #E9EBED; --ink-soft: #9BA1A8;
+    --brand: #4FC5B7; --brand-dark: #35A99C; --brand-soft: #1B3330;
+    --line: #2C3034; --line-soft: #24282B; --hard: #08090A;
+    --warn-bg: #33290F; --warn-line: #5A4715; --warn-ink: #F0D78F;
+    --ok-bg: #103021; --ok-line: #1E5C3C; --ok-ink: #97E0BB; --pin-bg: #3A2F12;
+    --t1: #86D0A6; --t1s: #17301F; --t2: #8AB4F8; --t2s: #1E2A3D;
     --t3: #DFC582; --t3s: #332C18; --t4: #EFA277; --t4s: #33241A;
     --t5: #EC93B8; --t5s: #331F29; --t6: #A99BF0; --t6s: #26224A;
   }
@@ -1800,11 +1839,14 @@
      ⚠️ 옛 키(play·memo·brick·note·base·paper·draft)가 설정·공유 링크에 남아 있을 수 있다.
         themeOf() 가 모르는 키를 THEMES[0] 으로 받아 주므로 전부 레고로 선다. 지우지 말 것. */
   var THEMES = [
-    { key: "lego", label: "레고", sub: "단 하나의 모양", tone: 1, font: "Jua",
-      desc: "납작한 색면과 둥근 모서리, 위에 돌기. 제목은 둥근 주아, 본문은 잘 읽히는 고딕입니다." }
+    /* ⚠️ font 를 비워 둔다. 제목 글꼴을 본문과 같게 맞추면서 주아(Jua)를 안 쓰게 됐다.
+       안 쓰는 글꼴을 계속 받아 오면 첫 화면이 그만큼 늦어진다. */
+    { key: "lego", label: "레고", sub: "단 하나의 모양", tone: 1, font: "",
+      desc: "흰 종이에 머리카락 테두리. 색은 지금 고른 것에만 씁니다. 제목과 본문이 같은 글꼴로 섭니다." }
   ];
   /* 색감 여섯 · 이 한 모양이 갈아입는 옷. 여기만 고른다. */
   var TONES = [
+    { key: "clean",  label: "깔끔",     sub: "흰 종이에 청록" },
     { key: "craft",  label: "크래프트", sub: "크림 종이에 붉은 흙" },
     { key: "sunny",  label: "볕",       sub: "노란 종이에 빨강" },
     { key: "sky",    label: "하늘",     sub: "흰 종이에 파랑" },
@@ -1812,13 +1854,14 @@
     { key: "ink",    label: "먹",       sub: "회백 종이에 먹" },
     { key: "blue",   label: "청사진",   sub: "청회 바탕에 청록" }
   ];
-  /* 태어날 때의 색 · 색감을 따로 안 고르면 크래프트(크림 종이에 붉은 흙)로 선다.
-     첨부 시안의 색이 이것이다. 옛 모양을 쓰던 사람이 넘어올 때는 그 모양이 입던 색을 잇는다. */
-  var TONE_OF = { lego: "craft", play: "sunny", memo: "craft", brick: "craft", note: "craft",
+  /* 태어날 때의 색 · 색감을 따로 안 고르면 «깔끔»(흰 종이에 청록)으로 선다.
+     ⚠️ 이미 고른 사람의 색은 안 건드린다. settings.tone 이 적혀 있으면 그것이 이긴다.
+     옛 모양을 쓰던 사람이 넘어올 때는 그 모양이 입던 색을 잇는다. */
+  var TONE_OF = { lego: "clean", play: "sunny", memo: "craft", brick: "craft", note: "craft",
                   base: "sky", paper: "ink", draft: "blue" };
   function toneOf(shapeKey, picked) {
     if (picked && TONES.some(function (t) { return t.key === picked; })) return picked;
-    return TONE_OF[shapeKey] || "craft";
+    return TONE_OF[shapeKey] || "clean";
   }
 
   /* 정리 방식은 «둘» 이다.

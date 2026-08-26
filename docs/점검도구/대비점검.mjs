@@ -115,7 +115,7 @@ const MEASURE = `(() => {
 const THEMES = ["lego"];
 /* 색감 여섯. 색은 이제 «모양» 이 아니라 «색감» 이 쥐고 있다.
    그래서 색 대비는 색감마다 한 번씩만 재면 된다. 모양은 색을 안 건드리므로. */
-const TONES = ["craft", "sunny", "sky", "forest", "ink", "blue"];
+const TONES = ["clean", "craft", "sunny", "sky", "forest", "ink", "blue"];
 const rows = [];
 for (const th of THEMES) {
   for (const dark of [false, true]) {
@@ -146,7 +146,7 @@ for (const th of THEMES) {
   }
 }
 
-const NAME = { lego: "레고" };
+const NAME = { lego: "레고", clean: "깔끔" };
 const LOW = [];
 console.log("프리셋      화면   카드 넘침 폰넘침 | 본문  제목  배지  날짜  태그  길찾기 단추  칩");
 for (const r of rows) {
