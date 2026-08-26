@@ -99,29 +99,37 @@
      ⚠️ 여기에 색을 적고 싶어지면, 그건 색감에 적어야 하는 것이다.
      ========================================================= */
   [data-theme="lego"] {
-    --shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.07);
-    --font-title: "Jua", var(--font-body); --title-spacing: 0px;
-    --bw: 1px;                   /* 테두리는 머리카락만큼 · 색면이 말하게 둔다 */
-    --radius: 20px; --r-btn: 12px; --r-btn-sm: 10px; --r-inp: 12px; --r-pill: 999px; --r-block: 14px;
-    --veil: transparent;         /* 기록 카드에 유형 색이 그대로 드러난다 */
-    --entry-pt: 30px;
-    --accent-w: 0px;
-    --stud: block; --stud-w: 96px; --stud-h: 14px; --stud-step: 24px;
+    /* 그림자는 «있는 줄 모르게» · 종이가 살짝 떠 있는 정도 */
+    --shadow: 0 1px 2px rgba(20,20,20,.04);
+    --font-title: var(--font-body); --title-spacing: 0px;
+    --bw: 1px;                   /* 테두리는 머리카락만큼 */
+    --radius: 10px; --r-btn: 8px; --r-btn-sm: 7px; --r-inp: 8px; --r-pill: 999px; --r-block: 8px;
+    --veil: var(--panel);        /* 기록 카드는 흰 종이다 · 색은 배지에만 */
+    --entry-pt: 16px;
+    --accent-w: 0px;             /* 위쪽 색줄 없음 */
+    --stud: none;                /* 돌기 없음 */
   }
-  /* 머리띠 · 강조색 판. 색은 색감의 --brand 를 «가리키기만» 한다 */
-  [data-theme="lego"] header.top { background: var(--brand); border-bottom: none; }
-  [data-theme="lego"] .logo { color: var(--panel); }
-  [data-theme="lego"] .logo small { color: var(--panel); opacity: .78; }
-  [data-theme="lego"] header.top .acct { color: var(--panel); opacity: .85; }
-  /* «방금 동기화» 도 판 위에서 읽혀야 한다. busy(도는 중)는 조금 더 또렷하게 */
-  [data-theme="lego"] header.top .syncpill { color: var(--panel); opacity: .8; }
-  [data-theme="lego"] header.top .syncpill.busy { opacity: 1; }
-  /* 돌기 셋 · 첨부 시안의 상단 점 · 레고라는 것을 머리띠가 스스로 말한다 */
-  [data-theme="lego"] .logo::before {
-    content: ""; flex: 0 0 auto; width: 10px; height: 10px; border-radius: 50%;
-    background: var(--panel); opacity: .45; margin-right: 32px;
-    box-shadow: 15px 0 0 var(--panel), 30px 0 0 var(--panel);
-  }
+  /* 머리띠 · 조용한 판. 글이 주인공이고 머리띠는 자리만 잡아 준다.
+     ⚠️ 예전에는 강조색을 통째로 깔았다. 색면이 크면 화면 전체가 그 색 이야기가 되어,
+        정작 읽어야 할 글이 뒤로 밀린다. 색은 «지금 고른 것» 에만 쓴다. */
+  [data-theme="lego"] header.top { background: var(--panel); border-bottom: 1px solid var(--line); }
+  [data-theme="lego"] .logo { color: var(--ink); font-weight: 700; }
+  [data-theme="lego"] .logo small { color: var(--ink-soft); }
+  [data-theme="lego"] .logo .logomark { color: var(--brand); }
+  [data-theme="lego"] header.top .acct { color: var(--ink-soft); }
+  [data-theme="lego"] header.top .syncpill { color: var(--ink-soft); }
+  [data-theme="lego"] header.top .syncpill.busy { color: var(--brand); }
+  /* 왼쪽 기둥은 옅은 바탕, 읽는 자리는 흰 종이 · 둘이 갈려야 눈이 쉰다 */
+  [data-theme="lego"] body { background: var(--bg); }
+  [data-theme="lego"] #sideNav { background: var(--bg); border-right: 1px solid var(--line); }
+  [data-theme="lego"] .layout { background: var(--panel); }
+  [data-theme="lego"] #sideNav { background: var(--bg); }
+  /* 카드 사이를 띄우는 대신 «줄» 로 가른다 · 업노트의 목록처럼 글이 이어져 읽힌다 */
+  [data-theme="lego"] .composer { border-color: var(--line-soft); }
+  [data-theme="lego"] .banner { border-radius: var(--r-btn); }
+  [data-theme="lego"] .chip { font-weight: 500; }
+  [data-theme="lego"] .btn { font-weight: 600; }
+  [data-theme="lego"] .sidenew { font-size: calc(14.5px * var(--fs)); padding: 10px; font-weight: 600; }
   /* ---------- 선 아이콘 · 그림글자 대신 ----------
      currentColor 를 쓰므로 어느 색감·밝기에서도 글자와 같은 색으로 선다. */
   .bico { width: calc(19px * var(--fs)); height: calc(19px * var(--fs)); flex: 0 0 auto;
@@ -139,13 +147,14 @@
   [data-theme="lego"] header.top .btn:focus-visible,
   [data-theme="lego"] .burgerbtn:focus-visible { outline-color: var(--panel); }
 
-  /* 머리띠 위 단추 · 흰 알약 (시안의 「교사용 지도안」) · 로그인만 진하게 */
-  [data-theme="lego"] header.top .btn.sm { border-color: transparent; }
+  /* 머리띠 위 단추 · 평소엔 글자만, 올리면 테두리가 뜬다 */
+  [data-theme="lego"] header.top .btn.sm { border-color: transparent; background: transparent; color: var(--ink-soft); }
+  [data-theme="lego"] header.top .btn.sm:hover { border-color: var(--line); background: var(--bg); color: var(--brand); }
   [data-theme="lego"] header.top .btn.primary {
-    background: var(--panel); color: var(--brand); border-color: transparent; font-weight: 700;
+    background: var(--brand); color: #fff; border-color: var(--brand); font-weight: 600;
   }
+  [data-theme="lego"] header.top .btn.primary:hover { background: var(--brand-dark); color: #fff; }
   @media (max-width: 720px) {
-    [data-theme="lego"] .logo::before { display: none; }   /* 폰에서는 자리가 좁다 */
   }
 
   /* =========================================================
@@ -180,9 +189,20 @@
   .siderow.on svg, .siderow.on .cnt { color: var(--brand); }
   .siderow.d1 { padding-left: 26px; } .siderow.d2 { padding-left: 42px; } .siderow.d3 { padding-left: 58px; }
   /* 구역 이름 · 폴더·태그·휴지통을 눈으로 갈라 준다 (업노트의 사이드바 구조) */
-  .sidecap { font-size: calc(11.5px * var(--fs)); font-weight: 700; letter-spacing: .06em;
-             color: var(--ink-soft); padding: 14px 10px 5px; text-transform: none; }
-  .sidecap:empty { padding: 7px 0 0; }
+  /* 구역 이름 = 접기 손잡이. 태그가 곧 폴더인 사람은 폴더가 열댓 개라
+     칸마다 ▸ 를 다는 것으로는 안 된다 · 구역째로 접혀야 한다. */
+  .sidecap { display: flex; align-items: center; gap: 5px; width: 100%; text-align: left;
+             background: none; border: none; font-family: inherit; cursor: pointer;
+             font-size: calc(11.5px * var(--fs)); font-weight: 700; letter-spacing: .04em;
+             color: var(--ink-soft); padding: 14px 8px 5px; }
+  .sidecap:hover { color: var(--brand); }
+  .sidecap .cap-tw { display: inline-flex; align-items: center; justify-content: center; width: 13px;
+                     opacity: .6; transition: transform .15s ease; }
+  .sidecap .cap-tw svg { width: 9px; height: 9px; }
+  .sidecap .cap-tw.open { transform: rotate(90deg); }
+  .sidecap .n { flex: 0 1 auto; }
+  .sidecap .cnt { margin-left: auto; font-weight: 500; opacity: .8; }
+  .sidegap { height: 10px; }
   .smartrow, .quickrow, .tagrow {
     display: flex; align-items: center; gap: 8px; width: 100%; text-align: left;
     background: none; border: none; font: inherit; color: var(--ink); cursor: pointer;
@@ -229,9 +249,13 @@
 
   /* 작성칸 접기 · 폴더를 볼 때는 목록이 위로 올라온다 */
   .cfold { display: none; }
-  .composer.collapsed { padding-top: 14px; padding-bottom: 14px; }
-  .composer.collapsed > *:not(.cfold) { display: none; }
-  .composer.collapsed .cfold { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  /* ⚠️ 이름을 «collapsed» 로 쓰면 안 된다. 그 이름은 이미 «접힌 본문의 페이드»(.collapsed::after)
+     가 쓰고 있어서, 작성칸을 접는 순간 그 70px 짜리 투명 덮개가 «＋ 새 기록» 위에 얹혔다.
+     눈에는 멀쩡한 단추가 보이는데 눌러도 아무 일이 안 일어났다.
+     클래스 이름은 «무엇처럼 보이나» 가 아니라 «누가 이미 쓰고 있나» 로 정해야 한다. */
+  .composer.cfolded { padding-top: 14px; padding-bottom: 14px; }
+  .composer.cfolded > *:not(.cfold) { display: none; }
+  .composer.cfolded .cfold { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
   .cfoldbtn { display: flex; align-items: center; gap: 8px; background: var(--brand); color: var(--panel);
               border: none; cursor: pointer; padding: 11px 20px; border-radius: var(--r-btn);
               font-family: var(--font-title); letter-spacing: var(--title-spacing);
@@ -253,8 +277,9 @@
                gap: 4.5px; width: 40px; height: 40px; flex: 0 0 auto; cursor: pointer;
                background: var(--panel); border: var(--bw) solid var(--line); border-radius: var(--r-btn-sm); }
   .burgerbtn i { display: block; width: 17px; height: 2.5px; border-radius: 2px; background: var(--ink); }
-  [data-theme="lego"] .burgerbtn { background: rgba(255,255,255,.16); border-color: transparent; }
-  [data-theme="lego"] .burgerbtn i { background: var(--panel); }
+  [data-theme="lego"] .burgerbtn { background: transparent; border-color: transparent; }
+  [data-theme="lego"] .burgerbtn:hover { background: var(--bg); border-color: var(--line); }
+  [data-theme="lego"] .burgerbtn i { background: var(--ink-soft); }
   @media (min-width: 1021px) {
     .layout.folded { grid-template-columns: minmax(0, 1fr); }
     .layout.folded #sideNav { display: none; }
@@ -597,9 +622,9 @@
   body.focusing #btnFocus { border-color: var(--brand); color: var(--brand); }
 
   /* 제목을 누르면 열린다 · 카드에서 가장 많이 하는 일이 가장 가까운 자리에 */
-  .titlebtn { background: none; border: none; padding: 0; margin: 0; font: inherit; color: inherit;
-              cursor: pointer; text-align: left; }
+  .titlebtn { cursor: pointer; }
   .titlebtn:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .titlebtn:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; border-radius: 3px; }
 
   /* ---------- 폰 아래 고정 바 ---------- */
   .dock { display: none; }
@@ -607,12 +632,15 @@
     .dock { display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 55;
             background: var(--panel); border-top: 1px solid var(--line);
             padding: 5px 6px calc(5px + env(safe-area-inset-bottom, 0px)); }
-    .dockbtn { flex: 1 1 0; display: flex; flex-direction: column; align-items: center; gap: 2px;
+    .dockbtn { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 2px;
                background: none; border: none; cursor: pointer; color: var(--ink-soft);
-               padding: 6px 2px; border-radius: 10px; font-family: inherit; }
+               padding: 6px 2px; border-radius: 10px; font-family: inherit; overflow: hidden; }
     .dockbtn:hover, .dockbtn:active { background: var(--brand-soft); color: var(--brand-dark); }
     .dockbtn .di { font-size: calc(18px * var(--fs)); line-height: 1.1; }
-    .dockbtn .dl { font-size: calc(11px * var(--fs)); }
+    /* ⚠️ 글자를 아주 크게 해 두면 이름 넉 줄이 390px 에 안 들어간다.
+       아래 바는 «누르는 자리» 가 먼저다 · 이름은 자리가 없으면 줄여서라도 칸을 지킨다. */
+    .dockbtn .dl { font-size: min(calc(11px * var(--fs)), 13px); max-width: 100%;
+                   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     /* 아래 바가 목록 끝과 «넣기 줄» 을 가리면 안 된다 */
     .wrap { padding-bottom: 128px; }
     .addbar { bottom: 62px; }
@@ -634,6 +662,10 @@
   .btn:disabled { opacity: .45; cursor: not-allowed; }
 
   .card { background: var(--panel); border: var(--bw) solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
+  /* 목록 카드 · 사이 간격을 좁히고 테두리를 옅게. 글이 줄줄이 이어져 읽히게 */
+  [data-theme="lego"] .entry { margin-bottom: 10px; border-color: var(--line-soft); }
+  [data-theme="lego"] .entry:hover { border-color: var(--line); }
+  [data-theme="lego"] .entry .head h3 { font-weight: 600; }
 
   /* ---------- 배너 ---------- */
   .banner { margin: 16px 0; padding: 12px 14px; border-radius: 12px; font-size: calc(13.5px * var(--fs));
@@ -8671,8 +8703,8 @@
     /* ---- 빠른 접근 · 고정해 둔 기록으로 바로 ---- */
     var pins = live.filter(function (n) { return n.pinned; });
     if (pins.length) {
-      host.appendChild(el("div", "sidecap", "빠른 접근"));
-      pins.slice(0, 8).forEach(function (n) {
+      var quickOpen = capRow("빠른 접근", "quick", pins.length);
+      if (quickOpen) pins.slice(0, 8).forEach(function (n) {
         var b = el("button", "quickrow");
         b.type = "button";
         b.appendChild(el("span", "sico", "⭐"));
@@ -8684,7 +8716,31 @@
       });
     }
 
-    host.appendChild(el("div", "sidecap", "폴더 구조"));
+    /* 구역 이름을 누르면 그 구역이 통째로 접힌다.
+       ⚠️ 태그가 곧 폴더인 사람은 폴더가 열댓 개다. 그런데 폴더 하나하나에는
+          자식이 없어서 ▸ 손잡이가 안 붙는다 · 접을 길이 아예 없었다.
+          접는 것은 «칸마다» 가 아니라 «구역마다» 가 맞다. 편 것은 기기에 남는다. */
+    function capRow(label, key, count) {
+      var open = sideSecOpen[key] !== false;
+      var b = el("button", "sidecap" + (open ? " open" : ""));
+      b.type = "button";
+      /* ⚠️ ▾ 같은 글자는 한글 글꼴로 떨어지면 «-» 처럼 보인다. 실제로 그렇게 보였다.
+         이미 나무에서 쓰는 SVG 꺾쇠를 그대로 쓴다 · 어느 기기에서나 같은 모양이다. */
+      var tw = el("span", "cap-tw" + (open ? " open" : ""));
+      tw.appendChild(caretSvg());
+      b.appendChild(tw);
+      b.appendChild(el("span", "n", label));
+      if (count != null) b.appendChild(el("span", "cnt", String(count)));
+      b.title = open ? "접기" : "펴기";
+      b.addEventListener("click", function () {
+        sideSecOpen[key] = !open;
+        try { localStorage.setItem("trace.sideSec.v1", JSON.stringify(sideSecOpen)); } catch (e) {}
+        renderSideNav();
+      });
+      host.appendChild(b);
+      return open;
+    }
+    var treeOpen = capRow("폴더 구조", "folders", null);
 
     // 색인이 아는 길로 나무를 세운다
     var root = { children: {}, order: [], count: 0 };
@@ -8768,6 +8824,7 @@
       host.appendChild(b);
     }
 
+    if (treeOpen) {
     row(folder.name || "내 폴더", [], 0, live.length, false, true, folder.id || null);
     (function walk(node, path, depth) {
       node.order.slice().sort(function (a, b) { return a.localeCompare(b, "ko"); }).forEach(function (nm) {
@@ -8779,6 +8836,7 @@
         if (open) walk(kid, p, depth + 1);
       });
     })(root, [], 1);
+    }
 
     /* ＋ 새 기록 · 지금 고른 자리에 바로 쓴다.
        옆의 ▾ 는 «자리를 바꾸는» 자리다. 사업이 바뀔 때만 누른다. */
@@ -8817,8 +8875,9 @@
       return a.localeCompare(b, "ko");
     });
     if (tnames.length) {
-      host.appendChild(el("div", "sidecap", "태그"));
+      var tagOpen = capRow("태그", "tags", tnames.length);
       var SIDE_TAGS = 8;
+      if (!tagOpen) tnames = [];
       var showTags = sideTagsOpen ? tnames : tnames.slice(0, SIDE_TAGS);
       showTags.forEach(function (t) {
         var on = filterTags.indexOf(t) >= 0;
@@ -8846,11 +8905,13 @@
     /* ---- 휴지통 · 되돌릴 수 있는 자리가 눈에 보여야 «지우기» 가 무섭지 않다 ---- */
     var trashN = entries.filter(function (n) { return n.trashed; }).length;
     if (trashN || smartView === "trash") {
-      host.appendChild(el("div", "sidecap", ""));
+      host.appendChild(el("div", "sidegap"));
       smartRow("🗑", "휴지통", trashN, "trash", "지운 기록 · 되돌리거나 완전히 지웁니다");
     }
   }
   var sideTagsOpen = false;
+  /* 구역 접힘 · 기본은 다 펴짐. false 로 적힌 것만 접힌다 */
+  var sideSecOpen = safeParse(localStorage.getItem("trace.sideSec.v1")) || {};
 
   /* ---- 양식으로 시작하기 ----
      되풀이되는 기록(수업 회고·연수 정리)을 소제목까지 세운 채로 연다.
@@ -8970,7 +9031,7 @@
   }
   function applyComposerFold() {
     var c = $("composer");
-    if (c) c.classList.toggle("collapsed", composerFolded);
+    if (c) c.classList.toggle("cfolded", composerFolded);
     var w = $("cfoldWhere");
     if (w) {
       w.innerHTML = "";
@@ -9179,10 +9240,17 @@
       /* 제목을 누르면 열린다 · 가장 많이 하는 일(읽기)이 가장 가까운 자리에 있어야 한다.
          전에는 제목이 왼쪽 위, 여는 단추가 오른쪽 아래로 «대각선으로 가장 먼» 자리였다. */
       var h3 = el("h3");
-      var tbtn = el("button", "titlebtn", n.title || "(제목 없음)");
-      tbtn.type = "button";
+      /* ⚠️ <button> 으로 만들면 안 된다. 단추는 «쪼갤 수 없는 한 덩어리» 라서
+         긴 제목이 줄바꿈을 못 하고 폰에서 화면 밖으로 밀려난다 (실제로 39px 넘쳤다).
+         글처럼 흐르면서 눌리기도 해야 하므로 span 에 역할만 준다. */
+      var tbtn = el("span", "titlebtn", n.title || "(제목 없음)");
+      tbtn.setAttribute("role", "button");
+      tbtn.setAttribute("tabindex", "0");
       tbtn.title = "전체 보기";
       tbtn.addEventListener("click", function () { openViewer(n); });
+      tbtn.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openViewer(n); }
+      });
       h3.appendChild(tbtn);
       head.appendChild(h3);
       /* 나머지는 한 겹 안으로 · 위험한 것(삭제)이 편집 바로 옆에 늘 나와 있으면 안 된다 */

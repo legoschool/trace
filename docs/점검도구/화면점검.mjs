@@ -124,10 +124,12 @@ const b = JSON.parse(boot);
 check("첫 화면이 그려진다", b.editor && b.addButtons > 0, `＋버튼 ${b.addButtons}개`);
 check("자바스크립트 오류 없음", errors.length === 0, errors[0] || "");
 
-/* ---------- 1-2. 모양은 레고 하나 ----------
+/* ---------- 1-2. 모양은 하나 · 조용한 종이 ----------
    예전에는 처음 온 사람에게 «어떤 모양으로 쓸까요?» 를 물었다.
-   모양이 레고 하나가 되면서 물을 것이 없어졌다 · 창이 안 떠야 하고,
-   화면은 묻지 않아도 레고 모양·크래프트 색·큰 글자로 서 있어야 한다. */
+   모양이 하나가 되면서 물을 것이 없어졌다 · 창이 안 떠야 한다.
+   ⚠️ 모양은 «업노트처럼» 으로 다시 잡았다. 강조색 판·레고 돌기·둥근 제목 글꼴을
+      걷어내고, 흰 종이에 머리카락 테두리만 남겼다. 색면이 크면 화면 전체가
+      그 색 이야기가 되어 정작 읽어야 할 글이 뒤로 밀린다. */
 await wait(700);
 const look = await evaluate(`(() => {
   const asked = Array.from(document.querySelectorAll('.card.modal')).some(x => (x.textContent||'').includes('어떤 모양으로'));
@@ -144,11 +146,14 @@ const look = await evaluate(`(() => {
 })()`);
 const lk = JSON.parse(look);
 check("모양을 묻는 창이 더는 없다", !lk.asked, lk.asked ? "아직 묻는다" : "안 묻는다");
-check("묻지 않아도 레고 모양으로 선다", lk.attr === "lego" && lk.stud === "block" && lk.radius === "20px",
-  `${lk.attr} · 모서리 ${lk.radius} · 돌기 ${lk.stud}`);
+check("묻지 않아도 한 모양으로 선다", lk.attr === "lego", String(lk.attr));
+/* 돌기와 큰 모서리는 걷어냈다 · 돌아오면 안 된다 */
+check("장식 돌기가 없다", lk.stud === "none", String(lk.stud));
+check("모서리가 조용하다", parseFloat(lk.radius) <= 12, lk.radius);
 check("태어날 때의 색은 크래프트다", lk.tone === "craft", String(lk.tone));
 check("처음 오는 사람은 큰 글자로 시작한다", lk.size === "big", String(lk.size || "보통"));
-check("제목 글꼴은 주아다", /Jua/.test(lk.titleFont), lk.titleFont.slice(0, 30));
+/* 제목 글꼴도 본문과 같은 것으로 · 글꼴이 둘이면 화면이 시끄럽다 */
+check("제목 글꼴이 본문과 같다", !/Jua|Gaegu/.test(lk.titleFont), lk.titleFont.slice(0, 30));
 const headband = await evaluate(`(() => {
   const h = document.querySelector('header.top');
   const cs = getComputedStyle(h);
@@ -156,7 +161,10 @@ const headband = await evaluate(`(() => {
   return JSON.stringify({ bg: cs.backgroundColor, brand: brand });
 })()`);
 const hb = JSON.parse(headband);
-check("머리띠가 강조색 판이다", !!hb.bg && hb.bg !== "rgba(0, 0, 0, 0)", `${hb.bg} (강조 ${hb.brand})`);
+/* ⚠️ 머리띠는 이제 «강조색 판» 이 아니다. 종이색이라야 한다 ·
+   글이 주인공이고 머리띠는 자리만 잡아 준다. */
+check("머리띠가 조용한 판이다", !!hb.bg && hb.bg !== "rgba(0, 0, 0, 0)" && hb.bg !== hb.brand,
+  `${hb.bg} (강조 ${hb.brand})`);
 
 
 /* 기록 카드가 «유형 색» 을 물려받는지 · 프리셋의 핵심이다.
@@ -1236,7 +1244,7 @@ const deskPick = JSON.parse(await evaluate(`(() => {
   const shown = Array.from(c.children).filter(ch => getComputedStyle(ch).display !== 'none');
   const now = Array.from(nav.querySelectorAll('.siderow')).find(r => ((r.querySelector('.n')||{}).textContent) === '평가');
   return JSON.stringify({
-    collapsed: c.classList.contains('collapsed'),
+    collapsed: c.classList.contains('cfolded'),
     onlyFold: shown.length === 1 && shown[0].className === 'cfold',
     height: Math.round(c.getBoundingClientRect().height),
     where: (document.getElementById('cfoldWhere')||{}).textContent || '',
@@ -1265,7 +1273,7 @@ const unfold = JSON.parse(await evaluate(`(() => {
   document.getElementById('btnUnfold').click();
   const c = document.getElementById('composer');
   return JSON.stringify({
-    open: !c.classList.contains('collapsed'),
+    open: !c.classList.contains('cfolded'),
     line: (document.getElementById('deskLine')||{}).textContent || ''
   });
 })()`));
@@ -1281,7 +1289,7 @@ const busy = JSON.parse(await evaluate(`(() => {
   const other = rows.find(r => ((r.querySelector('.n')||{}).textContent) === '연수');
   if (other) other.click();
   return JSON.stringify({
-    stillOpen: !document.getElementById('composer').classList.contains('collapsed'),
+    stillOpen: !document.getElementById('composer').classList.contains('cfolded'),
     kept: document.getElementById('title').value
   });
 })()`));
@@ -1647,9 +1655,9 @@ const pillar = JSON.parse(await evaluate(`(() => {
   const tags = Array.from(document.querySelectorAll('#sideNav .tagrow')).map(b => (b.querySelector('.n') || {}).textContent);
   return JSON.stringify({ caps, smart, quick, tags });
 })()`));
-check("기둥이 구역으로 나뉜다", (pillar.caps || []).indexOf("빠른 접근") >= 0 &&
-  (pillar.caps || []).indexOf("폴더 구조") >= 0 && (pillar.caps || []).indexOf("태그") >= 0,
-  (pillar.caps || []).join(" / "));
+check("기둥이 구역으로 나뉜다", ["빠른 접근", "폴더 구조", "태그"].every(function (k) {
+  return (pillar.caps || []).some(function (c) { return c.indexOf(k) >= 0; });
+}), (pillar.caps || []).join(" / "));
 check("«모든 기록 · 할 일 · 분류 없음» 이 선다",
   ["모든 기록", "할 일", "분류 없음"].every(function (k) { return (pillar.smart || []).indexOf(k) >= 0; }),
   (pillar.smart || []).join(" · "));
@@ -1910,6 +1918,60 @@ check("휴지통이 «드라이브는 아직 그대로» 를 말해 준다", /�
 check("휴지통을 비울 수 있다", !emptied.err && (emptied.left || []).length === 1,
   emptied.err || (emptied.left || []).join(" · "));
 check("비우기 전에 한 번 더 묻는다", /되돌릴 수 없습니다/.test(emptied.ask || ""), (emptied.ask || "").slice(0, 50));
+
+/* ---------- 10-11. 구역째로 접힌다 · 그리고 「＋ 새 기록」 이 진짜로 눌린다 ----------
+   ⚠️ 태그가 곧 폴더인 사람은 폴더가 열댓 개다. 그런데 폴더 하나하나에는 자식이 없어서
+      ▸ 손잡이가 안 붙는다 · 접을 길이 아예 없었다. 접는 것은 «칸마다» 가 아니라 «구역마다» 다.
+   ⚠️ 그리고 접은 작성칸의 「＋ 새 기록」 은 «눈에는 보이는데 안 눌리는» 단추였다.
+      클래스 이름을 collapsed 로 붙였더니, 이미 그 이름을 쓰던 «접힌 본문의 페이드»
+      (.collapsed::after) 가 70px 짜리 투명 덮개를 단추 위에 얹었다.
+      클래스 이름은 «무엇처럼 보이나» 가 아니라 «누가 이미 쓰고 있나» 로 정해야 한다. */
+const sect = JSON.parse(await evaluate(`(() => {
+  const cap = t => Array.from(document.querySelectorAll('#sideNav .sidecap')).find(c => c.textContent.indexOf(t) >= 0);
+  const rows = () => document.querySelectorAll('#sideNav .siderow').length;
+  const tags = () => document.querySelectorAll('#sideNav .tagrow').length;
+  const f = cap('폴더 구조');
+  if (!f) return JSON.stringify({ err: 'NO_CAP' });
+  const before = rows();
+  f.click();
+  const closed = rows();
+  cap('폴더 구조').click();
+  const opened = rows();
+  const t = cap('태그');
+  let tBefore = tags(), tClosed = -1;
+  if (t) { t.click(); tClosed = tags(); cap('태그').click(); }
+  return JSON.stringify({ before, closed, opened, tBefore, tClosed,
+    saved: localStorage.getItem('trace.sideSec.v1') || '' });
+})()`));
+check("폴더 구역이 통째로 접힌다", !sect.err && sect.before > 0 && sect.closed === 0,
+  sect.err || (sect.before + " → " + sect.closed));
+check("다시 누르면 펴진다", sect.opened === sect.before, sect.closed + " → " + sect.opened);
+check("태그 구역도 접힌다", sect.tClosed === 0, sect.tBefore + " → " + sect.tClosed);
+
+/* 접힌 작성칸의 「＋ 새 기록」 을 «진짜 그 자리에서» 눌러 본다 ·
+   프로그램으로 click() 을 부르면 덮개가 있어도 눌린다. 그래서 좌표로 확인한다. */
+/* 쓰던 글(블록까지)이 있으면 일부러 안 접는다 · 빈 화면에서 봐야 한다 */
+await evaluate(`(() => { localStorage.removeItem('trace.draft.v1'); return true; })()`);
+await send("Page.navigate", { url: URL_ });
+await wait(2400);
+const unfoldable = JSON.parse(await evaluate(`(() => {
+  const row = Array.from(document.querySelectorAll('#sideNav .siderow'))[1];
+  if (row) row.click();
+  window.scrollTo(0, 0);
+  const c = document.getElementById('composer');
+  const b = document.getElementById('btnUnfold');
+  b.scrollIntoView({ block: 'center' });
+  const r = b.getBoundingClientRect();
+  const hit = document.elementFromPoint(Math.round(r.left + r.width / 2), Math.round(r.top + r.height / 2));
+  return JSON.stringify({
+    folded: c.classList.contains('cfolded'),
+    reachable: !!hit && (hit === b || b.contains(hit)),
+    hit: hit ? (hit.tagName + (hit.id ? '#' + hit.id : '')) : 'null'
+  });
+})()`));
+check("폴더를 누르면 작성칸이 접힌다(cfolded)", unfoldable.folded === true);
+check("접힌 «＋ 새 기록» 이 무엇에도 안 덮인다", unfoldable.reachable === true,
+  "그 자리의 요소 · " + unfoldable.hit);
 
 /* 빈 화면의 긴 설명도 걷어냈다 · 그 글이 돌아오면 안 된다 */
 const oldEmptyDesc = await evaluate(`/마크다운\\(.md\\)으로, 사진·파일은 정리된 이름/.test(document.body.textContent)`);
