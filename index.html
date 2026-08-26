@@ -808,6 +808,9 @@
   .addplus { font-size: calc(26px * var(--fs)); line-height: 1; font-weight: 800; color: var(--brand); }
   /* 선 아이콘과 글자가 한 줄에 나란히 서게 */
   .addbar [data-add] { display: inline-flex; align-items: center; gap: 6px; }
+  /* 접어 둔 갈래 · 「⋯ 더」 를 누르면 제자리에서 펴진다 */
+  .addbar .addx { display: none; }
+  .addbar.open .addx { display: inline-flex; }
   .addbar [data-add] svg { flex: 0 0 auto; opacity: .8; }
   .addbar [data-add]:hover svg { opacity: 1; }
   .addlabel { font-size: calc(12.5px * var(--fs)); font-weight: 700; color: var(--ink-soft); }
@@ -1512,18 +1515,22 @@
         <button class="btn sm" data-add="text">글</button>
         <button class="btn sm" data-add="todo">할 일</button>
         <button class="btn sm" data-add="list">목록</button>
-        <button class="btn sm" data-add="quote">인용</button>
-        <button class="btn sm" data-add="code">코드</button>
         <button class="btn sm" data-add="table">표</button>
-        <button class="btn sm" data-add="fold">접이식</button>
         <button class="btn sm" data-add="capture">캡처</button>
         <button class="btn sm" data-add="image">사진</button>
-        <button class="btn sm" data-add="draw">손 메모</button>
-        <button class="btn sm" data-add="voice">녹음</button>
         <button class="btn sm" data-add="file">파일·영상</button>
-        <button class="btn sm" data-add="link">링크</button>
-        <button class="btn sm" data-add="embed">코드 삽입</button>
-        <button class="btn sm" data-add="divider">구분선</button>
+        <!-- ⚠️ 갈래를 더 만들 때는 여기 늘리지 말고 addx 를 붙여 접힌 쪽에 둘 것.
+             넣기 줄이 열여섯 개가 되면 폰에서 여섯 줄을 먹는다 · 고르는 자리가 아니라 벽이 된다.
+             제자리에서 펴지게 한 이유 · 뜬 메뉴로 덮으면 적던 자리가 가려진다. -->
+        <button class="btn sm addx" data-add="quote">인용</button>
+        <button class="btn sm addx" data-add="code">코드</button>
+        <button class="btn sm addx" data-add="fold">접이식</button>
+        <button class="btn sm addx" data-add="draw">손 메모</button>
+        <button class="btn sm addx" data-add="voice">녹음</button>
+        <button class="btn sm addx" data-add="link">링크</button>
+        <button class="btn sm addx" data-add="embed">코드 삽입</button>
+        <button class="btn sm addx" data-add="divider">구분선</button>
+        <button id="btnAddMore" class="btn sm" title="인용·코드·접이식·손 메모·녹음·링크·코드 삽입·구분선">⋯ 더</button>
       </div>
       <input type="file" id="fileInput" multiple class="hidden" />
       <input type="file" id="imgInput" accept="image/*" multiple class="hidden" />
@@ -11826,6 +11833,23 @@
     if (b) { b.textContent = on ? "🎯 집중 끄기" : "🎯 집중"; }
     if (on) { composerFolded = false; applyComposerFold(); }
   }
+  /* 넣기 줄의 «⋯ 더» · 자주 안 쓰는 갈래는 접어 둔다.
+     매일 넣는 것(소제목·글·할 일·목록·표·캡처·사진·파일)만 처음부터 보인다.
+     ⚠️ 뜬 메뉴로 덮지 않는다 · 적던 자리를 가리면 무엇을 쓰던 중이었는지 놓친다.
+        편 것은 기기에 남는다 · 늘 다 쓰는 사람에게 매번 다시 펴게 하면 안 된다. */
+  var addOpen = localStorage.getItem("trace.addOpen.v1") === "1";
+  function applyAddOpen() {
+    var bar = $("addbar"), b = $("btnAddMore");
+    if (bar) bar.classList.toggle("open", addOpen);
+    if (b) { b.textContent = addOpen ? "⋯ 접기" : "⋯ 더"; }
+  }
+  $("btnAddMore").addEventListener("click", function () {
+    addOpen = !addOpen;
+    try { localStorage.setItem("trace.addOpen.v1", addOpen ? "1" : "0"); } catch (e) {}
+    applyAddOpen();
+  });
+  applyAddOpen();
+
   $("btnFocus").addEventListener("click", function () {
     setFocus(!document.body.classList.contains("focusing"));
   });

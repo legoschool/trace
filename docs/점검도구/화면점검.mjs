@@ -72,6 +72,18 @@ async function connect() {
   throw new Error("Edge 디버깅 포트에 붙지 못했습니다");
 }
 
+/* 넣기 줄 밖에 있든 «⋯ 더» 안에 있든, 그 갈래를 넣을 수 있으면 된다 */
+const addByKind = (kind, korean) => `(() => {
+  const direct = document.querySelector('[data-add="${kind}"]');
+  if (direct) { direct.click(); return true; }
+  const more = document.getElementById('btnAddMore');
+  if (!more) return false;
+  more.click();
+  const it = Array.from(document.querySelectorAll('.menupop button')).find(b => b.textContent.indexOf('${korean}') >= 0);
+  if (it) it.click();
+  document.querySelectorAll('.menupop').forEach(p => p.remove());
+  return !!it;
+})()`;
 const results = [];
 function check(name, ok, detail = "") {
   results.push({ name, ok, detail });
@@ -173,6 +185,9 @@ await evaluate(`(() => {
 await evaluate(`(() => { document.querySelectorAll('.modal-bg').forEach(b => b.remove()); return true; })()`);
 await wait(300);
 const voiceUi = await evaluate(`(() => {
+  // 녹음은 접힌 쪽에 있다 · 한 번 펴고 누른다
+  const barV = document.getElementById('addbar');
+  if (barV && !barV.classList.contains('open')) document.getElementById('btnAddMore').click();
   const b = Array.from(document.querySelectorAll('[data-add]')).find(x => (x.textContent||'').includes('녹음'));
   if (!b) return 'NO_BUTTON';
   b.click();
@@ -560,6 +575,8 @@ check("연결 전에는 막히고 이유를 말해 준다", /연결/.test(String
 
 /* ---------- 4-2. 손 메모 ---------- */
 const drawOpen = await evaluate(`(() => {
+  const bar0 = document.getElementById('addbar');
+  if (bar0 && !bar0.classList.contains('open')) document.getElementById('btnAddMore').click();
   const b = document.querySelector('[data-add="draw"]');
   if (!b) return 'NO_BUTTON';
   b.click();
@@ -610,6 +627,8 @@ if (drawOpen === "OPEN") {
 
 /* ---------- 4-3. 녹음 ---------- */
 const voiceOpen = await evaluate(`(() => {
+  const bar1 = document.getElementById('addbar');
+  if (bar1 && !bar1.classList.contains('open')) document.getElementById('btnAddMore').click();
   const b = document.querySelector('[data-add="voice"]');
   if (!b) return 'NO_BUTTON';
   b.click();
@@ -1495,14 +1514,28 @@ await evaluate(`(() => {
 await send("Page.navigate", { url: URL_ });
 await wait(2500);
 const blockKinds = JSON.parse(await evaluate(`(() => {
-  const add = k => { const b = document.querySelector('[data-add="' + k + '"]'); if (b) b.click(); return !!b; };
-  const found = {};
-  ['todo','list','code','table','fold'].forEach(k => { found[k] = add(k); });
-  return JSON.stringify({ found, buttons: Array.from(document.querySelectorAll('#addbar [data-add]')).map(b => b.getAttribute('data-add')) });
+  // 자주 안 쓰는 갈래는 접혀 있다 · 처음 보이는 것과 펴면 나오는 것을 따로 센다
+  const vis = () => Array.from(document.querySelectorAll('#addbar [data-add]'))
+    .filter(b => getComputedStyle(b).display !== 'none').map(b => b.getAttribute('data-add'));
+  // 앞선 점검이 펴 놓았을 수 있다 · 접힌 상태에서 재야 «처음 보이는 것» 을 세는 것이다
+  if (document.getElementById('addbar').classList.contains('open')) document.getElementById('btnAddMore').click();
+  const outer = vis();
+  document.getElementById('btnAddMore').click();
+  const inner = vis().filter(k => outer.indexOf(k) < 0);
+  document.getElementById('btnAddMore').click();
+  // 세고 나서, 이 뒤의 점검이 쓸 블록들을 실제로 넣어 둔다
+  ['todo', 'list', 'table'].forEach(k => { const b = document.querySelector('[data-add="' + k + '"]'); if (b) b.click(); });
+  return JSON.stringify({ buttons: outer, inner, barCount: outer.length + 1 });
 })()`));
-check("업노트식 블록 다섯이 넣기 줄에 있다",
-  ["todo", "list", "code", "table", "fold"].every(function (k) { return (blockKinds.buttons || []).indexOf(k) >= 0; }),
+check("매일 쓰는 갈래는 넣기 줄 밖에 있다",
+  ["todo", "list", "table"].every(function (k) { return (blockKinds.buttons || []).indexOf(k) >= 0; }),
   (blockKinds.buttons || []).join(" "));
+check("가끔 쓰는 갈래는 접혀 있다가 펴진다",
+  ["quote", "code", "fold", "divider", "voice", "draw"].every(function (k) {
+    return (blockKinds.inner || []).indexOf(k) >= 0;
+  }), (blockKinds.inner || []).join(" "));
+/* ⚠️ 넣기 줄이 열여섯 개가 되면 폰에서 여섯 줄을 먹는다 · 고르는 자리가 아니라 벽이 된다 */
+check("넣기 줄이 열 개를 안 넘는다", blockKinds.barCount <= 10, blockKinds.barCount + "개");
 
 const built = JSON.parse(await evaluate(`(() => {
   const t = document.getElementById('title');
@@ -1520,6 +1553,9 @@ const built = JSON.parse(await evaluate(`(() => {
   l3[3].value = '속 항목'; l3[3].dispatchEvent(new Event('input', { bubbles: true }));
   l3[3].dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
   // 코드
+  // 코드·접이식은 접힌 쪽에 있다 · 한 번 펴고 누른다
+  if (!document.getElementById('addbar').classList.contains('open')) document.getElementById('btnAddMore').click();
+  ['code', 'fold'].forEach(k => { const b = document.querySelector('[data-add="' + k + '"]'); if (b) b.click(); });
   const ct = Array.from(document.querySelectorAll('#blocks textarea.mono')).pop();
   ct.value = "const a = 1"; ct.dispatchEvent(new Event('input', { bubbles: true }));
   // 표
