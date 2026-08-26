@@ -749,6 +749,76 @@
   .flabel { font-size: calc(12px * var(--fs)); color: var(--ink-soft); font-weight: 700; padding-right: 2px; align-self: center; }
   /* 태그가 스무 개를 넘으면 눈으로 훑는 것은 «찾기» 가 아니다. 그때만 나오는 칸 */
   .tagfind { flex: 0 1 160px; padding: 5px 10px; font-size: calc(13px * var(--fs)); border-radius: 99px; }
+
+  /* 서식 단추 줄 · 적는 칸 바로 아래. 기호를 외우게 하지 않는다 */
+  .fmtbar { display: flex; gap: 4px; margin-top: 5px; flex-wrap: wrap; }
+  .fmtbtn { min-width: 30px; padding: 4px 8px; border: 1px solid var(--line); background: var(--panel);
+            color: var(--ink); border-radius: 7px; cursor: pointer; font-size: calc(13px * var(--fs)); line-height: 1.4; }
+  .fmtbtn:hover { border-color: var(--brand); color: var(--brand); }
+  .fmtsep { width: 1px; align-self: stretch; background: var(--line); margin: 0 3px; }
+  .hlbtn { width: 22px; height: 26px; border: 1px solid var(--line); border-radius: 6px; cursor: pointer; padding: 0; }
+  .hlbtn:hover { border-color: var(--ink); transform: translateY(-1px); }
+  /* 보이는 쪽 서식 · 형광펜은 색감을 따라간다 */
+  .content mark, .vpaper mark { background: var(--brand-soft); color: inherit; padding: 0 2px; border-radius: 3px; }
+  .content code, .vpaper code { font-family: ui-monospace, Consolas, monospace;
+                               font-size: .92em; background: var(--bg); border: 1px solid var(--line);
+                               border-radius: 5px; padding: 1px 5px; }
+  .content .codeblock code, .vpaper .codeblock code { background: none; border: none; padding: 0; }
+
+  /* ---------- 줄이 여럿인 블록 (할 일 · 목록) ---------- */
+  .lines { display: flex; flex-direction: column; gap: 4px; }
+  .linerow { display: flex; align-items: center; gap: 8px; }
+  .linechk { flex: 0 0 auto; width: 17px; height: 17px; accent-color: var(--brand); cursor: pointer; }
+  .linebul { flex: 0 0 auto; width: 17px; text-align: center; color: var(--ink-soft);
+             font-size: calc(13px * var(--fs)); font-variant-numeric: tabular-nums; }
+  .lineinp { flex: 1 1 auto; width: auto; }
+  .linerow .btn.xs { flex: 0 0 auto; opacity: .45; }
+  .linerow:hover .btn.xs { opacity: 1; }
+
+  /* 보이는 쪽 · 목록에서 «바로» 체크된다. 그게 이 블록의 전부다 */
+  .todolist { list-style: none; margin: 10px 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
+  .todolist li { display: flex; align-items: flex-start; gap: 9px; line-height: 1.65; }
+  .todolist input[type=checkbox] { flex: 0 0 auto; width: 17px; height: 17px; margin-top: 3px;
+                                   accent-color: var(--brand); cursor: pointer; }
+  .todolist li.done .t { color: var(--ink-soft); text-decoration: line-through; }
+  .todolist .todocount { display: block; color: var(--ink-soft); font-size: calc(12px * var(--fs)); margin-top: 2px; }
+  .todolist .todocount.alldone { color: var(--ok); font-weight: 700; }
+  .bullets { margin: 10px 0; padding-left: 22px; line-height: 1.7; }
+  .bullets li.d1 { margin-left: 20px; list-style-type: circle; }
+  .bullets li.d2 { margin-left: 40px; list-style-type: square; }
+
+  /* ---------- 표 ---------- */
+  .tablewrap { overflow-x: auto; }
+  table.tedit { border-collapse: collapse; width: 100%; }
+  table.tedit th, table.tedit td { padding: 2px; }
+  table.tedit .tcell { width: 100%; min-width: 96px; padding: 6px 8px; font-size: calc(13.5px * var(--fs)); }
+  table.tedit th .tcell { font-weight: 700; }
+  table.tedit .tctl { width: 1%; white-space: nowrap; opacity: .45; }
+  table.tedit tr:hover .tctl { opacity: 1; }
+  /* 보이는 쪽 · 좁은 화면에서는 표만 옆으로 밀린다 (쪽 전체가 밀리면 안 된다) */
+  .tscroll { overflow-x: auto; margin: 12px 0; }
+  table.shown { border-collapse: collapse; width: 100%; font-size: calc(13.5px * var(--fs)); }
+  table.shown th, table.shown td { border: 1px solid var(--line); padding: 8px 11px; text-align: left; line-height: 1.6; }
+  table.shown th { background: var(--brand-soft); color: var(--brand-dark); font-weight: 700; }
+  table.shown tr:nth-child(even) td { background: var(--bg); }
+
+  /* ---------- 접이식 ---------- */
+  .foldbox { border: 1px solid var(--line); border-radius: 10px; margin: 12px 0; background: var(--panel); }
+  .foldbox > summary { cursor: pointer; padding: 10px 13px; font-weight: 700; list-style: none;
+                       display: flex; align-items: center; gap: 8px; border-radius: 10px; }
+  .foldbox > summary::-webkit-details-marker { display: none; }
+  .foldbox > summary::before { content: "▸"; color: var(--ink-soft); transition: transform .15s ease; }
+  .foldbox[open] > summary::before { transform: rotate(90deg); }
+  .foldbox > summary:hover { background: var(--brand-soft); color: var(--brand-dark); }
+  .foldbody { padding: 2px 14px 12px; white-space: pre-wrap; line-height: 1.75; }
+
+  /* 코드 · 글과 확실히 갈라 보이게. 언어 딱지는 오른쪽 위 */
+  .codeblock { position: relative; background: var(--bg); border: 1px solid var(--line);
+               border-radius: 10px; padding: 12px 14px; margin: 12px 0; overflow-x: auto; }
+  .codeblock code { font-family: ui-monospace, Consolas, monospace; font-size: calc(13px * var(--fs));
+                    line-height: 1.6; white-space: pre; color: var(--ink); }
+  .codelang { position: absolute; top: 6px; right: 10px; font-size: calc(11px * var(--fs));
+              color: var(--ink-soft); letter-spacing: .04em; text-transform: lowercase; }
   .chip.tagchip { font-size: calc(12.5px * var(--fs)); padding: 5px 11px; }
   .chip.ghostchip { border-style: dashed; }
   .chip.clearchip { border-color: var(--danger); color: var(--danger); }
@@ -1349,7 +1419,12 @@
         <div class="addlead"><span class="addplus">＋</span><span class="addlabel">넣기</span></div>
         <button class="btn sm" data-add="heading">소제목</button>
         <button class="btn sm" data-add="text">글</button>
+        <button class="btn sm" data-add="todo">할 일</button>
+        <button class="btn sm" data-add="list">목록</button>
         <button class="btn sm" data-add="quote">인용</button>
+        <button class="btn sm" data-add="code">코드</button>
+        <button class="btn sm" data-add="table">표</button>
+        <button class="btn sm" data-add="fold">접이식</button>
         <button class="btn sm" data-add="capture">캡처</button>
         <button class="btn sm" data-add="image">사진</button>
         <button class="btn sm" data-add="draw">손 메모</button>
@@ -3271,17 +3346,60 @@
     return a;
   }
   // 텍스트를 [[링크]] 가 살아 있는 노드들로 붙인다
+  /* 글 안 서식 · 굵게 · 기울임 · 밑줄 · 취소선 · 형광펜 · 코드
+     ⚠️ 저장하는 것은 «마크다운 그대로» 다. 서식은 보여 줄 때만 입힌다.
+        그래야 드라이브에 남는 .md 가 옵시디언·깃허브에서도 그대로 읽힌다.
+        형광펜(==노랑==)과 밑줄(<u>)만 마크다운 표준 밖이라 흔한 확장 표기를 따른다.
+     한 번에 하나씩만 본다 · 겹쳐 쓰는 것(굵은 형광펜)까지 받으면 파서가 커진다. */
+  var INLINE_RE = /(\*\*|__)(?=\S)([\s\S]*?\S)\1|(~~)(?=\S)([\s\S]*?\S)\3|(==)(?=\S)([\s\S]*?\S)\5|(`)([^`\n]+?)\6|(\*|_)(?=\S)([\s\S]*?\S)\8/;
+  /* 색 있는 형광펜 · 마크다운에는 «색» 이라는 것이 없어서 <mark> 를 그대로 쓴다.
+     ⚠️ HTML 을 통째로 해석하지 않는다. 여는 표가 «색 하나» 인 이 모양일 때만 알아본다.
+        그래야 남이 보낸 글에 붙어 온 딴 표가 그대로 살아나는 일이 없다. */
+  var MARK_RE = /<mark style="background:(#[0-9a-fA-F]{3,8})">([\s\S]*?)<\/mark>/;
+  function appendInline(host, s) {
+    s = String(s == null ? "" : s);
+    var guard = 0;
+    while (s && guard++ < 400) {
+      var mk = MARK_RE.exec(s);
+      var m0 = INLINE_RE.exec(s);
+      // 둘 다 걸리면 앞에 있는 것부터 · 순서가 뒤집히면 조각이 어긋난다
+      if (mk && (!m0 || mk.index <= m0.index)) {
+        if (mk.index > 0) host.appendChild(document.createTextNode(s.slice(0, mk.index)));
+        var mel = document.createElement("mark");
+        mel.style.background = mk[1];
+        appendInline(mel, mk[2]);
+        host.appendChild(mel);
+        s = s.slice(mk.index + mk[0].length);
+        continue;
+      }
+      var m = m0;
+      if (!m) break;
+      if (m.index > 0) host.appendChild(document.createTextNode(s.slice(0, m.index)));
+      var tag = "b", inner = "";
+      if (m[1]) { tag = "b"; inner = m[2]; }
+      else if (m[3]) { tag = "s"; inner = m[4]; }
+      else if (m[5]) { tag = "mark"; inner = m[6]; }
+      else if (m[7]) { tag = "code"; inner = m[8]; }
+      else { tag = "i"; inner = m[10]; }
+      var node = document.createElement(tag);
+      if (tag === "code") node.textContent = inner;
+      else appendInline(node, inner);          // 굵은 글 안의 기울임까지는 받는다
+      host.appendChild(node);
+      s = s.slice(m.index + m[0].length);
+    }
+    if (s) host.appendChild(document.createTextNode(s));
+  }
   function appendRichText(host, text) {
     var s = String(text == null ? "" : text);
     var re = wikiRe(), last = 0, m;
     while ((m = re.exec(s))) {
-      if (m.index > last) host.appendChild(document.createTextNode(s.slice(last, m.index)));
+      if (m.index > last) appendInline(host, s.slice(last, m.index));
       var target = (m[1] || "").trim();
       var label = (m[2] != null && m[2].trim()) ? m[2].trim() : target;
       host.appendChild(wikiLinkEl(target, label));
       last = re.lastIndex;
     }
-    if (last < s.length) host.appendChild(document.createTextNode(s.slice(last)));
+    if (last < s.length) appendInline(host, s.slice(last));
   }
 
   /* =========================================================
@@ -3526,6 +3644,68 @@
           b.text.trim().split("\n").forEach(function (line) { L.push("> " + line); });
           L.push("");
         }
+      } else if (b.kind === "todo") {
+        /* 마크다운의 «할 일» 표기 그대로 · 옵시디언·깃허브·노션이 다 알아본다 */
+        var any = false;
+        (b.items || []).forEach(function (it) {
+          if (!it.t || !it.t.trim()) return;
+          any = true;
+          L.push("- [" + (it.done ? "x" : " ") + "] " + it.t.trim());
+        });
+        if (any) L.push("");
+      } else if (b.kind === "list") {
+        var any2 = false, num = [0, 0, 0];
+        (b.items || []).forEach(function (it) {
+          if (!it.t || !it.t.trim()) return;
+          any2 = true;
+          var d = Math.max(0, Math.min(2, it.d || 0));
+          var pad = new Array(d * 2 + 1).join(" ");
+          if (b.ordered) {
+            num[d]++; for (var q = d + 1; q < 3; q++) num[q] = 0;
+            L.push(pad + num[d] + ". " + it.t.trim());
+          } else {
+            L.push(pad + "- " + it.t.trim());
+          }
+        });
+        if (any2) L.push("");
+      } else if (b.kind === "table") {
+        /* 파이프 표 · 깃허브·옵시디언이 다 알아본다.
+           칸 안의 | 는 \\| 로 막아야 표가 거기서 갈라지지 않는다. */
+        var cells = function (a) {
+          return "| " + a.map(function (c) {
+            return String(c == null ? "" : c).replace(/\|/g, "\\|").replace(/\n/g, " ").trim();
+          }).join(" | ") + " |";
+        };
+        var hd = (b.head || []);
+        var body2 = (b.rows || []).filter(function (r) {
+          return r.some(function (c) { return c && String(c).trim(); });
+        });
+        if (hd.length && (hd.some(function (h) { return h && h.trim(); }) || body2.length)) {
+          L.push(cells(hd));
+          L.push("|" + hd.map(function () { return " --- "; }).join("|") + "|");
+          body2.forEach(function (r) { L.push(cells(r)); });
+          L.push("");
+        }
+      } else if (b.kind === "fold") {
+        // 마크다운에 접이식은 없다 · <details> 를 그대로 쓴다 (마크다운은 HTML 을 품는다)
+        if ((b.title && b.title.trim()) || (b.text && b.text.trim())) {
+          L.push("<details" + (b.open ? " open" : "") + ">");
+          L.push("<summary>" + (b.title || "펼쳐 보기").trim() + "</summary>");
+          L.push("");
+          if (b.text && b.text.trim()) { L.push(b.text.trim()); L.push(""); }
+          L.push("</details>");
+          L.push("");
+        }
+      } else if (b.kind === "code") {
+        if (b.text && b.text.trim()) {
+          /* 코드 안에 ``` 이 들어 있으면 울타리가 거기서 끊긴다. 그럴 땐 울타리를 늘린다. */
+          var fence = "```";
+          while (b.text.indexOf(fence) >= 0) fence += "`";
+          L.push(fence + (b.lang || ""));
+          L.push(b.text.replace(/\s+$/, ""));
+          L.push(fence);
+          L.push("");
+        }
       } else if (b.kind === "divider") {
         L.push("---"); L.push("");
       } else if (b.kind === "image") {
@@ -3764,6 +3944,14 @@
   function slimBlock(b) {
     var o = { id: b.id, kind: b.kind };
     if (b.kind === "text" || b.kind === "heading" || b.kind === "quote") o.text = b.text || "";
+    if (b.kind === "todo") o.items = (b.items || []).map(function (it) { return { t: it.t || "", done: !!it.done }; });
+    if (b.kind === "list") { o.ordered = !!b.ordered; o.items = (b.items || []).map(function (it) { return { t: it.t || "", d: it.d || 0 }; }); }
+    if (b.kind === "code") { o.lang = b.lang || ""; o.text = b.text || ""; }
+    if (b.kind === "table") {
+      o.head = (b.head || []).map(function (x) { return x || ""; });
+      o.rows = (b.rows || []).map(function (r) { return (r || []).map(function (x) { return x || ""; }); });
+    }
+    if (b.kind === "fold") { o.title = b.title || ""; o.text = b.text || ""; o.open = !!b.open; }
     if (b.kind === "link") { o.url = b.url || ""; o.label = b.label || ""; }
     if (b.kind === "embed") { o.code = b.code || ""; o.height = b.height || 360; }
     if (b.kind === "image" || b.kind === "file") {
@@ -4277,7 +4465,93 @@
   function cloneBlock(b) {
     var c = {};
     for (var k in b) if (Object.prototype.hasOwnProperty.call(b, k)) c[k] = b[k];
+    /* ⚠️ 얕은 복사면 «줄이 여럿인 블록» 의 항목 배열을 원본과 나눠 쓰게 된다.
+       그러면 편집으로 불러온 기록에서 체크 하나 눌렀을 때 원본까지 같이 바뀐다.
+       줄을 들고 있는 블록은 한 겹 더 떠서 복사한다. */
+    if (Array.isArray(b.items)) c.items = b.items.map(function (it) {
+      var o = {}; for (var q in it) if (Object.prototype.hasOwnProperty.call(it, q)) o[q] = it[q]; return o;
+    });
+    if (Array.isArray(b.head)) c.head = b.head.slice();
+    if (Array.isArray(b.rows)) c.rows = b.rows.map(function (r) { return r.slice(); });
     return c;
+  }
+
+  /* 서식 단추 · 고른 글자를 마크다운 기호로 감싼다.
+     ⚠️ 기호를 «외우게» 하면 아무도 안 쓴다. 그렇다고 편집기를 통째로 갈아엎으면
+        드라이브에 남는 것이 마크다운이 아니게 된다. 그래서 단추가 기호를 대신 넣어 준다.
+     이미 감싸져 있으면 벗긴다 · 같은 단추를 두 번 누르면 되돌아와야 한다. */
+  var FORMATS = [
+    { k: "b", label: "가", title: "굵게 (Ctrl+B)", mark: "**", style: "font-weight:800" },
+    { k: "i", label: "가", title: "기울임 (Ctrl+I)", mark: "*", style: "font-style:italic" },
+    { k: "s", label: "가", title: "취소선", mark: "~~", style: "text-decoration:line-through" },
+    { k: "m", label: "가", title: "형광펜", mark: "==", style: "background:var(--brand-soft);border-radius:3px" },
+    { k: "c", label: "코드", title: "코드로", mark: "`", style: "font-family:ui-monospace,Consolas,monospace" }
+  ];
+  function wrapSelection(ta, mark, onDone) {
+    var s = ta.selectionStart, e = ta.selectionEnd, v = ta.value;
+    var sel = v.slice(s, e);
+    if (!sel) {                       // 고른 것이 없으면 기호만 넣고 가운데에 커서를 둔다
+      ta.value = v.slice(0, s) + mark + mark + v.slice(e);
+      ta.selectionStart = ta.selectionEnd = s + mark.length;
+    } else if (v.slice(s - mark.length, s) === mark && v.slice(e, e + mark.length) === mark) {
+      ta.value = v.slice(0, s - mark.length) + sel + v.slice(e + mark.length);   // 벗기기
+      ta.selectionStart = s - mark.length; ta.selectionEnd = e - mark.length;
+    } else {
+      ta.value = v.slice(0, s) + mark + sel + mark + v.slice(e);
+      ta.selectionStart = s + mark.length; ta.selectionEnd = e + mark.length;
+    }
+    ta.focus();
+    if (onDone) onDone(ta.value);
+  }
+  /* 형광펜 여섯 색 · 업노트가 쓰는 여섯 자리를 우리 색감 위에서도 읽히는 값으로 잡았다.
+     밝을 때와 어두울 때 모두 검은 글자가 읽혀야 해서, 흐린 파스텔로만 고른다. */
+  var HL_COLORS = [
+    ["#FBE2C8", "주황"], ["#FBCFCF", "빨강"], ["#CFE6FB", "파랑"],
+    ["#FBF3B8", "노랑"], ["#D6F0C2", "초록"], ["#EBD6FB", "보라"]
+  ];
+  function wrapMark(ta, color, onDone) {
+    var s = ta.selectionStart, e = ta.selectionEnd, v = ta.value;
+    var sel = v.slice(s, e);
+    if (!sel) { ta.focus(); toast("형광펜을 칠할 글자를 먼저 고르세요."); return; }
+    var open = '<mark style="background:' + color + '">', close = "</mark>";
+    ta.value = v.slice(0, s) + open + sel + close + v.slice(e);
+    ta.selectionStart = s + open.length; ta.selectionEnd = e + open.length;
+    ta.focus();
+    if (onDone) onDone(ta.value);
+  }
+  function formatBar(ta, b) {
+    var bar = el("div", "fmtbar");
+    FORMATS.forEach(function (f) {
+      var btn = el("button", "fmtbtn", f.label);
+      btn.type = "button";
+      btn.title = f.title;
+      btn.style.cssText += ";" + f.style;
+      btn.addEventListener("mousedown", function (e) { e.preventDefault(); });   // 고른 것을 잃지 않게
+      btn.addEventListener("click", function () {
+        wrapSelection(ta, f.mark, function (v) { b.text = v; autoGrow(ta); touchDraft(); });
+      });
+      bar.appendChild(btn);
+    });
+    bar.appendChild(el("span", "fmtsep"));
+    HL_COLORS.forEach(function (c) {
+      var sw = el("button", "hlbtn");
+      sw.type = "button";
+      sw.title = "형광펜 · " + c[1];
+      sw.style.background = c[0];
+      sw.addEventListener("mousedown", function (e) { e.preventDefault(); });
+      sw.addEventListener("click", function () {
+        wrapMark(ta, c[0], function (v) { b.text = v; autoGrow(ta); touchDraft(); });
+      });
+      bar.appendChild(sw);
+    });
+    ta.addEventListener("keydown", function (e) {
+      if (!(e.ctrlKey || e.metaKey)) return;
+      var key = String(e.key || "").toLowerCase();
+      if (key !== "b" && key !== "i") return;
+      e.preventDefault();
+      wrapSelection(ta, key === "b" ? "**" : "*", function (v) { b.text = v; autoGrow(ta); touchDraft(); });
+    });
+    return bar;
   }
 
   function newBlock(kind, data) {
@@ -4286,6 +4560,11 @@
     if (kind === "link") { b.url = ""; b.label = ""; }
     if (kind === "embed") { b.code = ""; b.height = 360; }
     if (kind === "image" || kind === "file") { b.caption = ""; }
+    if (kind === "todo") b.items = [{ t: "", done: false }];
+    if (kind === "list") { b.ordered = false; b.items = [{ t: "", d: 0 }]; }
+    if (kind === "code") { b.lang = ""; b.text = ""; }
+    if (kind === "table") { b.head = ["", ""]; b.rows = [["", ""], ["", ""]]; }
+    if (kind === "fold") { b.title = ""; b.text = ""; b.open = false; }
     if (data) for (var k in data) if (Object.prototype.hasOwnProperty.call(data, k)) b[k] = data[k];
     return b;
   }
@@ -4428,6 +4707,7 @@
         ta.addEventListener("paste", function (e) { handlePaste(e, b); });
         attachWiki(ta);
         body.appendChild(ta);
+        body.appendChild(formatBar(ta, b));
         setTimeout(function () { autoGrow(ta); }, 0);
 
       } else if (b.kind === "heading") {
@@ -4436,6 +4716,201 @@
         hi.addEventListener("input", function () { b.text = hi.value; });
         attachWiki(hi);
         body.appendChild(hi);
+
+      } else if (b.kind === "todo" || b.kind === "list") {
+        /* 줄이 여럿인 블록 · 한 줄씩 적고 Enter 로 다음 줄로 넘어간다.
+           ⚠️ 줄 하나 고칠 때마다 전부 다시 그리면 적던 자리를 잃는다.
+              그래서 다시 그리는 것은 «줄이 늘거나 줄 때» 뿐이다. */
+        var isTodo = b.kind === "todo";
+        var rows = el("div", "lines");
+        function repaintLines(focusAt) {
+          rows.innerHTML = "";
+          if (!b.items || !b.items.length) b.items = [isTodo ? { t: "", done: false } : { t: "", d: 0 }];
+          b.items.forEach(function (it, i) {
+            var line = el("div", "linerow");
+            line.style.paddingLeft = (isTodo ? 0 : (it.d || 0) * 22) + "px";
+            if (isTodo) {
+              var cb = el("input"); cb.type = "checkbox"; cb.checked = !!it.done;
+              cb.className = "linechk";
+              cb.addEventListener("change", function () { it.done = cb.checked; touchDraft(); });
+              line.appendChild(cb);
+            } else {
+              var bul = el("span", "linebul", b.ordered ? (i + 1) + "." : "•");
+              line.appendChild(bul);
+            }
+            var ti = el("input", "inp lineinp");
+            ti.value = it.t || "";
+            ti.placeholder = isTodo ? "할 일" : "항목";
+            ti.addEventListener("input", function () { it.t = ti.value; touchDraft(); });
+            ti.addEventListener("keydown", function (e) {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                b.items.splice(i + 1, 0, isTodo ? { t: "", done: false } : { t: "", d: it.d || 0 });
+                repaintLines(i + 1);
+              } else if (e.key === "Backspace" && !ti.value && b.items.length > 1) {
+                e.preventDefault();
+                b.items.splice(i, 1);
+                repaintLines(Math.max(0, i - 1));
+              } else if (!isTodo && e.key === "Tab") {
+                // 들여쓰기는 목록에서만 · 할 일은 한 겹으로 둔다 (겹치면 체크의 뜻이 흐려진다)
+                e.preventDefault();
+                it.d = Math.max(0, Math.min(2, (it.d || 0) + (e.shiftKey ? -1 : 1)));
+                repaintLines(i);
+              }
+            });
+            attachWiki(ti);
+            line.appendChild(ti);
+            var xb = el("button", "btn xs ghost", "✕");
+            xb.type = "button"; xb.title = "이 줄 지우기";
+            xb.addEventListener("click", function () {
+              if (b.items.length <= 1) { b.items = [isTodo ? { t: "", done: false } : { t: "", d: 0 }]; }
+              else b.items.splice(i, 1);
+              repaintLines(Math.max(0, i - 1));
+            });
+            line.appendChild(xb);
+            rows.appendChild(line);
+          });
+          if (focusAt != null) {
+            var ins = rows.querySelectorAll(".lineinp");
+            if (ins[focusAt]) ins[focusAt].focus();
+          }
+          touchDraft();
+        }
+        repaintLines(null);
+        body.appendChild(rows);
+        var lbar = el("div", "row"); lbar.style.marginTop = "6px";
+        var addLine = el("button", "btn xs", "＋ 줄 추가");
+        addLine.type = "button";
+        addLine.addEventListener("click", function () {
+          b.items.push(isTodo ? { t: "", done: false } : { t: "", d: 0 });
+          repaintLines(b.items.length - 1);
+        });
+        lbar.appendChild(addLine);
+        if (!isTodo) {
+          var ord = el("button", "btn xs", b.ordered ? "1. 번호 매김" : "• 점 목록");
+          ord.type = "button";
+          ord.title = "번호 매김과 점 목록을 바꿉니다";
+          ord.addEventListener("click", function () {
+            b.ordered = !b.ordered;
+            ord.textContent = b.ordered ? "1. 번호 매김" : "• 점 목록";
+            repaintLines(null);
+          });
+          lbar.appendChild(ord);
+          lbar.appendChild(el("span", "addhint", "Tab 으로 한 칸 들여쓰기 · Shift+Tab 으로 내어쓰기"));
+        } else {
+          lbar.appendChild(el("span", "addhint", "Enter 로 다음 줄 · 목록에서도 바로 체크할 수 있습니다"));
+        }
+        body.appendChild(lbar);
+
+      } else if (b.kind === "table") {
+        /* 표 · 칸을 눌러 바로 적는다. 첫 줄은 «머리» 라 굵게 선다.
+           ⚠️ 칸 하나 고칠 때마다 전부 다시 그리면 적던 자리를 잃는다 · 줄·칸이 늘거나 줄 때만 다시 그린다. */
+        var tw = el("div", "tablewrap");
+        function repaintTable() {
+          tw.innerHTML = "";
+          if (!b.head || !b.head.length) b.head = ["", ""];
+          if (!b.rows || !b.rows.length) b.rows = [b.head.map(function () { return ""; })];
+          var cols = b.head.length;
+          b.rows.forEach(function (r) { while (r.length < cols) r.push(""); r.length = cols; });
+          var tb = el("table", "tedit");
+          var hr = el("tr");
+          b.head.forEach(function (h, ci) {
+            var th = el("th");
+            var inp = el("input", "inp tcell");
+            inp.value = h || ""; inp.placeholder = "머리 " + (ci + 1);
+            inp.addEventListener("input", function () { b.head[ci] = inp.value; touchDraft(); });
+            th.appendChild(inp);
+            tb.appendChild(hr);
+            hr.appendChild(th);
+          });
+          var delCol = el("th", "tctl");
+          var dcb = el("button", "btn xs ghost", "✕열"); dcb.type = "button"; dcb.title = "마지막 열 지우기";
+          dcb.addEventListener("click", function () {
+            if (b.head.length <= 1) return;
+            b.head.pop(); b.rows.forEach(function (r) { r.pop(); }); repaintTable();
+          });
+          delCol.appendChild(dcb); hr.appendChild(delCol);
+          b.rows.forEach(function (row, ri) {
+            var tr = el("tr");
+            row.forEach(function (cell, ci) {
+              var td = el("td");
+              var inp2 = el("input", "inp tcell");
+              inp2.value = cell || "";
+              inp2.addEventListener("input", function () { b.rows[ri][ci] = inp2.value; touchDraft(); });
+              attachWiki(inp2);
+              td.appendChild(inp2); tr.appendChild(td);
+            });
+            var dt = el("td", "tctl");
+            var drb = el("button", "btn xs ghost", "✕"); drb.type = "button"; drb.title = "이 줄 지우기";
+            drb.addEventListener("click", function () {
+              if (b.rows.length <= 1) return;
+              b.rows.splice(ri, 1); repaintTable();
+            });
+            dt.appendChild(drb); tr.appendChild(dt);
+            tb.appendChild(tr);
+          });
+          tw.appendChild(tb);
+          var tbar = el("div", "row"); tbar.style.marginTop = "6px";
+          var ar = el("button", "btn xs", "＋ 줄"); ar.type = "button";
+          ar.addEventListener("click", function () { b.rows.push(b.head.map(function () { return ""; })); repaintTable(); });
+          var ac = el("button", "btn xs", "＋ 열"); ac.type = "button";
+          ac.addEventListener("click", function () { b.head.push(""); b.rows.forEach(function (r) { r.push(""); }); repaintTable(); });
+          tbar.appendChild(ar); tbar.appendChild(ac);
+          tbar.appendChild(el("span", "addhint", "첫 줄이 표의 머리가 됩니다"));
+          tw.appendChild(tbar);
+          touchDraft();
+        }
+        repaintTable();
+        body.appendChild(tw);
+
+      } else if (b.kind === "fold") {
+        /* 접이식 · 긴 기록에서 «지금 안 볼 것» 을 접어 둔다.
+           마크다운에 접이식은 없어서 <details> 를 그대로 쓴다 · 옵시디언·깃허브가 다 알아본다. */
+        var ft = el("input", "inp");
+        ft.placeholder = "접었을 때 보일 제목 (예: 6월 13-19)";
+        ft.value = b.title || "";
+        ft.addEventListener("input", function () { b.title = ft.value; touchDraft(); });
+        body.appendChild(ft);
+        var fa = el("textarea", "inp");
+        fa.rows = 3; fa.value = b.text || "";
+        fa.placeholder = "펼쳤을 때 보일 내용";
+        fa.style.marginTop = "6px";
+        fa.addEventListener("input", function () { b.text = fa.value; autoGrow(fa); touchDraft(); });
+        attachWiki(fa);
+        body.appendChild(fa);
+        body.appendChild(formatBar(fa, b));
+        var fo = el("label", "checkline");
+        var fc = el("input"); fc.type = "checkbox"; fc.checked = !!b.open;
+        fc.addEventListener("change", function () { b.open = fc.checked; touchDraft(); });
+        fo.appendChild(fc);
+        fo.appendChild(el("span", null, " 처음부터 펴 놓기"));
+        body.appendChild(fo);
+        setTimeout(function () { autoGrow(fa); }, 0);
+
+      } else if (b.kind === "code") {
+        var lang = el("input", "inp");
+        lang.style.maxWidth = "180px";
+        lang.placeholder = "언어 (예: js, python · 비워도 됩니다)";
+        lang.value = b.lang || "";
+        lang.addEventListener("input", function () { b.lang = lang.value.trim(); touchDraft(); });
+        body.appendChild(lang);
+        var ct = el("textarea", "inp mono");
+        ct.rows = 5;
+        ct.value = b.text || "";
+        ct.placeholder = "코드를 붙여넣으세요";
+        ct.style.marginTop = "6px";
+        ct.addEventListener("input", function () { b.text = ct.value; autoGrow(ct); touchDraft(); });
+        /* 코드 칸에서 Tab 은 «다음 칸으로» 가 아니라 «들여쓰기» 여야 한다 */
+        ct.addEventListener("keydown", function (e) {
+          if (e.key !== "Tab") return;
+          e.preventDefault();
+          var s = ct.selectionStart, t = ct.selectionEnd;
+          ct.value = ct.value.slice(0, s) + "  " + ct.value.slice(t);
+          ct.selectionStart = ct.selectionEnd = s + 2;
+          b.text = ct.value; touchDraft();
+        });
+        body.appendChild(ct);
+        setTimeout(function () { autoGrow(ct); }, 0);
 
       } else if (b.kind === "link") {
         var r1 = el("div", "row");
@@ -6214,8 +6689,22 @@
       if (b.kind === "image" || b.kind === "file") return true;
       if (b.kind === "link") return !!b.url;
       if (b.kind === "embed") return !!(b.code && b.code.trim());
+      if (b.kind === "todo" || b.kind === "list") return hasLine(b);
+      if (b.kind === "table") return hasCell(b);
+      if (b.kind === "fold") return !!((b.title && b.title.trim()) || (b.text && b.text.trim()));
       if (b.kind === "divider") return false;
       return !!(b.text && b.text.trim());
+    });
+  }
+  /* 줄이 여럿인 블록은 «한 줄이라도 글자가 있으면» 내용이 있는 것이다 */
+  function hasLine(b) {
+    return (b.items || []).some(function (it) { return it.t && it.t.trim(); });
+  }
+  /* 표는 «머리든 칸이든 글자가 하나라도» 있으면 내용이 있는 것이다 */
+  function hasCell(b) {
+    var any = (b.head || []).some(function (h) { return h && h.trim(); });
+    return any || (b.rows || []).some(function (r) {
+      return (r || []).some(function (c) { return c && String(c).trim(); });
     });
   }
 
@@ -6259,9 +6748,17 @@
       if (b.kind === "image" || b.kind === "file") return true;
       if (b.kind === "link") return !!(b.url && b.url.trim());
       if (b.kind === "embed") return !!(b.code && b.code.trim());
+      if (b.kind === "todo" || b.kind === "list") return hasLine(b);
+      if (b.kind === "table") return hasCell(b);
+      if (b.kind === "fold") return !!((b.title && b.title.trim()) || (b.text && b.text.trim()));
       return !!(b.text && b.text.trim());
     }).map(function (b) {
       var c = cloneBlock(b);
+      // 빈 줄은 저장할 때 걷어낸다 · Enter 를 눌러 두고 안 채운 줄이 그대로 남으면 안 된다
+      if (c.kind === "todo" || c.kind === "list") {
+        c.items = (c.items || []).filter(function (it) { return it.t && it.t.trim(); })
+          .map(function (it) { it.t = it.t.trim(); return it; });
+      }
       if (c.kind === "link" && !/^(https?:|mailto:)/i.test(c.url)) c.url = "https://" + c.url.replace(/^\/+/, "");
       if (c.kind === "image" || c.kind === "file") {
         order++;
@@ -6620,7 +7117,10 @@
 
   function entryText(n) {
     return [n.title, (n.tags || []).join(" ")].concat((n.blocks || []).map(function (b) {
-      return [b.text, b.url, b.label, b.caption, b.name, b.original].filter(Boolean).join(" ");
+      // 할 일·목록의 줄도 검색에 걸려야 한다 · 거기 적은 것도 내가 쓴 글이다
+      var lines = (b.items || []).map(function (it) { return it.t || ""; }).join(" ");
+      var cells = (b.head || []).join(" ") + " " + (b.rows || []).map(function (r) { return (r || []).join(" "); }).join(" ");
+      return [b.text, b.title, b.url, b.label, b.caption, b.name, b.original, lines, cells.trim()].filter(Boolean).join(" ");
     })).join(" ").toLowerCase();
   }
   function matches(n) {
@@ -6793,6 +7293,95 @@
         var h = el("h4"); appendRichText(h, b.text); host.appendChild(h);
       } else if (b.kind === "quote") {
         var q = el("blockquote"); appendRichText(q, b.text); host.appendChild(q);
+      } else if (b.kind === "todo") {
+        /* 업노트에서 가장 몸에 붙는 것이 이것이다 · 목록에서 «바로» 체크된다.
+           읽다가 한 일이 생각나면 그 자리에서 누른다. 편집으로 들어갔다 나오지 않는다.
+           ⚠️ 누른 즉시 드라이브까지 올라가야 한다. 안 그러면 다른 기기에서 안 눌린 채로 있다. */
+        var ul = el("ul", "todolist");
+        var cntLi = null;
+        function paintCount() {
+          if (!cntLi) return;
+          var live = (n.blocks || []).filter(function (x) { return x.id === b.id; })[0] || b;
+          var items = live.items || [];
+          var dn = items.filter(function (it) { return it.done; }).length;
+          cntLi.textContent = dn + " / " + items.length + " 함";
+          cntLi.classList.toggle("alldone", items.length > 0 && dn === items.length);
+        }
+        (b.items || []).forEach(function (it, i) {
+          var li = el("li", it.done ? "done" : null);
+          var cb = el("input"); cb.type = "checkbox"; cb.checked = !!it.done;
+          cb.title = "한 일로 표시하거나 되돌립니다";
+          cb.addEventListener("click", function (e) { e.stopPropagation(); });
+          cb.addEventListener("change", function () {
+            var live = (n.blocks || []).filter(function (x) { return x.id === b.id; })[0];
+            var tgt = live && live.items && live.items[i];
+            if (!tgt) return;
+            tgt.done = cb.checked;
+            li.classList.toggle("done", cb.checked);
+            paintCount();                    // 숫자도 같이 따라와야 «반영됐다» 가 보인다
+            n.updatedAt = Date.now(); n._dirty = true;
+            saveLocal();
+            if (connected) syncPending();
+          });
+          li.appendChild(cb);
+          var sp = el("span", "t"); appendRichText(sp, it.t); li.appendChild(sp);
+          ul.appendChild(li);
+        });
+        if ((b.items || []).length) {
+          cntLi = el("li", "todocount");
+          ul.appendChild(cntLi);
+          paintCount();
+        }
+        host.appendChild(ul);
+
+      } else if (b.kind === "list") {
+        var listEl = el(b.ordered ? "ol" : "ul", "bullets");
+        (b.items || []).forEach(function (it) {
+          if (!it.t) return;
+          var li = el("li", "d" + Math.max(0, Math.min(2, it.d || 0)));
+          appendRichText(li, it.t);
+          listEl.appendChild(li);
+        });
+        if (listEl.children.length) host.appendChild(listEl);
+
+      } else if (b.kind === "table") {
+        var tbox = el("div", "tscroll");
+        var tt = el("table", "shown");
+        var head = (b.head || []).filter(function (h) { return h != null; });
+        if (head.some(function (h) { return h && h.trim(); })) {
+          var thr = el("tr");
+          head.forEach(function (h) { var th = el("th"); appendRichText(th, h); thr.appendChild(th); });
+          tt.appendChild(thr);
+        }
+        (b.rows || []).forEach(function (r) {
+          if (!r.some(function (c) { return c && String(c).trim(); })) return;   // 빈 줄은 안 그린다
+          var tr = el("tr");
+          r.forEach(function (c) { var td = el("td"); appendRichText(td, c); tr.appendChild(td); });
+          tt.appendChild(tr);
+        });
+        if (tt.children.length) { tbox.appendChild(tt); host.appendChild(tbox); }
+
+      } else if (b.kind === "fold") {
+        var det = el("details", "foldbox");
+        if (b.open) det.open = true;
+        var sm = el("summary");
+        appendRichText(sm, b.title || "펼쳐 보기");
+        det.appendChild(sm);
+        var fb = el("div", "foldbody");
+        appendRichText(fb, b.text || "");
+        det.appendChild(fb);
+        host.appendChild(det);
+
+      } else if (b.kind === "code") {
+        var pre = el("pre", "codeblock");
+        var codeEl = el("code", null, b.text || "");
+        pre.appendChild(codeEl);
+        if (b.lang) {
+          var lg = el("span", "codelang", b.lang);
+          pre.appendChild(lg);
+        }
+        host.appendChild(pre);
+
       } else if (b.kind === "divider") {
         host.appendChild(el("hr"));
       } else if (b.kind === "image") {

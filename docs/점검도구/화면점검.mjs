@@ -1479,6 +1479,106 @@ check("폴더를 고르면 태그 칩도 그 폴더 기준으로 센다",
   !chipScope.err && (chipScope.after || []).length === 1 && /연수/.test((chipScope.after || [])[0] || ""),
   (chipScope.after || []).join(" ") || chipScope.err);
 
+/* ---------- 10-6. 업노트식 블록 여섯 ----------
+   할 일 · 목록 · 코드 · 표 · 접이식 · 글 안 서식.
+   ⚠️ 가장 중요한 것은 «목록에서 바로 체크된다» 는 것이다. 읽다가 한 일이 생각나면
+      그 자리에서 누른다. 편집으로 들어갔다 나오는 순간 그 기능은 죽은 기능이 된다. */
+await evaluate(`(() => {
+  localStorage.setItem('trace.entries.v2', '[]');
+  ['trace.draft.v1','trace.desk.v1','trace.deskList.v1'].forEach(k => localStorage.removeItem(k));
+  return true;
+})()`);
+await send("Page.navigate", { url: URL_ });
+await wait(2500);
+const blockKinds = JSON.parse(await evaluate(`(() => {
+  const add = k => { const b = document.querySelector('[data-add="' + k + '"]'); if (b) b.click(); return !!b; };
+  const found = {};
+  ['todo','list','code','table','fold'].forEach(k => { found[k] = add(k); });
+  return JSON.stringify({ found, buttons: Array.from(document.querySelectorAll('#addbar [data-add]')).map(b => b.getAttribute('data-add')) });
+})()`));
+check("업노트식 블록 다섯이 넣기 줄에 있다",
+  ["todo", "list", "code", "table", "fold"].every(function (k) { return (blockKinds.buttons || []).indexOf(k) >= 0; }),
+  (blockKinds.buttons || []).join(" "));
+
+const built = JSON.parse(await evaluate(`(() => {
+  const t = document.getElementById('title');
+  t.value = '업노트식 블록'; t.dispatchEvent(new Event('input', { bubbles: true }));
+  // 할 일 두 줄
+  const lines = Array.from(document.querySelectorAll('#blocks .lineinp'));
+  lines[0].value = '숙제 끝내기'; lines[0].dispatchEvent(new Event('input', { bubbles: true }));
+  lines[0].dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+  const l2 = Array.from(document.querySelectorAll('#blocks .lineinp'));
+  l2[1].value = '표 예매'; l2[1].dispatchEvent(new Event('input', { bubbles: true }));
+  // 목록 · 들여쓰기
+  l2[2].value = '겉 항목'; l2[2].dispatchEvent(new Event('input', { bubbles: true }));
+  l2[2].dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+  const l3 = Array.from(document.querySelectorAll('#blocks .lineinp'));
+  l3[3].value = '속 항목'; l3[3].dispatchEvent(new Event('input', { bubbles: true }));
+  l3[3].dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
+  // 코드
+  const ct = Array.from(document.querySelectorAll('#blocks textarea.mono')).pop();
+  ct.value = "const a = 1"; ct.dispatchEvent(new Event('input', { bubbles: true }));
+  // 표
+  const cells = Array.from(document.querySelectorAll('#blocks .tcell'));
+  ['요일','할 일','Day 1','이동'].forEach((v, i) => {
+    if (cells[i]) { cells[i].value = v; cells[i].dispatchEvent(new Event('input', { bubbles: true })); }
+  });
+  // 접이식
+  const fi = Array.from(document.querySelectorAll('#blocks input.inp')).filter(i => (i.placeholder || '').indexOf('접었을 때') >= 0)[0];
+  fi.value = '6월 13-19'; fi.dispatchEvent(new Event('input', { bubbles: true }));
+  const fa = Array.from(document.querySelectorAll('#blocks textarea.inp')).filter(x => !x.classList.contains('mono')).pop();
+  fa.value = '세탁물 찾기'; fa.dispatchEvent(new Event('input', { bubbles: true }));
+  // 서식 단추로 굵게
+  const bar = fa.parentElement.querySelector('.fmtbar');
+  const hl = bar ? bar.querySelectorAll('.hlbtn').length : 0;
+  fa.focus(); fa.setSelectionRange(0, 3);
+  if (bar) bar.querySelectorAll('.fmtbtn')[0].click();
+  const marked = fa.value;
+  document.getElementById('btnSave').click();
+  const n = JSON.parse(localStorage.getItem('trace.entries.v2'))[0] || {};
+  return JSON.stringify({ hl, marked, kinds: (n.blocks || []).map(b => b.kind) });
+})()`));
+check("한 기록에 다섯 갈래가 함께 담긴다",
+  ["todo", "list", "code", "table", "fold"].every(function (k) { return (built.kinds || []).indexOf(k) >= 0; }),
+  (built.kinds || []).join(" "));
+check("형광펜이 여섯 색이다", built.hl === 6, String(built.hl) + "색");
+check("서식 단추가 마크다운 기호를 대신 넣는다", /^\*\*/.test(built.marked || ""), built.marked || "");
+
+const shownBlocks = JSON.parse(await evaluate(`(() => {
+  const card = document.querySelector('#list .entry');
+  if (!card) return JSON.stringify({ err: 'NO_CARD' });
+  return JSON.stringify({
+    todo: card.querySelectorAll('.todolist input[type=checkbox]').length,
+    bullets: !!card.querySelector('.bullets'),
+    nested: !!card.querySelector('.bullets li.d1'),
+    code: !!card.querySelector('.codeblock'),
+    table: card.querySelectorAll('table.shown th').length,
+    fold: !!card.querySelector('details.foldbox'),
+    bold: !!card.querySelector('b'),
+    count: (card.querySelector('.todocount') || {}).textContent || ''
+  });
+})()`));
+check("표가 머리줄을 갖고 그려진다", shownBlocks.table === 2, "머리 " + shownBlocks.table + "칸");
+check("접이식이 details 로 그려진다", !!shownBlocks.fold);
+check("중첩 목록이 한 겹 들어간다", !!shownBlocks.nested);
+check("코드 블록이 따로 그려진다", !!shownBlocks.code);
+check("서식이 화면에 입혀진다", !!shownBlocks.bold);
+
+/* ⚠️ 이것이 이 블록의 전부다 · 목록에서 «바로» 체크되고, 누른 즉시 저장돼야 한다 */
+const ticked = JSON.parse(await evaluate(`(() => {
+  const before = (document.querySelector('#list .todocount') || {}).textContent || '';
+  const box = document.querySelector('#list .todolist input[type=checkbox]');
+  if (!box) return JSON.stringify({ err: 'NO_BOX' });
+  box.click();
+  const after = (document.querySelector('#list .todocount') || {}).textContent || '';
+  const n = JSON.parse(localStorage.getItem('trace.entries.v2'))[0];
+  const todo = (n.blocks || []).filter(b => b.kind === 'todo')[0] || {};
+  return JSON.stringify({ before, after, saved: ((todo.items || [])[0] || {}).done === true });
+})()`));
+check("목록에서 바로 체크된다", ticked.saved === true, ticked.err || "저장됨");
+check("체크하면 «몇 개 했는지» 도 같이 바뀐다", ticked.before !== ticked.after,
+  (ticked.before || "?") + " → " + (ticked.after || "?"));
+
 /* 빈 화면의 긴 설명도 걷어냈다 · 그 글이 돌아오면 안 된다 */
 const oldEmptyDesc = await evaluate(`/마크다운\\(.md\\)으로, 사진·파일은 정리된 이름/.test(document.body.textContent)`);
 check("빈 화면의 긴 설명이 돌아오지 않았다", !oldEmptyDesc);
