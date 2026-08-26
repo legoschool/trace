@@ -578,6 +578,24 @@
   .menupop button.danger:hover { background: var(--warn-bg); color: var(--danger); }
   .menupop .sep { height: 1px; background: var(--line-soft); margin: 4px 2px; }
 
+  /* 작성칸 머리줄 · 제목과 집중 단추 */
+  .chead { display: flex; align-items: center; gap: 8px; }
+  .chead h2 { margin: 0; }
+
+  /* ---------- 집중 모드 · 적는 칸만 남긴다 ---------- */
+  body.focusing header.top,
+  body.focusing #sideNav,
+  body.focusing #banner,
+  body.focusing .toolbar,
+  body.focusing .filters,
+  body.focusing #list,
+  body.focusing footer.site,
+  body.focusing .dock { display: none !important; }
+  body.focusing .layout { grid-template-columns: minmax(0, 1fr); }
+  body.focusing .wrap { max-width: 760px; margin: 0 auto; padding-top: 28px; }
+  body.focusing .composer { border: none; box-shadow: none; background: transparent; }
+  body.focusing #btnFocus { border-color: var(--brand); color: var(--brand); }
+
   /* 제목을 누르면 열린다 · 카드에서 가장 많이 하는 일이 가장 가까운 자리에 */
   .titlebtn { background: none; border: none; padding: 0; margin: 0; font: inherit; color: inherit;
               cursor: pointer; text-align: left; }
@@ -1453,7 +1471,11 @@
       <button type="button" class="cfoldbtn" id="btnUnfold">＋ 새 기록</button>
       <span class="cfoldwhere" id="cfoldWhere"></span>
     </div>
-    <h2 id="composerTitle">✍️ 새 기록</h2>
+    <div class="chead">
+      <h2 id="composerTitle">✍️ 새 기록</h2>
+      <span class="spacer"></span>
+      <button id="btnFocus" class="btn sm ghost" title="쓰는 데만 집중합니다 (Esc 로 나오기)">🎯 집중</button>
+    </div>
     <!-- 이 기록이 갈 자리. 쓰기 전에 보여야 한다 · 쓰고 나서 알면 늦다 -->
     <div id="deskLine" class="deskline hidden"></div>
 
@@ -1624,6 +1646,27 @@
     folderMode: "perEntry",
     folderPattern: "{날짜}_{유형}_{제목}",
     materialsFolderName: "자료",
+    /* 양식 · 같은 틀로 되풀이해 쓰는 기록을 한 번에 세운다.
+       교사 기록은 「수업 회고」·「연수 정리」처럼 되풀이되는 것이 대부분인데,
+       그때마다 소제목을 다시 치게 하면 결국 아무것도 안 적게 된다. */
+    templates: [
+      { id: "t_class", name: "수업 회고", type: "reflection", tags: "수업",
+        blocks: [
+          { kind: "heading", text: "{날짜} 수업" },
+          { kind: "text", text: "" },
+          { kind: "heading", text: "아이들은 무엇을 했나" },
+          { kind: "text", text: "" },
+          { kind: "heading", text: "다음에 바꿀 것" },
+          { kind: "todo", items: [""] }
+        ] },
+      { id: "t_train", name: "연수 정리", type: "knowledge", tags: "연수",
+        blocks: [
+          { kind: "heading", text: "{날짜} 연수" },
+          { kind: "text", text: "" },
+          { kind: "heading", text: "가져올 것" },
+          { kind: "todo", items: [""] }
+        ] }
+    ],
     viewMode: "stream",   // stream(나열) | grid(바둑판) | list(목록)
     theme: "lego",       // 모양은 레고 하나 · 고르는 것이 아니다
     tone: "",            // 색감. 빈 값이면 크래프트 (태어날 때의 색)
@@ -1965,6 +2008,16 @@
       if (typeof s[k] === "string" && s[k].trim()) out[k] = s[k].trim();
     });
     out.useSubfolder = !!s.useSubfolder;
+    // 양식 · 사람이 지운 것도 뜻이므로, 배열이 있으면 «비어 있어도» 그대로 받는다
+    if (Array.isArray(s.templates)) {
+      out.templates = s.templates.filter(function (t) { return t && t.name; }).map(function (t) {
+        return {
+          id: t.id || uid("tpl_"), name: String(t.name).slice(0, 40),
+          type: t.type || "", tags: t.tags || "",
+          blocks: Array.isArray(t.blocks) ? t.blocks : []
+        };
+      });
+    }
     // ⚠️ 옛 방식(materials·monthly·tag)도 그대로 받는다. 여기서 걸러 내면 쓰던 사람의 정리가 바뀐다
     if (ALL_FOLDER_MODES.some(function (m) { return m.key === s.folderMode; })) out.folderMode = s.folderMode;
     else if (s.folderMode === undefined && s.version) {
@@ -4519,6 +4572,13 @@
     text:    { icon: "📝", label: "글" },
     heading: { icon: "🔠", label: "소제목" },
     quote:   { icon: "❝", label: "인용" },
+    /* ⚠️ 새 갈래를 만들면 여기에도 적어야 한다. 안 적으면 편집 화면에서 이름표가
+       전부 「글」로 보여서, 무슨 블록을 고치고 있는지 알 수 없게 된다. */
+    todo:    { icon: "☑", label: "할 일" },
+    list:    { icon: "•", label: "목록" },
+    code:    { icon: "⌨", label: "코드" },
+    table:   { icon: "▦", label: "표" },
+    fold:    { icon: "▸", label: "접이식" },
     image:   { icon: "🖼️", label: "사진" },
     file:    { icon: "📎", label: "파일·영상" },
     link:    { icon: "🔗", label: "링크" },
@@ -8704,6 +8764,41 @@
   }
   var sideTagsOpen = false;
 
+  /* ---- 양식으로 시작하기 ----
+     되풀이되는 기록(수업 회고·연수 정리)을 소제목까지 세운 채로 연다.
+     {날짜}·{요일} 은 여는 그 순간의 날짜로 바뀐다 · 양식을 쓰는 사람은 «오늘» 을 적으려는 것이다. */
+  function fillTplText(s) {
+    var d = new Date();
+    var wd = ["일", "월", "화", "수", "목", "금", "토"][d.getDay()];
+    return String(s == null ? "" : s)
+      .replace(/\{날짜\}/g, dateStamp(d.getTime()))
+      .replace(/\{요일\}/g, wd);
+  }
+  function startFromTemplate(tpl) {
+    if (!tpl) return;
+    if (composerBusy() && !window.confirm("쓰던 내용을 버리고 양식으로 새로 시작할까요?")) return;
+    clearDraft(true);
+    resetComposer();
+    if (tpl.type) { currentType = tpl.type; renderTypeChips(); }
+    if (tpl.tags) $("tags").value = tpl.tags;
+    blocks = (tpl.blocks || []).map(function (t) {
+      var b = newBlock(t.kind || "text");
+      if (t.text != null) b.text = fillTplText(t.text);
+      if (t.title != null) b.title = fillTplText(t.title);
+      if (Array.isArray(t.items)) {
+        b.items = t.items.map(function (x) {
+          return (t.kind === "todo") ? { t: fillTplText(x), done: false } : { t: fillTplText(x), d: 0 };
+        });
+        if (!b.items.length) b.items = [(t.kind === "todo") ? { t: "", done: false } : { t: "", d: 0 }];
+      }
+      if (Array.isArray(t.head)) { b.head = t.head.slice(); b.rows = (t.rows || [t.head.map(function () { return ""; })]).map(function (r) { return r.slice(); }); }
+      return b;
+    });
+    renderBlocks();
+    openComposer();
+    toast("「" + tpl.name + "」 양식으로 시작합니다.");
+  }
+
   /* ▾ 안에 든 것 · 자리를 바꾸는 세 가지 길 */
   var sideMenuOpen = false;
   function deskMenu() {
@@ -8720,6 +8815,11 @@
       box.appendChild(b);
       return b;
     }
+    /* 양식이 먼저다 · 되풀이되는 기록은 «어디에» 보다 «어떤 틀로» 가 먼저 정해진다 */
+    (settings.templates || []).slice(0, 6).forEach(function (tpl) {
+      item("📋 " + tpl.name, "양식으로 시작합니다", function () { startFromTemplate(tpl); });
+    });
+    if ((settings.templates || []).length) box.appendChild(el("div", "sep"));
     item("📂 새 폴더 만들어 쓰기…", "「" + (folder.name || "연결한 폴더") + "」 안에 만듭니다", function () {
       createDeskFolder();
     });
@@ -11716,6 +11816,22 @@
   $("btnSave").addEventListener("click", saveEntry);
   $("btnCancelEdit").addEventListener("click", function () { clearDraft(true); resetComposer(); });
   $("btnUnfold").addEventListener("click", openComposer);
+
+  /* ---- 집중 모드 ----
+     쓰는 동안 옆의 것들이 다 보이면 «지금 무엇을 쓰고 있었지» 를 자꾸 놓친다.
+     기둥·목록·머리띠를 감추고 적는 칸만 남긴다. Esc 한 번이면 되돌아온다. */
+  function setFocus(on) {
+    document.body.classList.toggle("focusing", !!on);
+    var b = $("btnFocus");
+    if (b) { b.textContent = on ? "🎯 집중 끄기" : "🎯 집중"; }
+    if (on) { composerFolded = false; applyComposerFold(); }
+  }
+  $("btnFocus").addEventListener("click", function () {
+    setFocus(!document.body.classList.contains("focusing"));
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && document.body.classList.contains("focusing")) setFocus(false);
+  });
 
   /* ---- 머리띠 ⋯ · 자주 안 쓰는 것을 한 겹 안에 ----
      ⚠️ 단추를 지운 것이 아니라 «층» 을 만든 것이다. 손잡이는 원래 것을 그대로 쓴다

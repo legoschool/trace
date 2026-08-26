@@ -1290,8 +1290,10 @@ const deskMenuChk = JSON.parse(await evaluate(`(() => {
     note: (m.querySelector('.note')||{}).textContent || ''
   });
 })()`));
-check("▾ 안에 자리 바꾸는 길 셋이 있다", !deskMenuChk.err && deskMenuChk.items.length === 3,
-  (deskMenuChk.items || []).join(" / "));
+/* ⚠️ ▾ 안에는 양식도 같이 산다. 여기서 세는 것은 «자리를 바꾸는 길» 셋뿐이다 */
+const deskWays = (deskMenuChk.items || []).filter(function (t) { return !/^📋/.test(t); });
+check("▾ 안에 자리 바꾸는 길 셋이 있다", !deskMenuChk.err && deskWays.length === 3,
+  deskWays.join(" / "));
 /* 실측해 둔 한계다 · 안 적으면 «앱이 고장났다» 가 된다 */
 check("고른 폴더에 원래 있던 것은 안 보인다고 미리 말한다", /원래 있던 파일은/.test(deskMenuChk.note || ""));
 
@@ -1747,6 +1749,58 @@ check("아래 바의 ⋯ 에 나머지가 다 있다",
   (dockWorks.items || []).join(" · "));
 await send("Emulation.clearDeviceMetricsOverride");
 await wait(500);
+
+/* ---------- 10-9. 양식과 집중 모드 ----------
+   교사 기록은 「수업 회고」·「연수 정리」처럼 되풀이되는 것이 대부분이다.
+   그때마다 소제목을 다시 치게 하면 결국 아무것도 안 적게 된다. */
+await evaluate(`(() => {
+  localStorage.setItem('trace.entries.v2', '[]');
+  ['trace.draft.v1','trace.desk.v1','trace.deskList.v1'].forEach(k => localStorage.removeItem(k));
+  return true;
+})()`);
+await send("Page.navigate", { url: URL_ });
+await wait(2500);
+const tpl = JSON.parse(await evaluate(`(() => {
+  document.querySelector('#sideNav .sidenewmore').click();
+  const items = Array.from(document.querySelectorAll('#sideNav .sidemenu button')).map(b => (b.firstChild || {}).textContent || '');
+  const one = Array.from(document.querySelectorAll('#sideNav .sidemenu button')).find(b => b.textContent.indexOf('수업 회고') >= 0);
+  if (!one) return JSON.stringify({ err: 'NO_TEMPLATE', items });
+  one.click();
+  const heads = Array.from(document.querySelectorAll('#blocks .bhead')).map(h => h.textContent.replace(/[⠿▲▼✕]/g, '').trim());
+  const first = (document.querySelector('#blocks input.inp') || {}).value || '';
+  return JSON.stringify({
+    items, heads, first,
+    type: (document.querySelector('#typeChips .chip.on') || {}).textContent || '',
+    tags: document.getElementById('tags').value
+  });
+})()`));
+check("＋ 새 기록 ▾ 에 양식이 있다", !tpl.err && (tpl.items || []).some(function (t) { return /수업 회고/.test(t); }),
+  (tpl.items || []).join(" · "));
+check("양식이 소제목까지 세운 채로 열린다", (tpl.heads || []).length >= 5, (tpl.heads || []).join(" · "));
+/* ⚠️ 새 갈래를 만들면 BLOCK_META 에도 적어야 한다. 안 적으면 이름표가 전부 「글」로 보인다 */
+check("양식 안의 할 일이 «할 일» 로 선다", (tpl.heads || []).some(function (h) { return /할 일/.test(h); }),
+  (tpl.heads || []).join(" · "));
+check("양식이 유형과 태그도 같이 잡아 준다", /회고/.test(tpl.type || "") && /수업/.test(tpl.tags || ""),
+  (tpl.type || "") + " / " + (tpl.tags || ""));
+check("{날짜} 가 오늘 날짜로 바뀐다", /^\d{4}-\d{2}-\d{2}/.test(tpl.first || ""), tpl.first || "");
+
+const focusMode = JSON.parse(await evaluate(`(() => {
+  document.getElementById('btnFocus').click();
+  const on = document.body.classList.contains('focusing');
+  const hidden = ['header.top', '#sideNav', '#list'].map(sel => {
+    const e = document.querySelector(sel);
+    return e ? getComputedStyle(e).display : 'none';
+  });
+  const composer = getComputedStyle(document.getElementById('composer')).display;
+  document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  const off = !document.body.classList.contains('focusing');
+  return JSON.stringify({ on, hidden, composer, off });
+})()`));
+check("집중 모드가 옆의 것들을 감춘다",
+  focusMode.on && (focusMode.hidden || []).every(function (d) { return d === "none"; }),
+  (focusMode.hidden || []).join(" "));
+check("집중 모드에서도 적는 칸은 남는다", focusMode.composer !== "none", focusMode.composer);
+check("Esc 로 집중 모드에서 나온다", focusMode.off === true);
 
 /* 빈 화면의 긴 설명도 걷어냈다 · 그 글이 돌아오면 안 된다 */
 const oldEmptyDesc = await evaluate(`/마크다운\\(.md\\)으로, 사진·파일은 정리된 이름/.test(document.body.textContent)`);
