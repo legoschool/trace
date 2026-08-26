@@ -1230,19 +1230,39 @@ check("PC 에서는 왼쪽에 폴더 구조 기둥이 선다", !side.err && side
    가장 자주 누르는 단추는 목록 길이에 밀리지 않는 자리에 있어야 한다. */
 check("«＋ 새 기록» 이 머리띠에 있다", side.topNew === true && side.topNewShown === true);
 check("기둥 아래에는 그 단추를 두 번 두지 않는다", side.sideAdd === false);
-/* ☰ 는 이제 PC 에도 있다 · 기둥을 접었다 편다. 한 단추, 한 뜻 */
+/* ☰ 는 이제 PC 에도 있다 · «한 겹씩 걷는다». 한 단추, 한 뜻 */
 check("PC 에도 줄 셋(☰)이 있다", side.burger !== "none", String(side.burger));
+/* ⚠️ 열고/끄는 두 단이던 것을 세 단으로 바꿨다.
+     0 · 기둥 │ 목록 │ 쓰는 자리   1 · 목록 │ 쓰는 자리   2 · 쓰는 자리만
+   칸을 감출 때 격자 폭도 같이 줄어야 «빈 흰 판» 이 안 남는다 · 그것까지 잰다. */
 const folded = JSON.parse(await evaluate(`(() => {
   const btn = document.getElementById('btnDrawer');
-  btn.click();
-  const closed = document.querySelector('.layout').classList.contains('folded') &&
-    getComputedStyle(document.getElementById('sideNav')).display === 'none';
-  btn.click();
-  const back = !document.querySelector('.layout').classList.contains('folded');
-  return JSON.stringify({ closed, back });
+  const L = document.querySelector('.layout');
+  const gone = sel => { const e = document.querySelector(sel); return !e || getComputedStyle(e).display === 'none'; };
+  const now = () => ({
+    nav: L.getAttribute('data-nav'),
+    cols: getComputedStyle(L).gridTemplateColumns.split(' ').length,
+    폭합: Math.round(getComputedStyle(L).gridTemplateColumns.split(' ').reduce((a, v) => a + parseFloat(v), 0)),
+    기둥감춤: gone('#sideNav'), 목록감춤: gone('.listcol')
+  });
+  btn.click(); const one = now();
+  btn.click(); const two = now();
+  btn.click(); const back = now();
+  return JSON.stringify({ one, two, back, 화면: innerWidth });
 })()`));
-check("누르면 기둥이 접힌다", folded.closed);
-check("다시 누르면 펴진다", folded.back);
+check("한 번 누르면 기둥이 접힌다",
+  folded.one.nav === "1" && folded.one.기둥감춤 === true && folded.one.목록감춤 === false,
+  "단 " + folded.one.nav + " · 칸 " + folded.one.cols);
+check("두 번째로 누르면 목록까지 접힌다",
+  folded.two.nav === "2" && folded.two.목록감춤 === true,
+  "단 " + folded.two.nav + " · 칸 " + folded.two.cols);
+check("세 번째로 누르면 다시 다 펴진다",
+  folded.back.nav === "0" && folded.back.기둥감춤 === false && folded.back.목록감춤 === false,
+  "단 " + folded.back.nav + " · 칸 " + folded.back.cols);
+/* ⚠️ 접었는데 그 자리가 빈 판으로 남으면 접은 것이 아니다. 폭 합이 화면과 같아야 한다 */
+check("어느 단에서도 빈 자리가 안 남는다",
+  [folded.one, folded.two, folded.back].every(function (x) { return Math.abs(x.폭합 - folded.화면) <= 1; }),
+  [folded.one, folded.two, folded.back].map(function (x) { return x.폭합; }).join(" / ") + " · 화면 " + folded.화면);
 
 await twoPane(); await wait(500);
 /* ---------- 10-2. 자리 · 왼쪽에서 고른 폴더가 곧 «다음 기록이 갈 자리» ----------
@@ -1841,23 +1861,31 @@ await evaluate(`(() => {
 })()`);
 await send("Page.navigate", { url: URL_ });
 await wait(2500);
+/* ⚠️ ▾ 는 «이 기록을 어디에 둘까» 만 고르는 자리다. 양식 두 줄을 얹어 두었더니
+   자리를 바꾸려고 연 사람 앞에 엉뚱한 줄이 먼저 섰다 · 양식은 아래 바 ⋯ 에 남겼다. */
 const tpl = JSON.parse(await evaluate(`(() => {
   document.getElementById('topNewMore').click();
   const items = Array.from(document.querySelectorAll('.menupop button')).map(b => (b.firstChild || {}).textContent || '');
-  const one = Array.from(document.querySelectorAll('.menupop button')).find(b => b.textContent.indexOf('수업 회고') >= 0);
+  document.querySelectorAll('.menupop').forEach(p => p.remove());
+  document.getElementById('dockMore').click();
+  const one = Array.from(document.querySelectorAll('.menupop button')).find(b => b.textContent.indexOf('양식으로 시작') >= 0);
+  const dockNote = one ? one.textContent.replace(/\s+/g, ' ').trim() : '';
   if (!one) return JSON.stringify({ err: 'NO_TEMPLATE', items });
   one.click();
   document.querySelectorAll('.menupop').forEach(p => p.remove());
   const heads = Array.from(document.querySelectorAll('#blocks .bhead')).map(h => h.textContent.replace(/[⠿▲▼✕]/g, '').trim());
   const first = (document.querySelector('#blocks input.inp') || {}).value || '';
   return JSON.stringify({
-    items, heads, first,
+    items, dockNote, heads, first,
     type: (document.querySelector('#typeChips .chip.on') || {}).textContent || '',
     tags: document.getElementById('tags').value
   });
 })()`));
-check("＋ 새 기록 ▾ 에 양식이 있다", !tpl.err && (tpl.items || []).some(function (t) { return /수업 회고/.test(t); }),
+check("＋ 새 기록 ▾ 는 «자리» 만 고른다 · 양식을 얹지 않는다",
+  !tpl.err && !(tpl.items || []).some(function (t) { return /수업 회고|연수 정리/.test(t); }) &&
+  (tpl.items || []).length === 3,
   (tpl.items || []).join(" · "));
+check("양식은 아래 바 ⋯ 에 그대로 있다", /수업 회고/.test(tpl.dockNote || ""), tpl.dockNote || "");
 check("양식이 소제목까지 세운 채로 열린다", (tpl.heads || []).length >= 5, (tpl.heads || []).join(" · "));
 /* ⚠️ 새 갈래를 만들면 BLOCK_META 에도 적어야 한다. 안 적으면 이름표가 전부 「글」로 보인다 */
 check("양식 안의 할 일이 «할 일» 로 선다", (tpl.heads || []).some(function (h) { return /할 일/.test(h); }),
@@ -2024,7 +2052,10 @@ await evaluate(`(() => {
     blocks: [{ id: 'b' + i, kind: 'text', text: t + ' 의 본문입니다. 두 줄까지만 미리 보입니다.' }],
     relations: [], pinned: false, createdAt: 1755000000000 - i * 8.64e7, updatedAt: 1755000000000 - i * 8.64e7 });
   localStorage.setItem('trace.entries.v2', JSON.stringify([mk(0, '첫째 기록'), mk(1, '둘째 기록'), mk(2, '셋째 기록')]));
-  ['trace.draft.v1','trace.desk.v1','trace.sideSec.v1'].forEach(k => localStorage.removeItem(k));
+  /* ⚠️ ☰ 로 접어 둔 단은 기기에 남는다. 안 지우면 앞 점검이 접어 둔 채로
+     여기 와서 «세 칸이 아니라 한 칸» 이라고 말한다 · 실제로 그랬다. */
+  ['trace.draft.v1','trace.desk.v1','trace.sideSec.v1','trace.navStage.v1','trace.sideFolded.v1']
+    .forEach(k => localStorage.removeItem(k));
   return true;
 })()`);
 await send("Page.navigate", { url: URL_ });
