@@ -257,14 +257,39 @@ await wait(900);
 const savedOk = await ev(`document.body.textContent.includes('점검용으로 고친 제목')`);
 check("고쳐서 저장하면 목록에 반영된다", savedOk === true);
 
-/* ---- 삭제 ---- */
-// 삭제는 «정말 지울까요?» 창을 한 번 더 거친다. 그 창까지 눌러 봐야 진짜 확인이다.
+/* ---- 삭제는 이제 «두 걸음» 이다 ----
+   한 번 누르면 휴지통에 들어간다. 되돌릴 수 있으므로 묻지 않는다 ·
+   되돌릴 수 있는 일에 «정말요?» 를 붙이면 그 물음이 값싸져서, 정작 되돌릴 수 없는
+   자리에서도 사람이 그냥 누르게 된다.
+   ⚠️ 드라이브 파일은 이때 «아직» 안 건드린다. 완전히 삭제할 때만 건드린다. */
 const deleted = await ev(`(() => {
   const before = document.querySelectorAll('.card.entry, .lrow').length;
   const b = Array.from(document.querySelectorAll('.card.entry button')).find(b => /삭제|🗑/.test(b.textContent||''));
   if (!b) return 'NO_DELETE';
   b.click();
   return before;
+})()`);
+await wait(800);
+const after = await ev(`document.querySelectorAll('.card.entry, .lrow').length`);
+check("지우면 목록에서 빠진다", typeof deleted === "number" && after < deleted, `${deleted} → ${after}`);
+const inTrash = JSON.parse(await ev(`(() => {
+  const row = Array.from(document.querySelectorAll('#sideNav .smartrow')).find(b => b.textContent.indexOf('휴지통') >= 0);
+  if (!row) return JSON.stringify({ err: 'NO_TRASH_ROW' });
+  row.click();
+  const cards = Array.from(document.querySelectorAll('.card.entry'));
+  const btns = cards.length ? Array.from(cards[0].querySelectorAll('.foot button')).map(b => b.textContent.trim()) : [];
+  return JSON.stringify({ count: cards.length, btns });
+})()`));
+check("지운 것이 휴지통에 남아 있다", !inTrash.err && inTrash.count > 0, inTrash.err || (inTrash.count + "편"));
+check("휴지통에서는 되돌리거나 완전히 지운다",
+  (inTrash.btns || []).some(function (t) { return /되돌리기/.test(t); }) &&
+  (inTrash.btns || []).some(function (t) { return /완전히/.test(t); }),
+  (inTrash.btns || []).join(" · "));
+/* 완전히 삭제는 되돌릴 수 없다 · 여기서는 반드시 한 번 더 물어야 한다 */
+await ev(`(() => {
+  const b = Array.from(document.querySelectorAll('.card.entry button')).find(b => /완전히/.test(b.textContent||''));
+  if (b) b.click();
+  return true;
 })()`);
 await wait(400);
 const confirmed = await ev(`(() => {
@@ -274,10 +299,14 @@ const confirmed = await ev(`(() => {
   yes.click();
   return 'CONFIRMED';
 })()`);
-check("삭제 전에 한 번 더 묻는다", confirmed === "CONFIRMED", String(confirmed));
-await wait(800);
-const after = await ev(`document.querySelectorAll('.card.entry, .lrow').length`);
-check("삭제하면 목록에서 빠진다", typeof deleted === "number" && after < deleted, `${deleted} → ${after}`);
+check("완전히 삭제할 때는 한 번 더 묻는다", confirmed === "CONFIRMED", String(confirmed));
+await wait(600);
+const backHome = await ev(`(() => {
+  const row = Array.from(document.querySelectorAll('#sideNav .smartrow')).find(b => b.textContent.indexOf('모든 기록') >= 0);
+  if (row) row.click();
+  return document.querySelectorAll('.card.entry, .lrow').length;
+})()`);
+check("완전히 지우면 휴지통에서도 없어진다", typeof backHome === "number" && backHome === after, String(backHome));
 
 /* ---- 임시저장 ---- */
 await ev(`(() => {

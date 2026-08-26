@@ -179,6 +179,26 @@
   .siderow.on { background: var(--brand-soft); color: var(--brand-dark); font-weight: 700; }
   .siderow.on svg, .siderow.on .cnt { color: var(--brand); }
   .siderow.d1 { padding-left: 26px; } .siderow.d2 { padding-left: 42px; } .siderow.d3 { padding-left: 58px; }
+  /* 구역 이름 · 폴더·태그·휴지통을 눈으로 갈라 준다 (업노트의 사이드바 구조) */
+  .sidecap { font-size: calc(11.5px * var(--fs)); font-weight: 700; letter-spacing: .06em;
+             color: var(--ink-soft); padding: 14px 10px 5px; text-transform: none; }
+  .sidecap:empty { padding: 7px 0 0; }
+  .smartrow, .quickrow, .tagrow {
+    display: flex; align-items: center; gap: 8px; width: 100%; text-align: left;
+    background: none; border: none; font: inherit; color: var(--ink); cursor: pointer;
+    padding: 8px 10px; border-radius: var(--r-btn); font-size: calc(14px * var(--fs));
+  }
+  .smartrow:hover, .quickrow:hover, .tagrow:hover { background: var(--brand-soft); }
+  .smartrow.on, .tagrow.on { background: var(--brand-soft); color: var(--brand-dark); font-weight: 700; }
+  .smartrow .sico, .quickrow .sico, .tagrow .sico { flex: 0 0 auto; width: 18px; text-align: center;
+                                                    color: var(--ink-soft); font-size: calc(13px * var(--fs)); }
+  .smartrow.on .sico, .tagrow.on .sico { color: var(--brand); }
+  .smartrow .n, .quickrow .n, .tagrow .n { flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .smartrow .cnt, .tagrow .cnt { flex: 0 0 auto; font-size: calc(12px * var(--fs)); color: var(--ink-soft); }
+  .quickrow { font-size: calc(13.5px * var(--fs)); padding: 7px 10px; }
+  .sidemore { display: block; width: 100%; text-align: left; background: none; border: none; cursor: pointer;
+              color: var(--ink-soft); font-size: calc(12.5px * var(--fs)); padding: 6px 10px 2px; font-family: inherit; }
+  .sidemore:hover { color: var(--brand); }
   .sidenew { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
              margin-top: 14px; background: var(--brand); color: var(--panel); border: none; cursor: pointer;
              font-family: var(--font-title); letter-spacing: var(--title-spacing);
@@ -1809,6 +1829,9 @@
   var filterTags = [];      // 태그로 좁혀 보기 (여러 개 고르면 모두 가진 기록만)
   var filterPath = [];      // 폴더 길로 좁혀 보기 · 길찾기 줄을 누르면 그 아래만 남는다
   var filterPinned = false; // 📌 고정한 것만 보기
+  /* 왼쪽 기둥 맨 위의 «똑똑한 목록» · 폴더가 아니라 «상태» 로 모아 보는 자리.
+     "" 모두 · "todo" 아직 안 한 일이 남은 것 · "untagged" 태그가 하나도 없는 것 · "trash" 휴지통 */
+  var smartView = "";
   var searchQ = "";
   var expanded = {};
 
@@ -3966,6 +3989,7 @@
       blocks: (n.blocks || []).filter(function (b) { return b.kind !== "image" && b.kind !== "file" ? true : !!b.fileId; }).map(slimBlock),
       relations: (n.relations || []).map(function (r) { return { to: r.to, label: r.label || "" }; }),
       pinned: !!n.pinned,
+      trashed: !!n.trashed, trashedAt: n.trashedAt || 0,
       createdAt: n.createdAt, updatedAt: n.updatedAt,
       mdId: n.mdId || null, mdName: n.mdName || null,
       docId: n.docId || null, htmlId: n.htmlId || null,
@@ -6777,19 +6801,47 @@
     if (connected) syncPending();
   }
 
+  /* ---- 삭제는 두 걸음이다 ----
+     ⚠️ 예전에는 한 번에 지웠다. 드라이브 파일까지 같이. 잘못 눌렀을 때 되돌릴 길이
+        「드라이브 휴지통을 직접 뒤지기」 뿐이었다. 십삼 년치를 담는 도구에서
+        되돌릴 수 없는 단추가 카드마다 늘 나와 있으면 안 된다.
+     이제 한 번 누르면 «휴지통» 에 들어간다. 드라이브는 아직 그대로다.
+     휴지통에서 다시 한 번 눌러야 진짜로 지운다. */
   function removeEntry(id) {
+    var n = entries.filter(function (x) { return x.id === id; })[0];
+    if (!n) return;
+    n.trashed = true;
+    n.trashedAt = Date.now();
+    n.updatedAt = Date.now();
+    n._dirty = true;
+    if (editingId === id) resetComposer();
+    saveLocal(); render();
+    if (connected) saveIndex().catch(function () {});
+    toast2("휴지통에서 되돌릴 수 있습니다.");
+    toast("「" + safeName(n.title || "", 20) + "」 를 휴지통으로 보냈습니다.");
+  }
+  function restoreEntry(id) {
+    var n = entries.filter(function (x) { return x.id === id; })[0];
+    if (!n) return;
+    delete n.trashed; delete n.trashedAt;
+    n.updatedAt = Date.now(); n._dirty = true;
+    saveLocal(); render();
+    if (connected) saveIndex().catch(function () {});
+    toast("되돌렸습니다.");
+  }
+  function purgeEntry(id) {
     var n = entries.filter(function (x) { return x.id === id; })[0];
     if (!n) return;
     /* 폴더에서 끌어온 자료(srcId)는 «원래부터 있던 남의 파일» 이다.
        목록에서 빼는 것과 파일을 버리는 것은 전혀 다른 일이라, 여기서는 목록에서만 뺀다.
        ⚠️ 이걸 안 가르면 십삼 년치를 훑어 온 사람이 한 편 지웠을 때 원본이 사라진다. */
     var imported = !!n.srcId;
-    confirmModal("기록을 삭제할까요?",
-      "「" + (n.title || "") + "」" + (!connected
-        ? "\n\n이 기기에서 삭제됩니다."
+    confirmModal("완전히 삭제할까요?",
+      "「" + (n.title || "") + "」" + "\n\n이건 되돌릴 수 없습니다." + (!connected
+        ? "\n이 기기에서 삭제됩니다."
         : imported
-          ? "\n\n목록에서만 뺍니다. 폴더에서 끌어온 것이라 드라이브의 원본 파일은 그대로 남습니다."
-          : "\n\n드라이브의 .md 파일과 첨부 자료도 함께 휴지통으로 이동합니다."),
+          ? "\n목록에서만 뺍니다. 폴더에서 끌어온 것이라 드라이브의 원본 파일은 그대로 남습니다."
+          : "\n드라이브의 .md 파일과 첨부 자료도 함께 휴지통으로 이동합니다."),
       function () {
         if (connected && !imported) {
           if (n.folderId) {
@@ -6812,7 +6864,7 @@
         saveLocal(); render();
         if (connected) saveIndex().catch(function () {});
         if (editingId === id) resetComposer();
-        toast("삭제했습니다.");
+        toast("완전히 삭제했습니다.");
       });
   }
 
@@ -6983,7 +7035,7 @@
   function renderFilters() {
     var host = $("typeFilters");
     host.innerHTML = "";
-    var all = el("button", "chip" + (filterType === "all" ? " on" : ""), "전체 " + entries.length);
+    var all = el("button", "chip" + (filterType === "all" ? " on" : ""), "전체 " + liveEntries().length);
     all.type = "button";
     all.addEventListener("click", function () { filterType = "all"; render(); });
     host.appendChild(all);
@@ -7104,17 +7156,26 @@
       pc.addEventListener("click", function () { filterPath = []; render(); });
       host.appendChild(pc);
     }
-    if (filterTags.length || filterType !== "all" || searchQ || filterPinned || filterPath.length) {
+    if (filterTags.length || filterType !== "all" || searchQ || filterPinned || filterPath.length || smartView) {
       var clear = el("button", "chip clearchip", "✕ 필터 지우기");
       clear.type = "button";
       clear.addEventListener("click", function () {
-        filterTags = []; filterType = "all"; searchQ = ""; filterPinned = false; filterPath = []; $("search").value = "";
+        filterTags = []; filterType = "all"; searchQ = ""; filterPinned = false; filterPath = []; smartView = ""; $("search").value = "";
         render();
       });
       host.appendChild(clear);
     }
   }
 
+  /* 휴지통에 든 것은 «없는 것» 처럼 군다 · 세는 자리도, 나무도, 목록도 다 이 자를 쓴다 */
+  function liveEntries() {
+    return entries.filter(function (n) { return !n.trashed; });
+  }
+  function hasOpenTodo(n) {
+    return (n.blocks || []).some(function (b) {
+      return b.kind === "todo" && (b.items || []).some(function (it) { return it.t && !it.done; });
+    });
+  }
   function entryText(n) {
     return [n.title, (n.tags || []).join(" ")].concat((n.blocks || []).map(function (b) {
       // 할 일·목록의 줄도 검색에 걸려야 한다 · 거기 적은 것도 내가 쓴 글이다
@@ -7124,6 +7185,11 @@
     })).join(" ").toLowerCase();
   }
   function matches(n) {
+    /* 휴지통은 «따로 보는 자리» 다. 평소 목록에는 절대 섞이지 않는다 */
+    if (smartView === "trash") return !!n.trashed;
+    if (n.trashed) return false;
+    if (smartView === "todo" && !hasOpenTodo(n)) return false;
+    if (smartView === "untagged" && (n.tags || []).length) return false;
     if (filterPinned && !n.pinned) return false;
     if (filterType !== "all" && n.type !== filterType) return false;
     /* 폴더 길은 «앞에서부터» 같아야 한다. 2019/3학년 을 고르면 2019/4학년 은 빠진다.
@@ -8306,12 +8372,63 @@
 
     var head = el("div", "sidehead");
     head.appendChild(folderSvg(18));
-    head.appendChild(document.createTextNode("폴더 구조"));
+    head.appendChild(document.createTextNode("내 기록장"));
     var x = el("button", "x", "✕");
     x.type = "button"; x.setAttribute("aria-label", "닫기");
     x.addEventListener("click", closeDrawer);
     head.appendChild(x);
     host.appendChild(head);
+
+    /* ---- 똑똑한 목록 · 폴더가 아니라 «상태» 로 모아 보는 자리 ----
+       폴더는 «내가 어디에 두었나» 로 찾는 길이고, 이쪽은 «지금 뭘 해야 하나» 로 찾는 길이다.
+       둘은 다른 물음이라 자리를 나눠 준다. */
+    var live = liveEntries();
+    function smartRow(icon, label, count, key, tip) {
+      var b = el("button", "smartrow" + (smartView === key && !filterPath.length ? " on" : ""));
+      b.type = "button";
+      b.title = tip || label;
+      b.appendChild(el("span", "sico", icon));
+      b.appendChild(el("span", "n", label));
+      if (count != null) b.appendChild(el("span", "cnt", String(count)));
+      b.addEventListener("click", function () {
+        smartView = (smartView === key) ? "" : key;
+        filterPath = [];
+        sideMenuOpen = false;
+        closeDrawer();
+        foldComposer();
+        render();
+        gotoList();
+      });
+      host.appendChild(b);
+      return b;
+    }
+    smartRow("📄", "모든 기록", live.length, "", "휴지통을 뺀 모든 기록");
+    var todoN = live.filter(hasOpenTodo).length;
+    if (todoN || smartView === "todo") {
+      smartRow("☑", "할 일", todoN, "todo", "아직 안 끝낸 할 일이 남은 기록");
+    }
+    var untagN = live.filter(function (n) { return !(n.tags || []).length; }).length;
+    if (untagN || smartView === "untagged") {
+      smartRow("🏷", "분류 없음", untagN, "untagged", "태그를 아직 안 붙인 기록");
+    }
+
+    /* ---- 빠른 접근 · 고정해 둔 기록으로 바로 ---- */
+    var pins = live.filter(function (n) { return n.pinned; });
+    if (pins.length) {
+      host.appendChild(el("div", "sidecap", "빠른 접근"));
+      pins.slice(0, 8).forEach(function (n) {
+        var b = el("button", "quickrow");
+        b.type = "button";
+        b.appendChild(el("span", "sico", "⭐"));
+        var nm = el("span", "n", n.title || "(제목 없음)");
+        nm.title = n.title || "";
+        b.appendChild(nm);
+        b.addEventListener("click", function () { closeDrawer(); openViewer(n); });
+        host.appendChild(b);
+      });
+    }
+
+    host.appendChild(el("div", "sidecap", "폴더 구조"));
 
     // 색인이 아는 길로 나무를 세운다
     var root = { children: {}, order: [], count: 0 };
@@ -8328,7 +8445,7 @@
       }
       return node;
     }
-    entries.forEach(function (n) {
+    live.forEach(function (n) {
       /* 한 기록이 여러 자리에 설 수 있다 (태그가 곧 폴더).
          드라이브에도 태그 폴더마다 바로가기가 놓이므로, 나무도 그만큼 세야
          「#수업 4」 와 「수업 4」 가 같은 수가 된다. */
@@ -8384,6 +8501,7 @@
          이 둘을 갈라 놓으면 폴더를 고른 뒤 저장 위치를 또 골라야 한다. */
       b.addEventListener("click", function () {
         filterPath = path.slice();
+        smartView = "";          // 폴더로 찾기와 «상태» 로 찾기는 동시에 서지 않는다
         setDesk(path.length ? { id: fid || null, name: label, path: path.slice() } : null, true);
         sideMenuOpen = false;    // 자리를 골랐으니 ▾ 는 할 일이 끝났다
         closeDrawer();
@@ -8394,7 +8512,7 @@
       host.appendChild(b);
     }
 
-    row(folder.name || "내 폴더", [], 0, entries.length, false, true, folder.id || null);
+    row(folder.name || "내 폴더", [], 0, live.length, false, true, folder.id || null);
     (function walk(node, path, depth) {
       node.order.slice().sort(function (a, b) { return a.localeCompare(b, "ko"); }).forEach(function (nm) {
         var kid = node.children[nm];
@@ -8426,7 +8544,57 @@
     newrow.appendChild(more);
     host.appendChild(newrow);
     if (sideMenuOpen) host.appendChild(deskMenu());
+
+    /* ---- 태그 · 폴더와 다른 길이다.
+       폴더는 «한 자리», 태그는 «여러 갈래». 같은 기록이 둘 다에 걸린다.
+       위의 거르개 칩과 같은 filterTags 를 쓴다 · 같은 일은 같은 길로. ---- */
+    var tcount = {};
+    live.forEach(function (n) {
+      var seen = {};
+      (n.tags || []).forEach(function (t) {
+        if (!t || seen[t]) return; seen[t] = 1;
+        tcount[t] = (tcount[t] || 0) + 1;
+      });
+    });
+    var tnames = Object.keys(tcount).sort(function (a, b) {
+      if (tcount[b] !== tcount[a]) return tcount[b] - tcount[a];
+      return a.localeCompare(b, "ko");
+    });
+    if (tnames.length) {
+      host.appendChild(el("div", "sidecap", "태그"));
+      var SIDE_TAGS = 8;
+      var showTags = sideTagsOpen ? tnames : tnames.slice(0, SIDE_TAGS);
+      showTags.forEach(function (t) {
+        var on = filterTags.indexOf(t) >= 0;
+        var b = el("button", "tagrow" + (on ? " on" : ""));
+        b.type = "button";
+        b.appendChild(el("span", "sico", "#"));
+        b.appendChild(el("span", "n", t));
+        b.appendChild(el("span", "cnt", String(tcount[t])));
+        b.title = on ? "이 태그만 보기를 풉니다" : "이 태그가 붙은 기록만 봅니다";
+        b.addEventListener("click", function () {
+          if (on) filterTags = filterTags.filter(function (x) { return x !== t; });
+          else filterTags = filterTags.concat([t]);
+          smartView = ""; closeDrawer(); foldComposer(); render(); gotoList();
+        });
+        host.appendChild(b);
+      });
+      if (tnames.length > SIDE_TAGS) {
+        var tm = el("button", "sidemore", sideTagsOpen ? "접기 ▲" : "＋" + (tnames.length - SIDE_TAGS) + "개 더");
+        tm.type = "button";
+        tm.addEventListener("click", function () { sideTagsOpen = !sideTagsOpen; renderSideNav(); });
+        host.appendChild(tm);
+      }
+    }
+
+    /* ---- 휴지통 · 되돌릴 수 있는 자리가 눈에 보여야 «지우기» 가 무섭지 않다 ---- */
+    var trashN = entries.filter(function (n) { return n.trashed; }).length;
+    if (trashN || smartView === "trash") {
+      host.appendChild(el("div", "sidecap", ""));
+      smartRow("🗑", "휴지통", trashN, "trash", "지운 기록 · 되돌리거나 완전히 지웁니다");
+    }
   }
+  var sideTagsOpen = false;
 
   /* ▾ 안에 든 것 · 자리를 바꾸는 세 가지 길 */
   var sideMenuOpen = false;
@@ -8599,8 +8767,9 @@
     var shown = entries.filter(matches);
     // 고정한 기록을 맨 위로. 나머지 순서(최신순)는 그대로 둔다
     shown.sort(function (a, b) { return (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0); });
-    $("countText").textContent = entries.length
-      ? (shown.length === entries.length ? entries.length + "개" : shown.length + " / " + entries.length + "개") : "";
+    var liveN = liveEntries().length;
+    $("countText").textContent = liveN
+      ? (shown.length === liveN ? liveN + "개" : shown.length + " / " + liveN + "개") : "";
 
     if (!shown.length) {
       var e = el("div", "empty");
@@ -8762,9 +8931,20 @@
       var bV = el("button", "btn sm", "📖 전체 보기");
       bV.addEventListener("click", function () { openViewer(n); });
       foot.appendChild(bV);
-      var bE = el("button", "btn sm", "✏️ 편집"); bE.addEventListener("click", function () { loadIntoComposer(n); });
-      var bD = el("button", "btn sm danger", "🗑️ 삭제"); bD.addEventListener("click", function () { removeEntry(n.id); });
-      foot.appendChild(bE); foot.appendChild(bD);
+      if (n.trashed) {
+        /* 휴지통에서는 할 수 있는 일이 둘뿐이다 · 되돌리거나, 정말로 지우거나 */
+        var bR = el("button", "btn sm", "↩ 되돌리기");
+        bR.addEventListener("click", function () { restoreEntry(n.id); });
+        var bP = el("button", "btn sm danger", "🗑️ 완전히 삭제");
+        bP.addEventListener("click", function () { purgeEntry(n.id); });
+        foot.appendChild(bR); foot.appendChild(bP);
+      } else {
+        var bE = el("button", "btn sm", "✏️ 편집"); bE.addEventListener("click", function () { loadIntoComposer(n); });
+        var bD = el("button", "btn sm danger", "🗑️ 삭제");
+        bD.title = "휴지통으로 보냅니다 · 되돌릴 수 있습니다";
+        bD.addEventListener("click", function () { removeEntry(n.id); });
+        foot.appendChild(bE); foot.appendChild(bD);
+      }
       card.appendChild(foot);
 
       host.appendChild(card);

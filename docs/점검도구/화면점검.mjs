@@ -1579,6 +1579,90 @@ check("목록에서 바로 체크된다", ticked.saved === true, ticked.err || "
 check("체크하면 «몇 개 했는지» 도 같이 바뀐다", ticked.before !== ticked.after,
   (ticked.before || "?") + " → " + (ticked.after || "?"));
 
+/* ---------- 10-7. 업노트식 왼쪽 기둥 ----------
+   폴더는 «내가 어디에 두었나» 로 찾는 길이고, 똑똑한 목록은 «지금 뭘 해야 하나» 로 찾는 길이다.
+   둘은 다른 물음이라 자리를 나눠 세운다. 태그는 또 다른 길이다 (폴더는 한 자리, 태그는 여러 갈래). */
+await evaluate(`(() => {
+  const mk = (id, title, tags, todo, pin) => ({
+    id, type: '', title, tags,
+    blocks: todo ? [{ id: 'b' + id, kind: 'todo', items: [{ t: '할 것', done: false }] }]
+                 : [{ id: 'b' + id, kind: 'text', text: title }],
+    relations: [], pinned: !!pin, createdAt: 1755000000000, updatedAt: 1755000000000
+  });
+  localStorage.setItem('trace.entries.v2', JSON.stringify([
+    mk('v1', '수업 회고', ['수업'], false, false),
+    mk('v2', '고정해 둔 기록', ['수업'], false, true),
+    mk('v3', '할 일이 남은 기록', ['업무'], true, false),
+    mk('v4', '태그 없는 기록', [], false, false)
+  ]));
+  ['trace.desk.v1','trace.deskList.v1','trace.draft.v1','trace.sideOpen.v1'].forEach(k => localStorage.removeItem(k));
+  return true;
+})()`);
+await send("Page.navigate", { url: URL_ });
+await wait(2500);
+const pillar = JSON.parse(await evaluate(`(() => {
+  const caps = Array.from(document.querySelectorAll('#sideNav .sidecap')).map(c => c.textContent).filter(Boolean);
+  const smart = Array.from(document.querySelectorAll('#sideNav .smartrow')).map(b => (b.querySelector('.n') || {}).textContent);
+  const quick = Array.from(document.querySelectorAll('#sideNav .quickrow')).map(b => (b.querySelector('.n') || {}).textContent);
+  const tags = Array.from(document.querySelectorAll('#sideNav .tagrow')).map(b => (b.querySelector('.n') || {}).textContent);
+  return JSON.stringify({ caps, smart, quick, tags });
+})()`));
+check("기둥이 구역으로 나뉜다", (pillar.caps || []).indexOf("빠른 접근") >= 0 &&
+  (pillar.caps || []).indexOf("폴더 구조") >= 0 && (pillar.caps || []).indexOf("태그") >= 0,
+  (pillar.caps || []).join(" / "));
+check("«모든 기록 · 할 일 · 분류 없음» 이 선다",
+  ["모든 기록", "할 일", "분류 없음"].every(function (k) { return (pillar.smart || []).indexOf(k) >= 0; }),
+  (pillar.smart || []).join(" · "));
+check("고정한 기록이 빠른 접근에 뜬다", (pillar.quick || []).indexOf("고정해 둔 기록") >= 0,
+  (pillar.quick || []).join(" · "));
+check("태그가 기둥에도 선다", (pillar.tags || []).length >= 2, (pillar.tags || []).join(" · "));
+
+const smartPick = JSON.parse(await evaluate(`(() => {
+  const hit = (label) => {
+    const b = Array.from(document.querySelectorAll('#sideNav .smartrow')).find(x => x.textContent.indexOf(label) >= 0);
+    if (!b) return null;
+    b.click();
+    return Array.from(document.querySelectorAll('#list .entry h3')).map(h => h.textContent);
+  };
+  const todo = hit('할 일');
+  const untag = hit('분류 없음');
+  hit('모든 기록');
+  const all = document.querySelectorAll('#list .entry').length;
+  return JSON.stringify({ todo, untag, all });
+})()`));
+check("«할 일» 은 안 끝낸 일이 남은 것만 모은다",
+  (smartPick.todo || []).length === 1 && /할 일이 남은/.test((smartPick.todo || [])[0] || ""),
+  (smartPick.todo || []).join(" · "));
+check("«분류 없음» 은 태그 안 붙인 것만 모은다",
+  (smartPick.untag || []).length === 1 && /태그 없는/.test((smartPick.untag || [])[0] || ""),
+  (smartPick.untag || []).join(" · "));
+check("«모든 기록» 으로 되돌아온다", smartPick.all === 4, smartPick.all + "편");
+
+/* ⚠️ 지우기가 되돌릴 수 있어야 한다 · 십삼 년치를 담는 도구에서 되돌릴 수 없는 단추가
+   카드마다 늘 나와 있으면 안 된다. 그리고 이때 드라이브 파일은 아직 안 건드린다. */
+const trashFlow = JSON.parse(await evaluate(`(() => {
+  const card = Array.from(document.querySelectorAll('#list .entry')).find(c => c.textContent.indexOf('수업 회고') >= 0);
+  const del = Array.from(card.querySelectorAll('button')).find(b => /삭제/.test(b.textContent));
+  del.click();
+  const gone = !Array.from(document.querySelectorAll('#list .entry')).some(c => c.textContent.indexOf('수업 회고') >= 0);
+  const kept = JSON.parse(localStorage.getItem('trace.entries.v2')).filter(x => x.id === 'v1')[0];
+  const row = Array.from(document.querySelectorAll('#sideNav .smartrow')).find(b => b.textContent.indexOf('휴지통') >= 0);
+  if (row) row.click();
+  const inTrash = Array.from(document.querySelectorAll('#list .entry h3')).map(h => h.textContent);
+  const back = Array.from(document.querySelectorAll('#list .entry button')).find(b => /되돌리기/.test(b.textContent));
+  if (back) back.click();
+  const all = Array.from(document.querySelectorAll('#sideNav .smartrow')).find(b => b.textContent.indexOf('모든 기록') >= 0);
+  if (all) all.click();
+  const restored = Array.from(document.querySelectorAll('#list .entry h3')).map(h => h.textContent);
+  return JSON.stringify({ gone, kept: !!kept, trashed: kept && kept.trashed === true, inTrash, restored });
+})()`));
+check("지우면 목록에서 빠지되 데이터는 남는다", trashFlow.gone && trashFlow.kept && trashFlow.trashed,
+  "남음 " + trashFlow.kept + " · 휴지통표시 " + trashFlow.trashed);
+check("휴지통에서 지운 것을 찾는다", (trashFlow.inTrash || []).indexOf("수업 회고") >= 0,
+  (trashFlow.inTrash || []).join(" · "));
+check("되돌리면 제자리로 온다", (trashFlow.restored || []).indexOf("수업 회고") >= 0,
+  (trashFlow.restored || []).join(" · "));
+
 /* 빈 화면의 긴 설명도 걷어냈다 · 그 글이 돌아오면 안 된다 */
 const oldEmptyDesc = await evaluate(`/마크다운\\(.md\\)으로, 사진·파일은 정리된 이름/.test(document.body.textContent)`);
 check("빈 화면의 긴 설명이 돌아오지 않았다", !oldEmptyDesc);
