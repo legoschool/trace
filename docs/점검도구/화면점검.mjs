@@ -1217,13 +1217,19 @@ const side = JSON.parse(await evaluate(`(() => {
     visible: cs.display !== 'none' && cs.transform === 'none',
     rows: nav.querySelectorAll('.siderow').length,
     root: (nav.querySelector('.siderow .n') || {}).textContent || '',
-    add: !!nav.querySelector('.sidenew'),
+    topNew: !!document.getElementById('topNew'),
+    topNewShown: (() => { const b = document.getElementById('topNew'); return !!b && getComputedStyle(b).display !== 'none'; })(),
+    sideAdd: !!nav.querySelector('.sidenew'),
     burger: getComputedStyle(document.getElementById('btnDrawer')).display
   });
 })()`));
 check("PC 에서는 왼쪽에 폴더 구조 기둥이 선다", !side.err && side.visible && side.rows >= 1,
   side.err || `줄 ${side.rows}개 · 뿌리 「${side.root}」`);
-check("기둥 맨 아래에 «＋ 새 기록» 이 있다", !!side.add);
+/* ⚠️ 「＋ 새 기록」 은 머리띠로 옮겼다. 기둥 맨 아래에 두었더니 폴더가 열댓 개인
+   사람에게는 화면 밖으로 밀려나 «어떻게 쓰냐» 가 됐다.
+   가장 자주 누르는 단추는 목록 길이에 밀리지 않는 자리에 있어야 한다. */
+check("«＋ 새 기록» 이 머리띠에 있다", side.topNew === true && side.topNewShown === true);
+check("기둥 아래에는 그 단추를 두 번 두지 않는다", side.sideAdd === false);
 /* ☰ 는 이제 PC 에도 있다 · 기둥을 접었다 편다. 한 단추, 한 뜻 */
 check("PC 에도 줄 셋(☰)이 있다", side.burger !== "none", String(side.burger));
 const folded = JSON.parse(await evaluate(`(() => {
@@ -1323,14 +1329,19 @@ check("새 기록에 고른 자리가 찍힌다", savedDesk.deskPath[0] === "연
 check("자리를 folderId 에 걸지 않는다 (한 편 지워도 폴더가 안 날아간다)",
   savedDesk.folderId === null, String(savedDesk.folderId));
 
+/* ⚠️ ▾ 는 기둥이 아니라 머리띠의 «＋ 새 기록» 옆에 있다 · 떠 있는 메뉴로 뜬다 */
 const deskMenuChk = JSON.parse(await evaluate(`(() => {
-  document.querySelector('#sideNav .sidenewmore').click();
-  const m = document.querySelector('#sideNav .sidemenu');
+  const more = document.getElementById('topNewMore');
+  if (!more) return JSON.stringify({ err: 'NO_BUTTON' });
+  more.click();
+  const m = document.querySelector('.menupop');
   if (!m) return JSON.stringify({ err: 'NO_MENU' });
-  return JSON.stringify({
+  const out = {
     items: Array.from(m.querySelectorAll('button')).map(b => (b.firstChild||{}).textContent || ''),
-    note: (m.querySelector('.note')||{}).textContent || ''
-  });
+    note: Array.from(m.querySelectorAll('small')).map(x => x.textContent).join(' ')
+  };
+  document.querySelectorAll('.menupop').forEach(p => p.remove());
+  return JSON.stringify(out);
 })()`));
 /* ⚠️ ▾ 안에는 양식도 같이 산다. 여기서 세는 것은 «자리를 바꾸는 길» 셋뿐이다 */
 const deskWays = (deskMenuChk.items || []).filter(function (t) { return !/^📋/.test(t); });
@@ -1340,9 +1351,11 @@ check("▾ 안에 자리 바꾸는 길 셋이 있다", !deskMenuChk.err && deskW
 check("고른 폴더에 원래 있던 것은 안 보인다고 미리 말한다", /원래 있던 파일은/.test(deskMenuChk.note || ""));
 
 const deskHome = JSON.parse(await evaluate(`(() => {
-  const btns = Array.from(document.querySelectorAll('#sideNav .sidemenu button'));
+  document.getElementById('topNewMore').click();
+  const btns = Array.from(document.querySelectorAll('.menupop button'));
   const h = btns.find(b => b.textContent.indexOf('기본 자리') >= 0);
   if (h) h.click();
+  document.querySelectorAll('.menupop').forEach(p => p.remove());
   return JSON.stringify({
     desk: localStorage.getItem('trace.desk.v1') || '',
     marked: Array.from(document.querySelectorAll('#sideNav .siderow')).filter(r => r.className.indexOf('desk') >= 0).length
@@ -1829,11 +1842,12 @@ await evaluate(`(() => {
 await send("Page.navigate", { url: URL_ });
 await wait(2500);
 const tpl = JSON.parse(await evaluate(`(() => {
-  document.querySelector('#sideNav .sidenewmore').click();
-  const items = Array.from(document.querySelectorAll('#sideNav .sidemenu button')).map(b => (b.firstChild || {}).textContent || '');
-  const one = Array.from(document.querySelectorAll('#sideNav .sidemenu button')).find(b => b.textContent.indexOf('수업 회고') >= 0);
+  document.getElementById('topNewMore').click();
+  const items = Array.from(document.querySelectorAll('.menupop button')).map(b => (b.firstChild || {}).textContent || '');
+  const one = Array.from(document.querySelectorAll('.menupop button')).find(b => b.textContent.indexOf('수업 회고') >= 0);
   if (!one) return JSON.stringify({ err: 'NO_TEMPLATE', items });
   one.click();
+  document.querySelectorAll('.menupop').forEach(p => p.remove());
   const heads = Array.from(document.querySelectorAll('#blocks .bhead')).map(h => h.textContent.replace(/[⠿▲▼✕]/g, '').trim());
   const first = (document.querySelector('#blocks input.inp') || {}).value || '';
   return JSON.stringify({
@@ -2152,6 +2166,58 @@ check("아래 바 ⋯ 에서 보기를 바꿀 수 있다", dockView.before !== d
   dockView.before + " → " + dockView.after);
 await anyPane();
 await wait(400);
+
+/* ---------- 10-14. 자리를 먼저 정하고 이름을 붙인다 · 안 보이는 것은 눈에 보이게 ----------
+   ⚠️ 이 앱에서 첫 태그는 그냥 딱지가 아니라 «폴더 이름» 이고, 파일 이름도 그것으로 시작한다.
+      제목부터 적게 해 두면 자리를 정하기 전에 이름부터 짓게 되어,
+      「배움」 을 제목으로 「질문」 을 태그로 적고 나서 왜 폴더가 따로 생겼는지 모르게 된다. */
+await evaluate(`(() => {
+  localStorage.setItem('trace.entries.v2', JSON.stringify([
+    { id: 'n1', type: 'idea', title: '사라진 기록', tags: ['pkems'], mdId: 'MDX',
+      blocks: [{ id: 'b1', kind: 'text', text: '내용' }], relations: [], pinned: false,
+      createdAt: 1755000000000, updatedAt: 1755000000000, _missing: true },
+    { id: 'n2', type: '', title: '멀쩡한 기록', tags: ['수업'],
+      blocks: [{ id: 'b2', kind: 'text', text: '내용' }], relations: [], pinned: false,
+      createdAt: 1755000000000, updatedAt: 1755000000000 }
+  ]));
+  localStorage.setItem('trace.settings.v1', JSON.stringify({ version: 1, folderMode: 'tag' }));
+  ['trace.desk.v1','trace.draft.v1','trace.sideSec.v1','trace.sideOpen.v1'].forEach(k => localStorage.removeItem(k));
+  return true;
+})()`);
+await send("Page.navigate", { url: URL_ });
+await wait(2500);
+const nameOrder = JSON.parse(await evaluate(`(() => {
+  const labels = Array.from(document.querySelectorAll('#composer .grid2 .field label')).map(l => l.textContent.trim());
+  const g = document.getElementById('tags'); g.value = '배움중심, 질문'; g.dispatchEvent(new Event('input', { bubbles: true }));
+  const t = document.getElementById('title'); t.value = '평가에 관한 논의'; t.dispatchEvent(new Event('input', { bubbles: true }));
+  return JSON.stringify({ labels, hint: (document.getElementById('nameHint') || {}).textContent || '' });
+})()`));
+check("태그 칸이 제목보다 먼저 온다", /태그/.test((nameOrder.labels || [])[0] || ""), (nameOrder.labels || []).join(" → "));
+check("첫 태그가 폴더가 된다고 그 자리에서 말한다", /폴더/.test((nameOrder.labels || [])[0] || ""),
+  (nameOrder.labels || [])[0] || "");
+/* 저장하고 드라이브를 열어 봐야 아는 것은 늦다 · 적는 그 자리에서 이름을 보여 준다 */
+check("파일 이름이 «폴더명_제목» 으로 미리 보인다",
+  /배움중심_평가에 관한 논의\.md/.test(nameOrder.hint || ""), nameOrder.hint || "(안 보임)");
+
+/* ⚠️ «안 보인다» 고 색인에서 저절로 지우면 안 된다. drive.file 에서 «안 보인다» 는
+   «지워졌다» 가 아니라 «권한이 끊겼다» 일 수도 있다. 저절로 지우면 권한이 잠깐
+   흔들린 날 십삼 년치가 통째로 사라진다. 대신 눈에 보이게 하고 사람이 치우게 한다. */
+const goneMark = JSON.parse(await evaluate(`(() => {
+  const rows = Array.from(document.querySelectorAll('#sideNav .siderow')).map(r => ({
+    n: (r.querySelector('.n') || {}).textContent, gone: r.classList.contains('gone')
+  }));
+  const card = Array.from(document.querySelectorAll('#list .entry')).find(c => c.textContent.indexOf('안 보입니다') >= 0);
+  const btns = card ? Array.from(card.querySelectorAll('.banner button')).map(b => b.textContent.trim()) : [];
+  return JSON.stringify({ rows, btns });
+})()`));
+check("안 보이는 기록만 든 폴더는 흐리게 선다",
+  (goneMark.rows || []).some(function (r) { return r.n === "pkems" && r.gone; }),
+  (goneMark.rows || []).map(function (r) { return r.n + (r.gone ? "(흐림)" : ""); }).join(" · "));
+check("멀쩡한 폴더는 그대로 선다",
+  (goneMark.rows || []).some(function (r) { return r.n === "수업" && !r.gone; }));
+check("안 보이는 기록을 손으로 치울 수 있다",
+  (goneMark.btns || []).some(function (t) { return /치우기/.test(t); }),
+  (goneMark.btns || []).join(" · "));
 
 /* 빈 화면의 긴 설명도 걷어냈다 · 그 글이 돌아오면 안 된다 */
 const oldEmptyDesc = await evaluate(`/마크다운\\(.md\\)으로, 사진·파일은 정리된 이름/.test(document.body.textContent)`);
