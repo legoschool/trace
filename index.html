@@ -555,6 +555,51 @@
     .logo { font-size: calc(15px * var(--fs)); }
   }
   .acct { font-size: calc(12.5px * var(--fs)); color: var(--ink-soft); max-width: 190px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* 검색을 머리띠로 올렸다 · 매일 쓰는 것은 밖에, 가끔 쓰는 것은 ⋯ 안에 */
+  .topsearch { flex: 1 1 150px; max-width: 320px; min-width: 0; border-radius: 99px;
+               padding: 8px 14px; font-size: calc(13.5px * var(--fs)); }
+  [data-theme="lego"] header.top .topsearch { border-color: transparent; }
+
+  /* ---------- 떠 있는 작은 메뉴 · 세 자리가 같은 모양을 쓴다 ---------- */
+  .dots { background: none; border: 1px solid transparent; color: var(--ink-soft); cursor: pointer;
+          border-radius: 8px; padding: 0 7px; font-size: calc(17px * var(--fs)); line-height: 1.5;
+          font-family: inherit; }
+  .dots:hover { border-color: var(--line); color: var(--brand); background: var(--panel); }
+  .menupop { position: fixed; z-index: 200; min-width: 184px; max-width: 260px; background: var(--panel);
+             border: 1px solid var(--line); border-radius: var(--r-btn); padding: 5px;
+             box-shadow: 0 12px 34px rgba(0,0,0,.18); }
+  .menupop button { display: block; width: 100%; text-align: left; background: none; border: none;
+                    font: inherit; color: var(--ink); cursor: pointer; padding: 9px 11px;
+                    border-radius: 8px; font-size: calc(13.5px * var(--fs)); line-height: 1.45; }
+  .menupop button:hover { background: var(--brand-soft); color: var(--brand-dark); }
+  .menupop button small { display: block; color: var(--ink-soft); font-size: calc(11.5px * var(--fs)); margin-top: 1px; }
+  .menupop button:hover small { color: inherit; }
+  .menupop button.danger { color: var(--danger); }
+  .menupop button.danger:hover { background: var(--warn-bg); color: var(--danger); }
+  .menupop .sep { height: 1px; background: var(--line-soft); margin: 4px 2px; }
+
+  /* 제목을 누르면 열린다 · 카드에서 가장 많이 하는 일이 가장 가까운 자리에 */
+  .titlebtn { background: none; border: none; padding: 0; margin: 0; font: inherit; color: inherit;
+              cursor: pointer; text-align: left; }
+  .titlebtn:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+  /* ---------- 폰 아래 고정 바 ---------- */
+  .dock { display: none; }
+  @media (max-width: 1020px) {
+    .dock { display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 55;
+            background: var(--panel); border-top: 1px solid var(--line);
+            padding: 5px 6px calc(5px + env(safe-area-inset-bottom, 0px)); }
+    .dockbtn { flex: 1 1 0; display: flex; flex-direction: column; align-items: center; gap: 2px;
+               background: none; border: none; cursor: pointer; color: var(--ink-soft);
+               padding: 6px 2px; border-radius: 10px; font-family: inherit; }
+    .dockbtn:hover, .dockbtn:active { background: var(--brand-soft); color: var(--brand-dark); }
+    .dockbtn .di { font-size: calc(18px * var(--fs)); line-height: 1.1; }
+    .dockbtn .dl { font-size: calc(11px * var(--fs)); }
+    /* 아래 바가 목록 끝과 «넣기 줄» 을 가리면 안 된다 */
+    .wrap { padding-bottom: 128px; }
+    .addbar { bottom: 62px; }
+    #sideNav { padding-bottom: 76px; }
+  }
 
   .btn {
     border: var(--bw) solid var(--line); background: var(--panel); color: var(--ink);
@@ -1340,7 +1385,8 @@
     .addhint { font-size: calc(12px * var(--fs)); }
     .bhead .btn.xs { min-width: 40px; }
     .media .thumb, .media .ficon { width: 72px; height: 72px; }
-    .toolbar .search { flex: 1 1 100%; max-width: none; order: 9; }
+    /* 검색은 머리띠로 올라갔다 · 폰에서는 머리띠 둘째 줄을 통째로 쓴다 */
+    .top-inner .topsearch { order: 9; flex: 1 1 100%; max-width: none; }
     .modal-bg { padding: 0; align-items: flex-end; }
     .modal { max-width: none; max-height: 92vh; border-radius: 16px 16px 0 0; }
     .graphmodal { height: 92vh; max-width: none; }
@@ -1374,14 +1420,17 @@
     <!-- 로고도 그림글자 대신 브릭 한 조각 · 이 도구의 정체성이다 -->
     <div class="logo"><svg class="logomark" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="9.5" width="18" height="10" rx="2.5"/><path d="M7 9.5V6.8h4v2.7M13 9.5V6.8h4v2.7"/></svg> 구글 기록장 <small>TRACE · 개인 지식·경험 관리 체계</small></div>
     <div class="spacer"></div>
+    <!-- 검색은 매일 쓴다. 목록 줄에 묻어 두면 «어디 있더라» 가 된다 -->
+    <input id="search" class="inp topsearch" type="search" placeholder="🔍 제목·내용·태그 검색" />
     <span id="syncPill" class="syncpill"></span>
     <span id="acct" class="acct"></span>
     <!-- 그림글자 대신 선 아이콘 · 이모지는 색이 우리 색을 안 따라와서 판 위에서 안 읽힌다 -->
-    <button id="btnHelp" class="btn sm" title="연결·백링크·관계망 사용법"><svg class="bico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.4 9.3a2.7 2.7 0 1 1 3.6 2.6c-.8.3-1 .9-1 1.9"/><circle cx="12" cy="17" r=".6" fill="currentColor" stroke="none"/></svg></button>
+    <span id="topExtras" class="hidden"><button id="btnHelp" class="btn sm" title="연결·백링크·관계망 사용법"><svg class="bico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.4 9.3a2.7 2.7 0 1 1 3.6 2.6c-.8.3-1 .9-1 1.9"/><circle cx="12" cy="17" r=".6" fill="currentColor" stroke="none"/></svg></button>
     <button id="btnInstall" class="btn sm" style="display:none" title="이 기록장을 내 컴퓨터에 앱으로 설치합니다"><svg class="bico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v10"/><path d="m7.5 10.5 4.5 4 4.5-4"/><path d="M5 19.5h14"/></svg><span class="lbl"> 앱으로 설치</span></button>
     <button id="btnMap" class="btn sm" title="폴더 구조"><svg class="bico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20v-14h6l2 2.5h10V20Z"/></svg><span class="lbl"> 폴더 구조</span></button>
     <button id="btnGraph" class="btn sm" title="관계망"><svg class="bico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5.5" r="2.4"/><circle cx="5.5" cy="17.5" r="2.4"/><circle cx="18.5" cy="17.5" r="2.4"/><path d="M10.9 7.6 6.7 15.4M13.1 7.6l4.2 7.8M7.9 17.5h8.2"/></svg><span class="lbl"> 관계망</span></button>
-    <button id="btnSettings" class="btn sm" title="설정"><svg class="bico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5h9"/><circle cx="16.5" cy="7.5" r="2.4"/><path d="M20 16.5h-9"/><circle cx="7.5" cy="16.5" r="2.4"/></svg><span class="lbl"> 설정</span></button>
+    <button id="btnSettings" class="btn sm" title="설정"><svg class="bico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5h9"/><circle cx="16.5" cy="7.5" r="2.4"/><path d="M20 16.5h-9"/><circle cx="7.5" cy="16.5" r="2.4"/></svg><span class="lbl"> 설정</span></button></span>
+    <button id="btnMore" class="btn sm" title="설정·도움말·앱 설치">⋯</button>
     <button id="btnLogin" class="btn sm primary">구글 로그인</button>
   </div>
 </header>
@@ -1475,7 +1524,6 @@
     <span class="spacer"></span>
     <div class="viewswitch" id="viewSwitch"></div>
     <button id="btnCompile" class="btn sm" title="고른 기록을 한 권으로 묶어 내려받습니다">📚 엮어내기</button>
-    <input id="search" class="inp search" placeholder="제목·내용·태그 검색" />
   </div>
   <div class="chips filters" id="typeFilters"></div>
   <div class="chips filters tagfilters" id="tagFilters"></div>
@@ -1487,6 +1535,13 @@
 </div>
 </div><!-- /.layout -->
 
+<!-- 폰 아래 고정 바 · 엄지가 닿는 자리에 매일 쓰는 넷만 둔다 -->
+<nav id="dock" class="dock" aria-label="빠른 이동">
+  <button id="dockNew" class="dockbtn"><span class="di">＋</span><span class="dl">새 기록</span></button>
+  <button id="dockFind" class="dockbtn"><span class="di">🔍</span><span class="dl">검색</span></button>
+  <button id="dockNav" class="dockbtn"><span class="di">📂</span><span class="dl">폴더</span></button>
+  <button id="dockMore" class="dockbtn"><span class="di">⋯</span><span class="dl">더 보기</span></button>
+</nav>
 <div id="wikiPop" class="hidden"></div>
 
 <div id="dropOverlay" class="dropoverlay hidden">
@@ -8321,6 +8376,59 @@
     svg.appendChild(p);
     return svg;
   }
+  /* ---- 떠 있는 작은 메뉴 · 세 자리에서 같이 쓴다 (카드 ⋯ · 머리띠 ⋯ · 아래 바 ⋯) ----
+     자주 안 쓰는 것을 한 겹 안에 넣으려면, 그 «한 겹» 이 어디서나 같아야 한다.
+     안 그러면 «감춰진 것을 여는 법» 을 자리마다 새로 배워야 한다. */
+  var openPop = null;
+  function closePop() {
+    if (!openPop) return;
+    openPop.remove(); openPop = null;
+    document.removeEventListener("click", onPopOutside, true);
+    document.removeEventListener("keydown", onPopKey, true);
+    window.removeEventListener("resize", closePop);
+    window.removeEventListener("scroll", closePop, true);
+  }
+  function onPopOutside(e) { if (openPop && !openPop.contains(e.target)) closePop(); }
+  function onPopKey(e) { if (e.key === "Escape") closePop(); }
+  function openMenu(anchor, items) {
+    var again = openPop && openPop._anchor === anchor;
+    closePop();
+    if (again) return;                      // 같은 단추를 다시 누르면 닫힌다
+    var pop = el("div", "menupop");
+    pop._anchor = anchor;
+    items.forEach(function (it) {
+      if (it === "-") { pop.appendChild(el("div", "sep")); return; }
+      if (!it) return;
+      var b = el("button", it.danger ? "danger" : null);
+      b.type = "button";
+      b.appendChild(document.createTextNode(it.label));
+      if (it.note) b.appendChild(el("small", null, it.note));
+      b.addEventListener("click", function (e) { e.stopPropagation(); closePop(); it.run(); });
+      pop.appendChild(b);
+    });
+    document.body.appendChild(pop);
+    var r = anchor.getBoundingClientRect();
+    var w = pop.offsetWidth, h = pop.offsetHeight;
+    var left = Math.min(Math.max(8, r.right - w), Math.max(8, window.innerWidth - w - 8));
+    var top = r.bottom + 6;
+    if (top + h > window.innerHeight - 8) top = Math.max(8, r.top - h - 6);
+    pop.style.left = left + "px";
+    pop.style.top = top + "px";
+    openPop = pop;
+    setTimeout(function () {
+      document.addEventListener("click", onPopOutside, true);
+      document.addEventListener("keydown", onPopKey, true);
+      window.addEventListener("resize", closePop);
+      window.addEventListener("scroll", closePop, true);
+    }, 0);
+  }
+  function dotsBtn(title) {
+    var b = el("button", "dots", "⋯");
+    b.type = "button";
+    b.title = title || "더 보기";
+    b.setAttribute("aria-label", title || "더 보기");
+    return b;
+  }
   function closeDrawer() {
     var nav = $("sideNav"), scrim = $("drawerScrim");
     if (nav) nav.classList.remove("open");
@@ -8852,7 +8960,33 @@
       if (crumbsOf(n).length) card.appendChild(buildCrumbs(n));
       if (n._missing || n._away) card.appendChild(missingNote(n));
       head.appendChild(el("span", "badge", t.icon + " " + t.label));
-      head.appendChild(el("h3", null, n.title));
+      /* 제목을 누르면 열린다 · 가장 많이 하는 일(읽기)이 가장 가까운 자리에 있어야 한다.
+         전에는 제목이 왼쪽 위, 여는 단추가 오른쪽 아래로 «대각선으로 가장 먼» 자리였다. */
+      var h3 = el("h3");
+      var tbtn = el("button", "titlebtn", n.title || "(제목 없음)");
+      tbtn.type = "button";
+      tbtn.title = "전체 보기";
+      tbtn.addEventListener("click", function () { openViewer(n); });
+      h3.appendChild(tbtn);
+      head.appendChild(h3);
+      /* 나머지는 한 겹 안으로 · 위험한 것(삭제)이 편집 바로 옆에 늘 나와 있으면 안 된다 */
+      var dots = dotsBtn("이 기록으로 할 일");
+      dots.addEventListener("click", function (e) {
+        e.stopPropagation();
+        var items = n.trashed
+          ? [{ label: "📖 전체 보기", run: function () { openViewer(n); } },
+             { label: "↩ 되돌리기", run: function () { restoreEntry(n.id); } },
+             "-",
+             { label: "🗑️ 완전히 삭제", danger: true, note: "되돌릴 수 없습니다", run: function () { purgeEntry(n.id); } }]
+          : [{ label: "📖 전체 보기", run: function () { openViewer(n); } },
+             { label: "✏️ 편집", run: function () { loadIntoComposer(n); } },
+             { label: n.pinned ? "📌 고정 풀기" : "📌 맨 위에 고정", run: function () { togglePin(n); } },
+             { label: "🔗 링크로 공유", run: function () { openShareModal(n); } },
+             "-",
+             { label: "🗑️ 삭제", danger: true, note: "휴지통으로 · 되돌릴 수 있습니다", run: function () { removeEntry(n.id); } }];
+        openMenu(dots, items);
+      });
+      head.appendChild(dots);
       var line2 = el("span", "when");
       line2.appendChild(document.createTextNode(formatDate(n.createdAt)));
       var pin = el("button", "pinbtn" + (n.pinned ? " on" : ""), n.pinned ? "📌 고정됨" : "📌 고정");
@@ -8928,22 +9062,15 @@
       foot.appendChild(sd);
       foot.appendChild(el("span", "spacer"));
       // 문서·PDF·.md·폴더는 모두 「전체 보기」 안에 모아 두었다
-      var bV = el("button", "btn sm", "📖 전체 보기");
-      bV.addEventListener("click", function () { openViewer(n); });
-      foot.appendChild(bV);
+
+      /* ⚠️ 단추 셋을 여기 늘어놓던 자리다. 제목 옆 ⋯ 로 옮겼다 ·
+         카드가 길수록 제목(왼쪽 위)과 단추(오른쪽 아래)가 멀어져서,
+         한 편 열어 보는 데에도 눈과 손이 화면을 가로질러야 했다.
+         휴지통에서만은 «되돌리기» 를 밖에 둔다. 거기 들어온 사람은 그것 하러 온 것이다. */
       if (n.trashed) {
-        /* 휴지통에서는 할 수 있는 일이 둘뿐이다 · 되돌리거나, 정말로 지우거나 */
         var bR = el("button", "btn sm", "↩ 되돌리기");
         bR.addEventListener("click", function () { restoreEntry(n.id); });
-        var bP = el("button", "btn sm danger", "🗑️ 완전히 삭제");
-        bP.addEventListener("click", function () { purgeEntry(n.id); });
-        foot.appendChild(bR); foot.appendChild(bP);
-      } else {
-        var bE = el("button", "btn sm", "✏️ 편집"); bE.addEventListener("click", function () { loadIntoComposer(n); });
-        var bD = el("button", "btn sm danger", "🗑️ 삭제");
-        bD.title = "휴지통으로 보냅니다 · 되돌릴 수 있습니다";
-        bD.addEventListener("click", function () { removeEntry(n.id); });
-        foot.appendChild(bE); foot.appendChild(bD);
+        foot.appendChild(bR);
       }
       card.appendChild(foot);
 
@@ -11589,6 +11716,50 @@
   $("btnSave").addEventListener("click", saveEntry);
   $("btnCancelEdit").addEventListener("click", function () { clearDraft(true); resetComposer(); });
   $("btnUnfold").addEventListener("click", openComposer);
+
+  /* ---- 머리띠 ⋯ · 자주 안 쓰는 것을 한 겹 안에 ----
+     ⚠️ 단추를 지운 것이 아니라 «층» 을 만든 것이다. 손잡이는 원래 것을 그대로 쓴다
+        (btnInstall 은 브라우저가 설치를 허락했을 때만 살아나므로 그 상태도 그대로 따라간다). */
+  function topMenuItems() {
+    var items = [];
+    var inst = $("btnInstall");
+    if (inst && inst.style.display !== "none") {
+      items.push({ label: "⬇ 앱으로 설치", note: "이 기록장을 내 컴퓨터에 앱으로", run: function () { inst.click(); } });
+    }
+    items.push({ label: "⚙️ 설정", run: function () { $("btnSettings").click(); } });
+    items.push({ label: "❔ 사용법", note: "연결 · 백링크 · 관계망", run: function () { $("btnHelp").click(); } });
+    if (userEmail) { items.push("-"); items.push({ label: "👤 " + userEmail, run: function () { $("btnSettings").click(); } }); }
+    return items;
+  }
+  $("btnMore").addEventListener("click", function (e) {
+    e.stopPropagation();
+    openMenu($("btnMore"), topMenuItems());
+  });
+
+  /* ---- 폰 아래 바 ----
+     폰에서 화면 위쪽은 손가락에서 가장 먼 자리다. 매일 쓰는 넷을 엄지 밑으로 내린다. */
+  $("dockNew").addEventListener("click", function () { closePop(); openComposer(); });
+  $("dockFind").addEventListener("click", function () {
+    closePop();
+    var s = $("search");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    if (s) setTimeout(function () { s.focus(); s.select(); }, 250);
+  });
+  $("dockNav").addEventListener("click", function () {
+    closePop();
+    var nav = $("sideNav"), scrim = $("drawerScrim");
+    if (nav) nav.classList.add("open");
+    if (scrim) scrim.classList.remove("hidden");
+  });
+  $("dockMore").addEventListener("click", function (e) {
+    e.stopPropagation();
+    openMenu($("dockMore"), [
+      { label: "🗂 폴더 구조", run: function () { $("btnMap").click(); } },
+      { label: "🕸️ 관계망", run: function () { $("btnGraph").click(); } },
+      { label: "📚 엮어내기", run: function () { $("btnCompile").click(); } },
+      "-"
+    ].concat(topMenuItems()));
+  });
   $("search").addEventListener("input", function () { searchQ = this.value.trim(); render(); });
   $("btnCompile").addEventListener("click", openCompile);
   document.addEventListener("keydown", function (e) {

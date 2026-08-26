@@ -925,8 +925,10 @@ if (treeOpen === "OPEN") {
 await evaluate(`(() => { const v = document.querySelector('.viewer'); if (v) v.remove();
   const bg = document.querySelector('.modal-bg'); if (bg) bg.remove();
   document.body.style.overflow = ''; return true; })()`);
+/* ⚠️ 카드에 있던 「전체 보기」 단추는 걷어냈다 · 이제 «제목을 누르면» 열린다.
+   가장 많이 하는 일이 가장 가까운 자리에 있어야 한다. 점검도 그 길로 들어간다. */
 const viewerBtns = await evaluate(`(() => {
-  const b = Array.from(document.querySelectorAll('button')).find(b => (b.textContent||'').includes('전체 보기'));
+  const b = document.querySelector('.card.entry .titlebtn');
   if (!b) return 'NO_ENTRY';
   b.click();
   const top = document.querySelector('.viewer .vtop');
@@ -1642,7 +1644,9 @@ check("«모든 기록» 으로 되돌아온다", smartPick.all === 4, smartPick
    카드마다 늘 나와 있으면 안 된다. 그리고 이때 드라이브 파일은 아직 안 건드린다. */
 const trashFlow = JSON.parse(await evaluate(`(() => {
   const card = Array.from(document.querySelectorAll('#list .entry')).find(c => c.textContent.indexOf('수업 회고') >= 0);
-  const del = Array.from(card.querySelectorAll('button')).find(b => /삭제/.test(b.textContent));
+  // 카드 단추는 제목 옆 ⋯ 안으로 들어갔다 · 열고 나서 눌러야 한다
+  card.querySelector('.dots').click();
+  const del = Array.from(document.querySelectorAll('.menupop button')).find(b => /삭제/.test(b.textContent));
   del.click();
   const gone = !Array.from(document.querySelectorAll('#list .entry')).some(c => c.textContent.indexOf('수업 회고') >= 0);
   const kept = JSON.parse(localStorage.getItem('trace.entries.v2')).filter(x => x.id === 'v1')[0];
@@ -1651,6 +1655,7 @@ const trashFlow = JSON.parse(await evaluate(`(() => {
   const inTrash = Array.from(document.querySelectorAll('#list .entry h3')).map(h => h.textContent);
   const back = Array.from(document.querySelectorAll('#list .entry button')).find(b => /되돌리기/.test(b.textContent));
   if (back) back.click();
+  document.querySelectorAll('.menupop').forEach(p => p.remove());
   const all = Array.from(document.querySelectorAll('#sideNav .smartrow')).find(b => b.textContent.indexOf('모든 기록') >= 0);
   if (all) all.click();
   const restored = Array.from(document.querySelectorAll('#list .entry h3')).map(h => h.textContent);
@@ -1662,6 +1667,86 @@ check("휴지통에서 지운 것을 찾는다", (trashFlow.inTrash || []).index
   (trashFlow.inTrash || []).join(" · "));
 check("되돌리면 제자리로 온다", (trashFlow.restored || []).indexOf("수업 회고") >= 0,
   (trashFlow.restored || []).join(" · "));
+
+/* ---------- 10-8. 층을 만든다 · 자주 쓰는 것은 손 가까이, 가끔 쓰는 것은 한 겹 안으로 ----------
+   단추를 «지운» 것이 아니다. 빈도와 상관없이 전부 같은 크기로 밖에 나와 있으면
+   무엇을 눌러야 할지 매번 다시 찾게 된다. 그래서 층을 나눈다. */
+const layered = JSON.parse(await evaluate(`(() => {
+  const hdr = document.querySelector('.top-inner');
+  const search = document.getElementById('search');
+  const card = document.querySelector('.card.entry');
+  return JSON.stringify({
+    searchInHeader: !!(search && search.closest('header')),
+    headerRows: hdr ? Math.round(hdr.getBoundingClientRect().height) : 0,
+    titleIsButton: !!(card && card.querySelector('.titlebtn')),
+    footButtons: card ? Array.from(card.querySelectorAll('.foot button')).map(b => b.textContent.trim()) : ['NO_CARD'],
+    hasDots: !!(card && card.querySelector('.dots'))
+  });
+})()`));
+check("검색이 머리띠로 올라왔다", layered.searchInHeader === true);
+check("PC 에서 머리띠는 한 줄이다", layered.headerRows > 0 && layered.headerRows < 76, layered.headerRows + "px");
+check("카드 제목을 누르면 열린다", layered.titleIsButton === true);
+check("카드 바닥에 단추가 늘어서 있지 않다", (layered.footButtons || []).length === 0,
+  (layered.footButtons || []).join(" · ") || "저장 상태만");
+check("카드 단추는 제목 옆 ⋯ 안에 있다", layered.hasDots === true);
+
+const popBehave = JSON.parse(await evaluate(`(() => {
+  const card = document.querySelector('.card.entry');
+  card.querySelector('.dots').click();
+  const items = Array.from(document.querySelectorAll('.menupop button')).map(b => (b.firstChild || {}).textContent || '');
+  const danger = !!document.querySelector('.menupop button.danger');
+  return JSON.stringify({ items, danger });
+})()`));
+check("⋯ 안에 할 일이 다 들어 있다",
+  ["📖 전체 보기", "✏️ 편집", "🔗 링크로 공유"].every(function (k) { return (popBehave.items || []).indexOf(k) >= 0; }),
+  (popBehave.items || []).join(" · "));
+/* ⚠️ 가장 위험한 일이 가장 어려워야 한다. 전에는 삭제가 편집 바로 옆에 늘 나와 있었다 */
+check("삭제는 한 겹 안에서, 빨갛게 선다", popBehave.danger === true);
+const popClose = await evaluate(`(async () => {
+  await new Promise(r => setTimeout(r, 30));
+  document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  return !document.querySelector('.menupop');
+})()`);
+check("Esc 를 누르면 ⋯ 가 닫힌다", popClose === true);
+
+/* ---- 폰 · 모든 단추가 엄지에서 가장 먼 맨 위에 있으면 안 된다 ---- */
+await send("Emulation.setDeviceMetricsOverride", { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
+await wait(700);
+const dock = JSON.parse(await evaluate(`(() => {
+  const d = document.getElementById('dock');
+  if (!d) return JSON.stringify({ err: 'NO_DOCK' });
+  const r = d.getBoundingClientRect();
+  const labels = Array.from(d.querySelectorAll('.dockbtn .dl')).map(x => x.textContent);
+  // 아래 바가 «넣기 줄» 을 가리면 안 된다 (둘 다 화면 아래에 붙는다)
+  const addbar = document.getElementById('addbar');
+  const ar = addbar ? addbar.getBoundingClientRect() : null;
+  return JSON.stringify({
+    shown: getComputedStyle(d).display !== 'none',
+    atBottom: Math.abs(r.bottom - window.innerHeight) < 2,
+    labels,
+    overlapsAddbar: ar ? (ar.bottom > r.top + 1) : false,
+    overflowX: document.documentElement.scrollWidth - document.documentElement.clientWidth
+  });
+})()`));
+check("폰에서 아래 고정 바가 선다", !dock.err && dock.shown && dock.atBottom, dock.err || (dock.labels || []).join(" · "));
+check("아래 바에 매일 쓰는 넷이 있다", (dock.labels || []).length === 4, (dock.labels || []).join(" · "));
+check("아래 바가 «넣기 줄» 을 가리지 않는다", dock.overlapsAddbar === false);
+check("아래 바를 넣어도 가로로 안 넘친다", dock.overflowX === 0, dock.overflowX + "px");
+const dockWorks = JSON.parse(await evaluate(`(() => {
+  document.getElementById('dockNav').click();
+  const opened = document.getElementById('sideNav').classList.contains('open');
+  document.getElementById('drawerScrim').click();
+  document.getElementById('dockMore').click();
+  const items = Array.from(document.querySelectorAll('.menupop button')).map(b => (b.firstChild || {}).textContent || '');
+  document.querySelectorAll('.menupop').forEach(p => p.remove());
+  return JSON.stringify({ opened, items });
+})()`));
+check("아래 바의 📂 가 폴더 서랍을 연다", dockWorks.opened === true);
+check("아래 바의 ⋯ 에 나머지가 다 있다",
+  ["🗂 폴더 구조", "🕸️ 관계망", "⚙️ 설정"].every(function (k) { return (dockWorks.items || []).indexOf(k) >= 0; }),
+  (dockWorks.items || []).join(" · "));
+await send("Emulation.clearDeviceMetricsOverride");
+await wait(500);
 
 /* 빈 화면의 긴 설명도 걷어냈다 · 그 글이 돌아오면 안 된다 */
 const oldEmptyDesc = await evaluate(`/마크다운\\(.md\\)으로, 사진·파일은 정리된 이름/.test(document.body.textContent)`);
