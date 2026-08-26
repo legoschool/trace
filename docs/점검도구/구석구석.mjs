@@ -231,12 +231,20 @@ await ev(`(() => { const bg = document.querySelector('.modal-bg'); if (bg) bg.re
 await wait(300);
 
 /* ---- 전체 보기 → 편집 → 저장 ---- */
+/* ⚠️ 3단(≥1180px)에서는 제목을 누르면 «오른쪽 칸에서» 열린다 ·
+   전체 보기 창은 제목 옆 ⋯ 안에 있다. 이 점검은 그 창을 보는 자리다. */
 const viewer = await ev(`(() => {
-  const b = document.querySelector('.card.entry .titlebtn');
-  if (!b) return 'NO_BUTTON';
-  b.click();
+  const card = document.querySelector('.card.entry');
+  if (!card) return 'NO_BUTTON';
+  const d = card.querySelector('.dots');
+  if (d) {
+    d.click();
+    const v = Array.from(document.querySelectorAll('.menupop button')).find(x => x.textContent.indexOf('전체 보기') >= 0);
+    if (v) v.click();
+    document.querySelectorAll('.menupop').forEach(p => p.remove());
+  }
   const p = document.querySelector('.vpaper');
-  return p ? p.textContent.slice(0, 30).replace(/\\s+/g,' ') : 'NO_PAPER';
+  return p ? p.textContent.slice(0, 30) : 'NO_PAPER';
 })()`);
 check("전체 보기가 펼쳐진다", !/^NO_/.test(String(viewer)), String(viewer));
 const edit = await ev(`(() => {

@@ -84,6 +84,10 @@ const addByKind = (kind, korean) => `(() => {
   document.querySelectorAll('.menupop').forEach(p => p.remove());
   return !!it;
 })()`;
+/* 3단(≥1180px)과 2단은 «다른 화면» 이다 · 접기·여는 법이 갈린다.
+   그래서 점검도 어느 쪽을 보는지 정하고 들어간다. */
+const twoPane = () => send("Emulation.setDeviceMetricsOverride", { width: 1100, height: 900, deviceScaleFactor: 1, mobile: false });
+const anyPane = () => send("Emulation.clearDeviceMetricsOverride");
 const results = [];
 function check(name, ok, detail = "") {
   results.push({ name, ok, detail });
@@ -954,10 +958,15 @@ await evaluate(`(() => { const v = document.querySelector('.viewer'); if (v) v.r
   document.body.style.overflow = ''; return true; })()`);
 /* ⚠️ 카드에 있던 「전체 보기」 단추는 걷어냈다 · 이제 «제목을 누르면» 열린다.
    가장 많이 하는 일이 가장 가까운 자리에 있어야 한다. 점검도 그 길로 들어간다. */
+/* ⚠️ 3단에서는 제목을 누르면 «오른쪽 칸에서 열린다» · 전체 보기 창은 ⋯ 안에 있다 */
 const viewerBtns = await evaluate(`(() => {
-  const b = document.querySelector('.card.entry .titlebtn');
+  const card = document.querySelector('.card.entry');
+  if (!card) return 'NO_ENTRY';
+  card.querySelector('.dots').click();
+  const b = Array.from(document.querySelectorAll('.menupop button')).find(x => /전체 보기/.test(x.textContent));
   if (!b) return 'NO_ENTRY';
   b.click();
+  document.querySelectorAll('.menupop').forEach(p => p.remove());
   const top = document.querySelector('.viewer .vtop');
   if (!top) return 'NO_VIEWER';
   return Array.from(top.querySelectorAll('button, a')).map(e => e.textContent).join(' | ');
@@ -1225,7 +1234,9 @@ const folded = JSON.parse(await evaluate(`(() => {
 check("누르면 기둥이 접힌다", folded.closed);
 check("다시 누르면 펴진다", folded.back);
 
+await twoPane(); await wait(500);
 /* ---------- 10-2. 자리 · 왼쪽에서 고른 폴더가 곧 «다음 기록이 갈 자리» ----------
+   ⚠️ 여기부터는 «2단 화면» 이야기다. 3단에서는 오른쪽 칸이 늘 쓰는 자리라 접지 않는다. 
    기둥은 원래도 목록을 좁혀 주고 있었다. 그런데 작성칸이 화면 한 장 반을 먹고 있어서
    좁혀진 목록이 «안 보이는 자리» 에 있었고, 누른 사람 눈에는 아무 일도 안 일어났다.
    이제 볼 때는 작성칸이 접히고, 고른 폴더가 그대로 쓰는 자리가 된다. */
@@ -1342,6 +1353,7 @@ const deskDepth = JSON.parse(await evaluate(`(() => {
 })()`));
 check("나무가 처음부터 한 겹 더 펴져 있다", deskDepth.depths.filter((d) => String(d) === "1").length >= 2,
   deskDepth.depths.join(","));
+await anyPane(); await wait(400);
 /* ---------- 10-3. 폴더 «밖» 으로 나간 것과 «정말 없는» 것을 가른다 ----------
    drive.file 권한은 파일 하나하나에 붙는다 · 폴더에 붙는 것이 아니다. 그래서 앱이 만든 파일은
    사람이 드라이브에서 딴 데로 옮겨도 계속 열린다 (이 앱은 글도 사진도 파일 ID 로 읽는다).
@@ -1763,20 +1775,28 @@ const dock = JSON.parse(await evaluate(`(() => {
   if (!d) return JSON.stringify({ err: 'NO_DOCK' });
   const r = d.getBoundingClientRect();
   const labels = Array.from(d.querySelectorAll('.dockbtn .dl')).map(x => x.textContent);
-  // 아래 바가 «넣기 줄» 을 가리면 안 된다 (둘 다 화면 아래에 붙는다)
+  /* ⚠️ 바닥은 하나뿐이라 아래 바와 넣기 줄이 나눠 가질 수 없다.
+     그래서 «때» 를 나눈다 · 쓰는 동안에는 넣기 줄이 바닥을 갖고 아래 바가 물러난다.
+     여기서 보는 것은 «둘이 같이 서 있지 않은가» 다. */
+  const writing = document.body.classList.contains('writing');
   const addbar = document.getElementById('addbar');
-  const ar = addbar ? addbar.getBoundingClientRect() : null;
+  const abShown = addbar ? getComputedStyle(addbar).display !== 'none' : false;
+  const dockShown = getComputedStyle(d).display !== 'none';
+  const ar = null;
   return JSON.stringify({
     shown: getComputedStyle(d).display !== 'none',
     atBottom: Math.abs(r.bottom - window.innerHeight) < 2,
     labels,
-    overlapsAddbar: ar ? (ar.bottom > r.top + 1) : false,
+    writing, abShown, dockShown,
+    overlapsAddbar: (writing && dockShown && abShown),
     overflowX: document.documentElement.scrollWidth - document.documentElement.clientWidth
   });
 })()`));
 check("폰에서 아래 고정 바가 선다", !dock.err && dock.shown && dock.atBottom, dock.err || (dock.labels || []).join(" · "));
+check("폰은 «목록부터» 열린다", dock.writing === false, dock.writing ? "작성칸이 펴진 채 시작" : "목록부터");
 check("아래 바에 매일 쓰는 넷이 있다", (dock.labels || []).length === 4, (dock.labels || []).join(" · "));
-check("아래 바가 «넣기 줄» 을 가리지 않는다", dock.overlapsAddbar === false);
+check("아래 바와 넣기 줄이 바닥을 다투지 않는다", dock.overlapsAddbar === false,
+  "쓰는 중 " + dock.writing + " · 아래 바 " + dock.dockShown + " · 넣기 줄 " + dock.abShown);
 check("아래 바를 넣어도 가로로 안 넘친다", dock.overflowX === 0, dock.overflowX + "px");
 const dockWorks = JSON.parse(await evaluate(`(() => {
   document.getElementById('dockNav').click();
@@ -1948,6 +1968,7 @@ check("폴더 구역이 통째로 접힌다", !sect.err && sect.before > 0 && se
 check("다시 누르면 펴진다", sect.opened === sect.before, sect.closed + " → " + sect.opened);
 check("태그 구역도 접힌다", sect.tClosed === 0, sect.tBefore + " → " + sect.tClosed);
 
+await twoPane(); await wait(500);
 /* 접힌 작성칸의 「＋ 새 기록」 을 «진짜 그 자리에서» 눌러 본다 ·
    프로그램으로 click() 을 부르면 덮개가 있어도 눌린다. 그래서 좌표로 확인한다. */
 /* 쓰던 글(블록까지)이 있으면 일부러 안 접는다 · 빈 화면에서 봐야 한다 */
@@ -1972,6 +1993,76 @@ const unfoldable = JSON.parse(await evaluate(`(() => {
 check("폴더를 누르면 작성칸이 접힌다(cfolded)", unfoldable.folded === true);
 check("접힌 «＋ 새 기록» 이 무엇에도 안 덮인다", unfoldable.reachable === true,
   "그 자리의 요소 · " + unfoldable.hit);
+await anyPane(); await wait(400);
+
+/* ---------- 10-12. 3단 · 왼쪽 기둥 │ 가운데 목록 │ 오른쪽 편집 ----------
+   업노트의 자리 나눔이다. 핵심은 «고르면 오른쪽에서 열린다» 하나다.
+   ⚠️ 세 칸이 각자 굴러야 한다. 한 덩어리로 굴리면 목록을 훑는 동안 쓰던 칸이
+      화면 밖으로 사라져서 «어디에 쓰고 있었지» 가 된다. */
+await anyPane();
+await send("Emulation.setDeviceMetricsOverride", { width: 1400, height: 950, deviceScaleFactor: 1, mobile: false });
+await evaluate(`(() => {
+  const mk = (i, t) => ({ id: 'p' + i, type: '', title: t, tags: ['수업'],
+    blocks: [{ id: 'b' + i, kind: 'text', text: t + ' 의 본문입니다. 두 줄까지만 미리 보입니다.' }],
+    relations: [], pinned: false, createdAt: 1755000000000 - i * 8.64e7, updatedAt: 1755000000000 - i * 8.64e7 });
+  localStorage.setItem('trace.entries.v2', JSON.stringify([mk(0, '첫째 기록'), mk(1, '둘째 기록'), mk(2, '셋째 기록')]));
+  ['trace.draft.v1','trace.desk.v1','trace.sideSec.v1'].forEach(k => localStorage.removeItem(k));
+  return true;
+})()`);
+await send("Page.navigate", { url: URL_ });
+await wait(2500);
+const three = JSON.parse(await evaluate(`(() => {
+  const cols = getComputedStyle(document.querySelector('.layout')).gridTemplateColumns.split(' ').length;
+  const lc = document.getElementById('listcol');
+  const wr = document.querySelector('.layout > .wrap');
+  const inList = lc ? lc.querySelectorAll('.entry').length : 0;
+  const inWrap = wr ? wr.querySelectorAll('.entry').length : 0;
+  return JSON.stringify({
+    cols, inList, inWrap,
+    listcolShown: lc ? getComputedStyle(lc).display !== 'none' : false,
+    listScrolls: lc ? getComputedStyle(lc).overflowY : '',
+    editScrolls: wr ? getComputedStyle(wr).overflowY : '',
+    title: (document.getElementById('listTitle') || {}).textContent || '',
+    composerInWrap: !!(wr && wr.querySelector('#composer'))
+  });
+})()`));
+check("세 칸으로 갈린다", three.cols === 3 && three.listcolShown, three.cols + "칸");
+check("기록 목록은 가운데 칸에 산다", three.inList > 0 && three.inWrap === 0,
+  "가운데 " + three.inList + " · 오른쪽 " + three.inWrap);
+check("쓰는 칸은 오른쪽에 산다", three.composerInWrap === true);
+check("가운데와 오른쪽이 각자 구른다", three.listScrolls === "auto" && three.editScrolls === "auto",
+  three.listScrolls + " / " + three.editScrolls);
+check("가운데 칸 제목이 지금 보는 곳을 말한다", /모든 기록/.test(three.title), three.title);
+
+const picked = JSON.parse(await evaluate(`(() => {
+  const t = document.querySelectorAll('#listcol .entry .titlebtn')[1];
+  if (!t) return JSON.stringify({ err: 'NO_ITEM' });
+  const name = t.textContent;
+  t.click();
+  const sel = document.querySelector('#listcol .entry.sel');
+  return JSON.stringify({
+    name,
+    오른쪽제목: document.getElementById('title').value,
+    표시됨: !!sel && sel.textContent.indexOf(name) >= 0,
+    창이떴나: !!document.querySelector('.viewer')
+  });
+})()`));
+check("고르면 오른쪽 칸에서 열린다", picked.오른쪽제목 === picked.name,
+  (picked.err || picked.name + " → " + picked.오른쪽제목));
+check("어느 줄을 열어 두었는지 목록에 표시된다", picked.표시됨 === true);
+/* ⚠️ 3단에서 전체 보기 창이 뜨면 안 된다 · 오른쪽 칸이 이미 그 자리다 */
+check("3단에서는 전체 보기 창이 안 뜬다", picked.창이떴나 === false);
+
+const folded3 = await evaluate(`(() => {
+  document.getElementById('title').value = '';
+  const rows = document.querySelectorAll('#sideNav .siderow');
+  if (rows[1]) rows[1].click();
+  return document.getElementById('composer').classList.contains('cfolded');
+})()`);
+/* 3단에서는 접을 이유가 없다 · 목록이 이미 딴 칸에 서 있다 */
+check("3단에서는 폴더를 눌러도 안 접힌다", folded3 === false);
+await anyPane();
+await wait(400);
 
 /* 빈 화면의 긴 설명도 걷어냈다 · 그 글이 돌아오면 안 된다 */
 const oldEmptyDesc = await evaluate(`/마크다운\\(.md\\)으로, 사진·파일은 정리된 이름/.test(document.body.textContent)`);
