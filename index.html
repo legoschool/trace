@@ -360,6 +360,17 @@
   @media (max-width: 1020px) {
     .layout { display: block; }
     .listcol { padding: 0 16px 80px; }
+    /* ⚠️ 폰에서 기록 한 편을 보기까지 700px 을 굴려야 했다.
+       보기 바꾸기·엮어내기·태그 칩이 목록 «위» 를 넉 줄이나 먹고 있었기 때문이다.
+       셋 다 다른 자리에 이미 있다 · 보기와 엮어내기는 아래 바 ⋯ 안에,
+       태그는 서랍 안에. 같은 것을 두 번 놓느라 화면을 잃을 이유가 없다. */
+    .listcol .toolbar .viewswitch, .listcol #btnCompile { display: none; }
+    .listcol #tagFilters { display: none; }
+    .listcol #typeFilters { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px;
+                            scrollbar-width: none; }
+    .listcol #typeFilters::-webkit-scrollbar { height: 0; }
+    .listcol #typeFilters .chip { flex: 0 0 auto; }
+    .listcol .toolbar { margin: 14px 0 8px; }
     /* 서랍 · 평소엔 왼쪽 밖에 숨어 있다가 줄 셋을 누르면 나온다.
        ⚠️ align-self 를 되돌려야 한다. 기둥일 때 쓴 start 가 남아 있으면
           고정(fixed) 요소가 위아래로 안 늘어나 서랍이 반토막이 된다. */
@@ -8945,8 +8956,13 @@
     }
 
     if (treeOpen) {
-    row(folder.name || "내 폴더", [], 0, live.length, false, true, folder.id || null);
-    (function walk(node, path, depth) {
+    /* ⚠️ 뿌리 줄에 hasKids 를 false 로 못 박아 두었다. 그래서 아래에 폴더가 열둘이나
+       매달려 있어도 접기 손잡이가 안 붙었다 · 통째로 접을 길이 없었던 것이다.
+       자식이 있으면 붙는다 · 다른 줄과 같은 규칙을 쓴다. */
+    var rootHasKids = root.order.length > 0;
+    var rootOpen = !rootHasKids || sideOpenOf("", []);
+    row(folder.name || "내 폴더", [], 0, live.length, rootHasKids, rootOpen, folder.id || null);
+    if (rootOpen) (function walk(node, path, depth) {
       node.order.slice().sort(function (a, b) { return a.localeCompare(b, "ko"); }).forEach(function (nm) {
         var kid = node.children[nm];
         var p = path.concat([nm]);
@@ -9008,9 +9024,13 @@
         b.appendChild(el("span", "cnt", String(tcount[t])));
         b.title = on ? "이 태그만 보기를 풉니다" : "이 태그가 붙은 기록만 봅니다";
         b.addEventListener("click", function () {
-          if (on) filterTags = filterTags.filter(function (x) { return x !== t; });
-          else filterTags = filterTags.concat([t]);
-          smartView = ""; closeDrawer(); foldComposer(); render(); gotoList();
+          /* ⚠️ 기둥의 태그는 «갈아탄다» · 쌓이지 않는다.
+             쌓이면 「모두 가진 기록」 만 남아서, 두 번째 태그를 누른 순간
+             「# 대학원 · 바이브코딩 0 / 9개 · 조건에 맞는 기록이 없습니다」 가 된다.
+             둘을 겹쳐 보고 싶은 사람은 위의 태그 칩으로 하면 된다 (그쪽은 그대로 쌓인다). */
+          filterTags = on ? [] : [t];
+          smartView = ""; filterPath = [];
+          closeDrawer(); foldComposer(); render(); gotoList();
         });
         host.appendChild(b);
       });
@@ -12236,9 +12256,24 @@
     if (nav) nav.classList.add("open");
     if (scrim) scrim.classList.remove("hidden");
   });
+  /* 폰에서는 보기 줄을 감췄다 · 대신 «다음 보기로 넘긴다». 넷뿐이라 돌려 쓰면 된다 */
+  function viewLabelNow() {
+    var v = VIEW_MODES.filter(function (x) { return !x.modal && x.key === settings.viewMode; })[0];
+    return "지금 · " + (v ? v.label : "나열");
+  }
+  function cycleView() {
+    var list = VIEW_MODES.filter(function (x) { return !x.modal; });
+    var i = 0;
+    list.forEach(function (x, k) { if (x.key === settings.viewMode) i = k; });
+    settings.viewMode = list[(i + 1) % list.length].key;
+    saveSettingsLocal();
+    render();
+    toast("보기 · " + list[(i + 1) % list.length].label);
+  }
   $("dockMore").addEventListener("click", function (e) {
     e.stopPropagation();
     openMenu($("dockMore"), [
+      { label: "👁 보기 바꾸기", note: viewLabelNow(), run: function () { cycleView(); } },
       { label: "🗂 폴더 구조", run: function () { $("btnMap").click(); } },
       { label: "🕸️ 관계망", run: function () { $("btnGraph").click(); } },
       { label: "📚 엮어내기", run: function () { $("btnCompile").click(); } },

@@ -2068,6 +2068,91 @@ check("3단에서는 폴더를 눌러도 안 접힌다", folded3 === false);
 await anyPane();
 await wait(400);
 
+/* ---------- 10-13. 폴더도 «하나하나» 접힌다 · 태그는 갈아탄다 · 폰은 굴리지 않는다 ----------
+   ⚠️ 뿌리 줄에 hasKids 를 false 로 못 박아 두어서, 아래에 폴더가 열둘이나 매달려
+      있어도 접기 손잡이가 안 붙었다. 구역만 접히고 폴더는 못 접었던 것이다. */
+await evaluate(`(() => {
+  const tags = ["부기","수업","질문","배움중심","바이브코딩","크롬 확장","자기관리","대학원","gpt","에듀테크","피캠스","pkems"];
+  const list = tags.map((t, i) => ({ id: 'w' + i, type: '', title: t + ' 기록', tags: [t],
+    blocks: [{ id: 'b' + i, kind: 'text', text: t }], relations: [], pinned: false,
+    createdAt: 1755000000000, updatedAt: 1755000000000 }));
+  localStorage.setItem('trace.entries.v2', JSON.stringify(list));
+  localStorage.setItem('trace.settings.v1', JSON.stringify({ version: 1, folderMode: 'tag' }));
+  ['trace.desk.v1','trace.deskList.v1','trace.draft.v1','trace.sideOpen.v1','trace.sideSec.v1'].forEach(k => localStorage.removeItem(k));
+  return true;
+})()`);
+await send("Page.navigate", { url: URL_ });
+await wait(2500);
+const rootFold = JSON.parse(await evaluate(`(() => {
+  const rows = () => Array.from(document.querySelectorAll('#sideNav .siderow')).map(r => (r.querySelector('.n') || {}).textContent);
+  const tog = () => document.querySelector('#sideNav .siderow .sidetog:not(.none)');
+  const before = rows();
+  if (!tog()) return JSON.stringify({ err: 'NO_ROOT_TOGGLE', before });
+  tog().click();
+  const closed = rows();
+  tog().click();
+  return JSON.stringify({ before: before.length, closed, opened: rows().length });
+})()`));
+check("뿌리 폴더에도 접기 손잡이가 붙는다", !rootFold.err, rootFold.err || "붙음");
+check("뿌리를 접으면 아래 폴더가 다 숨는다", (rootFold.closed || []).length === 1,
+  (rootFold.closed || []).join(" · "));
+check("다시 누르면 폴더가 돌아온다", rootFold.opened === rootFold.before,
+  rootFold.before + " → " + rootFold.opened);
+
+/* ⚠️ 기둥의 태그가 쌓이면 «모두 가진 기록» 만 남는다. 둘째 태그를 누른 순간
+   「# 대학원 · 바이브코딩 0 / 9개 · 조건에 맞는 기록이 없습니다」 가 됐다. 갈아타야 한다. */
+const tagSwap = JSON.parse(await evaluate(`(() => {
+  const tag = n => Array.from(document.querySelectorAll('#sideNav .tagrow')).find(b => ((b.querySelector('.n') || {}).textContent) === n);
+  const shown = () => document.querySelectorAll('#list .entry').length;
+  const t1 = tag('대학원'), t2 = tag('바이브코딩');
+  if (!t1 || !t2) return JSON.stringify({ err: 'NO_TAG' });
+  t1.click();
+  const a = { 제목: document.getElementById('listTitle').textContent, n: shown() };
+  Array.from(document.querySelectorAll('#sideNav .tagrow')).find(b => ((b.querySelector('.n') || {}).textContent) === '바이브코딩').click();
+  const b = { 제목: document.getElementById('listTitle').textContent, n: shown() };
+  Array.from(document.querySelectorAll('#sideNav .tagrow')).find(b2 => ((b2.querySelector('.n') || {}).textContent) === '바이브코딩').click();
+  const c = { 제목: document.getElementById('listTitle').textContent, n: shown() };
+  return JSON.stringify({ a, b, c });
+})()`));
+check("기둥의 태그는 갈아탄다 (쌓이지 않는다)", !tagSwap.err && tagSwap.b.n === 1 && !/·/.test(tagSwap.b.제목),
+  tagSwap.err || (tagSwap.a.제목 + " " + tagSwap.a.n + "개 → " + tagSwap.b.제목 + " " + tagSwap.b.n + "개"));
+check("같은 태그를 다시 누르면 풀린다", tagSwap.c && tagSwap.c.n > 1, (tagSwap.c || {}).제목);
+
+/* ⚠️ 폰에서 기록 한 편을 보기까지 700px 을 굴려야 했다 · 목록 «위» 가 넉 줄이었다 */
+await send("Emulation.setDeviceMetricsOverride", { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
+await wait(700);
+const phoneTop = JSON.parse(await evaluate(`(() => {
+  const clr = Array.from(document.querySelectorAll('.filters .chip')).find(c => c.textContent.indexOf('필터 지우기') >= 0);
+  if (clr) clr.click();
+  const first = document.querySelector('#list .entry');
+  return JSON.stringify({
+    첫기록까지: first ? Math.round(first.getBoundingClientRect().top) : -1,
+    보기줄: getComputedStyle(document.querySelector('.listcol .viewswitch')).display,
+    엮어내기: getComputedStyle(document.getElementById('btnCompile')).display,
+    태그칩: getComputedStyle(document.getElementById('tagFilters')).display,
+    유형칩줄: getComputedStyle(document.getElementById('typeFilters')).flexWrap
+  });
+})()`));
+check("폰에서 첫 기록이 한 화면 안에 든다", phoneTop.첫기록까지 > 0 && phoneTop.첫기록까지 < 500,
+  phoneTop.첫기록까지 + "px");
+check("폰에서 보기 줄·엮어내기는 아래 바 ⋯ 로 간다",
+  phoneTop.보기줄 === "none" && phoneTop.엮어내기 === "none");
+check("폰에서 태그 칩은 서랍에 맡긴다", phoneTop.태그칩 === "none");
+check("폰에서 유형 칩은 한 줄로 민다", phoneTop.유형칩줄 === "nowrap", phoneTop.유형칩줄);
+const dockView = JSON.parse(await evaluate(`(() => {
+  document.getElementById('dockMore').click();
+  const items = Array.from(document.querySelectorAll('.menupop button')).map(b => (b.firstChild || {}).textContent || '');
+  const v = Array.from(document.querySelectorAll('.menupop button')).find(b => /보기 바꾸기/.test(b.textContent));
+  const before = JSON.parse(localStorage.getItem('trace.settings.v1')).viewMode || 'stream';
+  if (v) v.click();
+  document.querySelectorAll('.menupop').forEach(p => p.remove());
+  return JSON.stringify({ items, before, after: JSON.parse(localStorage.getItem('trace.settings.v1')).viewMode });
+})()`));
+check("아래 바 ⋯ 에서 보기를 바꿀 수 있다", dockView.before !== dockView.after,
+  dockView.before + " → " + dockView.after);
+await anyPane();
+await wait(400);
+
 /* 빈 화면의 긴 설명도 걷어냈다 · 그 글이 돌아오면 안 된다 */
 const oldEmptyDesc = await evaluate(`/마크다운\\(.md\\)으로, 사진·파일은 정리된 이름/.test(document.body.textContent)`);
 check("빈 화면의 긴 설명이 돌아오지 않았다", !oldEmptyDesc);
