@@ -1838,6 +1838,79 @@ check("집중 모드가 옆의 것들을 감춘다",
 check("집중 모드에서도 적는 칸은 남는다", focusMode.composer !== "none", focusMode.composer);
 check("Esc 로 집중 모드에서 나온다", focusMode.off === true);
 
+/* ---------- 10-10. 버린 것은 «어디에서도» 없는 것처럼 굴어야 한다 ----------
+   휴지통을 만들면서 생기는 구멍이다. 목록에서만 빼고 끝내면 지운 기록이
+   백링크로 남고, 관계망에 점으로 뜨고, 태그 숫자에 섞이고, 드라이브에 계속 올라간다.
+   ⚠️ 그리고 «비우는 길» 이 없으면 버린 것이 색인에 영영 쌓인다. */
+await evaluate(`(() => {
+  localStorage.setItem('trace.entries.v2', JSON.stringify([
+    { id: 'z1', type: '', title: '살아있는 기록', tags: ['수업'],
+      blocks: [{ id: 'b1', kind: 'text', text: '내용 [[사라질 기록]] 을 가리킴' }],
+      relations: [], pinned: false, createdAt: 1755000000000, updatedAt: 1755000000000 },
+    { id: 'z2', type: '', title: '사라질 기록', tags: ['수업', '버릴태그'],
+      blocks: [{ id: 'b2', kind: 'text', text: '곧 버려질 내용' }],
+      relations: [], pinned: false, createdAt: 1755000000000, updatedAt: 1755000000000 }
+  ]));
+  ['trace.desk.v1','trace.deskList.v1','trace.draft.v1','trace.sideOpen.v1'].forEach(k => localStorage.removeItem(k));
+  return true;
+})()`);
+await send("Page.navigate", { url: URL_ });
+await wait(2500);
+const buried = JSON.parse(await evaluate(`(() => {
+  const byId = id => document.querySelector('#list .entry[data-eid="' + id + '"]');
+  const chips = () => Array.from(document.querySelectorAll('#tagFilters .chip')).map(c => c.textContent.trim());
+  const wiki = () => { const c = byId('z1'); const w = c && c.querySelector('.content .wikilink'); return w ? w.className : '없음'; };
+  const before = { chips: chips(), wiki: wiki() };
+  byId('z2').querySelector('.dots').click();
+  Array.from(document.querySelectorAll('.menupop button')).find(b => /삭제/.test(b.textContent)).click();
+  document.querySelectorAll('.menupop').forEach(p => p.remove());
+  return JSON.stringify({ before, afterChips: chips(), afterWiki: wiki() });
+})()`));
+check("버린 기록의 태그가 칩에서 빠진다",
+  !(buried.afterChips || []).some(function (c) { return /버릴태그/.test(c); }),
+  (buried.afterChips || []).join(" "));
+check("버린 기록으로 가던 [[연결]] 이 끊긴다", /missing/.test(buried.afterWiki || ""),
+  (buried.before || {}).wiki + " → " + buried.afterWiki);
+/* 관계망은 점을 그린다 · 「기록 N개」 라고 적어 두는 줄에서 센다.
+   ⚠️ 그림은 setTimeout 뒤에 서므로 누르자마자 읽으면 아직 비어 있다 */
+await evaluate(`(() => {
+  const b = Array.from(document.querySelectorAll('.vbtn')).find(x => (x.textContent||'').includes('관계망'));
+  if (b) b.click();
+  return true;
+})()`);
+await wait(900);
+const inGraph = JSON.parse(await evaluate(`(() => {
+  const bg = document.querySelector('.modal-bg');
+  const all = bg ? bg.textContent : '';
+  const m = all.match(/기록 ([0-9]+)개/);
+  document.querySelectorAll('.modal-bg').forEach(x => x.remove());
+  return JSON.stringify({ n: m ? +m[1] : -1, sample: all.slice(0, 90) });
+})()`));
+check("관계망에도 버린 기록이 안 뜬다", inGraph.n === 1, "점 " + inGraph.n + "개 · " + (inGraph.sample || ""));
+
+/* 비우는 길 · 없으면 버린 것이 영영 쌓인다 */
+const emptied = JSON.parse(await evaluate(`(() => {
+  const row = Array.from(document.querySelectorAll('#sideNav .smartrow')).find(b => b.textContent.indexOf('휴지통') >= 0);
+  if (!row) return JSON.stringify({ err: 'NO_TRASH' });
+  row.click();
+  const bn = document.querySelector('#list .banner');
+  const note = bn ? bn.textContent.replace(/\s+/g, ' ').trim() : '';
+  const btn = bn && Array.from(bn.querySelectorAll('button')).find(b => /비우기/.test(b.textContent));
+  if (!btn) return JSON.stringify({ err: 'NO_EMPTY_BTN', note });
+  btn.click();
+  const dlg = document.querySelector('.modal-bg .modal');
+  const ask = dlg ? dlg.textContent.replace(/\s+/g, ' ').trim() : '';
+  const yes = dlg && Array.from(dlg.querySelectorAll('button')).find(b => /모두 지우기/.test(b.textContent));
+  if (yes) yes.click();
+  const left = JSON.parse(localStorage.getItem('trace.entries.v2')).map(n => n.title);
+  return JSON.stringify({ note, ask, left });
+})()`));
+check("휴지통이 «드라이브는 아직 그대로» 를 말해 준다", /드라이브의 파일은 아직/.test(emptied.note || ""),
+  (emptied.note || emptied.err || "").slice(0, 60));
+check("휴지통을 비울 수 있다", !emptied.err && (emptied.left || []).length === 1,
+  emptied.err || (emptied.left || []).join(" · "));
+check("비우기 전에 한 번 더 묻는다", /되돌릴 수 없습니다/.test(emptied.ask || ""), (emptied.ask || "").slice(0, 50));
+
 /* 빈 화면의 긴 설명도 걷어냈다 · 그 글이 돌아오면 안 된다 */
 const oldEmptyDesc = await evaluate(`/마크다운\\(.md\\)으로, 사진·파일은 정리된 이름/.test(document.body.textContent)`);
 check("빈 화면의 긴 설명이 돌아오지 않았다", !oldEmptyDesc);

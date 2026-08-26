@@ -274,6 +274,25 @@
           font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; }
   .tag { border: var(--bw) solid var(--line); border-radius: 999px; padding: 1px 9px; font-size: 12.5px; }
   hr { border: none; border-top: var(--bw) solid var(--line); margin: 22px 0; }
+  /* 업노트식 블록 다섯 · 보내는 쪽(index.html)과 짝이다 */
+  .todolist { list-style: none; padding: 0; margin: 0 0 16px; }
+  .todolist li { display: flex; gap: 9px; align-items: flex-start; line-height: 1.7; margin: 4px 0; }
+  .todolist .chk { flex: 0 0 auto; }
+  .todolist li.done .t { color: var(--ink-soft); text-decoration: line-through; }
+  .bullets { margin: 0 0 16px; padding-left: 22px; line-height: 1.8; }
+  .bullets li.d1 { margin-left: 20px; list-style-type: circle; }
+  .bullets li.d2 { margin-left: 40px; list-style-type: square; }
+  .codeblock { position: relative; background: var(--bg); border: 1px solid var(--line);
+               border-radius: 10px; padding: 12px 14px; margin: 0 0 16px; overflow-x: auto; }
+  .codeblock code { font-family: ui-monospace, Consolas, monospace; font-size: .92em; white-space: pre; }
+  .codelang { position: absolute; top: 6px; right: 10px; font-size: 11px; color: var(--ink-soft); }
+  .tscroll { overflow-x: auto; margin: 0 0 16px; }
+  table.shown { border-collapse: collapse; width: 100%; }
+  table.shown th, table.shown td { border: 1px solid var(--line); padding: 8px 11px; text-align: left; line-height: 1.6; }
+  table.shown th { background: var(--brand-soft); color: var(--brand-dark); font-weight: 700; }
+  .foldbox { border: 1px solid var(--line); border-radius: 10px; margin: 0 0 16px; }
+  .foldbox > summary { cursor: pointer; padding: 10px 13px; font-weight: 700; }
+  .foldbody { padding: 2px 14px 12px; white-space: pre-wrap; line-height: 1.75; }
   blockquote { margin: 0 0 16px; padding: 8px 16px; border-left: 3px solid var(--brand);
                background: var(--bg); border-radius: 0 10px 10px 0; color: var(--ink-soft); white-space: pre-wrap; }
   a { color: var(--brand); }
@@ -497,6 +516,58 @@
 
     var w = document.getElementById("wrap");
     w.innerHTML = "";
+    /* ⚠️ 이 다섯은 앱 쪽 buildSharePacket 과 «짝» 이다. 한쪽을 고치면 다른 쪽도 고쳐야 한다.
+       보내는 쪽에만 담고 여기서 안 그리면, 받는 사람에게는 표가 통째로 없는 쪽이 간다.
+       ★ 받는 쪽에서는 체크가 «읽는 것» 이다 · 누를 수 없게 둔다. 남의 기록이다. */
+    function todoBlock(b) {
+      var ul = el("ul", "todolist");
+      (b.i || []).forEach(function (it) {
+        var li = el("li", it.c ? "done" : null);
+        li.appendChild(el("span", "chk", it.c ? "☑" : "☐"));
+        li.appendChild(el("span", "t", it.x || ""));
+        ul.appendChild(li);
+      });
+      return ul.children.length ? ul : null;
+    }
+    function listBlock(b) {
+      var box = el(b.o ? "ol" : "ul", "bullets");
+      (b.i || []).forEach(function (it) {
+        var li = el("li", "d" + Math.max(0, Math.min(2, it.d || 0)), it.x || "");
+        box.appendChild(li);
+      });
+      return box.children.length ? box : null;
+    }
+    function codeBlock(b) {
+      var pre = el("pre", "codeblock");
+      pre.appendChild(el("code", null, b.x || ""));
+      if (b.g) pre.appendChild(el("span", "codelang", b.g));
+      return pre;
+    }
+    function tableBlock(b) {
+      var wrap = el("div", "tscroll");
+      var t = el("table", "shown");
+      if ((b.h || []).some(function (x) { return x && String(x).trim(); })) {
+        var hr = el("tr");
+        (b.h || []).forEach(function (x) { hr.appendChild(el("th", null, x || "")); });
+        t.appendChild(hr);
+      }
+      (b.r || []).forEach(function (r) {
+        var tr = el("tr");
+        (r || []).forEach(function (c) { tr.appendChild(el("td", null, c || "")); });
+        t.appendChild(tr);
+      });
+      if (!t.children.length) return null;
+      wrap.appendChild(t);
+      return wrap;
+    }
+    function foldBlock(b) {
+      var d = el("details", "foldbox");
+      if (b.o) d.open = true;
+      d.appendChild(el("summary", null, b.t || "펼쳐 보기"));
+      d.appendChild(el("div", "foldbody", b.x || ""));
+      return d;
+    }
+
     var paper = el("div", "paper");
 
     var meta = el("div", "meta");
@@ -510,6 +581,11 @@
       if (b.k === "text") node = el("p", null, b.x || "");
       else if (b.k === "heading") node = el("h2", null, b.x || "");
       else if (b.k === "quote") { node = el("blockquote"); node.textContent = b.x || ""; }
+      else if (b.k === "todo") node = todoBlock(b);
+      else if (b.k === "list") node = listBlock(b);
+      else if (b.k === "code") node = codeBlock(b);
+      else if (b.k === "table") node = tableBlock(b);
+      else if (b.k === "fold") node = foldBlock(b);
       else if (b.k === "divider") node = el("hr");
       else if (b.k === "image") node = imageBlock(b);
       else if (b.k === "video") node = mediaBlock(b, "video");
