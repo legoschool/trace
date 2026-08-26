@@ -374,17 +374,38 @@ const back7 = await ev(`JSON.parse(localStorage.getItem('trace.entries.v2')||'[]
 check("다시 나눈 뒤에도 800편이 하나도 안 빠진다", back7 === 800, `${back7}편`);
 
 /* ═══ ⑧ 지운 것은 조각에서도 빠지고, 다른 기기에서 되살아나지 않는다 ═══ */
+/* ⚠️ 지우기는 이제 «두 걸음» 이고, 단추는 카드 제목 옆 ⋯ 안에 있다.
+   한 번 누르면 휴지통으로 가고(안 묻는다 · 되돌릴 수 있으니), 거기서 «완전히 삭제» 를
+   눌러야 색인에서 진짜로 빠진다. 조각에서 빠지는 것을 보려면 두 걸음을 다 밟아야 한다. */
 const delRes = await ev(`(() => {
-  const b = Array.from(document.querySelectorAll('button')).find(b => (b.textContent||'').includes('🗑️ 삭제'));
+  const d = document.querySelector('.card.entry .dots');
+  if (!d) return 'NO_DOTS';
+  d.click();
+  const b = Array.from(document.querySelectorAll('.menupop button')).find(x => /삭제/.test(x.textContent||''));
   if (!b) return 'NO_DEL';
-  b.click(); return 'OPENED';
+  b.click();
+  document.querySelectorAll('.menupop').forEach(p => p.remove());
+  return 'OPENED';
 })()`);
 await wait(600);
 const okRes = await ev(`(() => {
+  const row = Array.from(document.querySelectorAll('#sideNav .smartrow')).find(b => b.textContent.indexOf('휴지통') >= 0);
+  if (!row) return 'NO_TRASH';
+  row.click();
+  const d = document.querySelector('.card.entry .dots');
+  if (d) {
+    d.click();
+    const p2 = Array.from(document.querySelectorAll('.menupop button')).find(x => /완전히/.test(x.textContent||''));
+    if (p2) p2.click();
+    document.querySelectorAll('.menupop').forEach(p => p.remove());
+  }
   const y = Array.from(document.querySelectorAll('.modal-bg button, .card.modal button'))
     .find(b => (b.textContent||'').trim() === '삭제');
   if (!y) return 'NO_OK';
-  y.click(); return 'CONFIRMED';
+  y.click();
+  const all = Array.from(document.querySelectorAll('#sideNav .smartrow')).find(b => b.textContent.indexOf('모든 기록') >= 0);
+  if (all) all.click();
+  return 'CONFIRMED';
 })()`);
 await wait(5000);
 check("기록 하나를 지울 수 있다", delRes === "OPENED" && okRes === "CONFIRMED", delRes + "/" + okRes);

@@ -273,7 +273,9 @@ async function runImport() {
 const openEditor = () => ev(`(() => {
   const c = document.querySelector('.card.entry');
   if (!c) return 'NO_CARD';
-  const b = Array.from(c.querySelectorAll('button')).find(x => (x.textContent||'').includes('편집'));
+  /* ⚠️ 카드 단추는 제목 옆 ⋯ 안으로 들어갔다 · 열고 나서 눌러야 한다 */
+  const __d = c.querySelector('.dots'); if (__d) __d.click();
+  const b = Array.from(document.querySelectorAll('.menupop button')).find(x => (x.textContent||'').includes('편집'));
   if (!b) return 'NO_EDIT[' + Array.from(c.querySelectorAll('button')).map(x => x.textContent).join('|') + ']';
   b.click(); return 'OPEN';
 })()`);
@@ -341,11 +343,14 @@ const sideFold = await ev(`(() => {
   const closed = names();
   return JSON.stringify({ before, opened, closed });
 })()`).then((x) => JSON.parse(x));
-check("① 기둥은 접힌 채로 시작한다", !sideFold.err && sideFold.before.indexOf("과학") < 0,
+/* ⚠️ 처음부터 «두 겹» 은 펴 둔다. 접힌 지도는 지도 구실을 못 한다 ·
+   「2019 · 3」 만 보이고 안이 안 보이면 무엇이 들었는지 알 길이 없어서 결국 아무도 안 편다.
+   그래서 첫 번째 누름이 «접기» 이고 두 번째가 «펴기» 다. */
+check("① 기둥은 두 겹까지 펴진 채로 시작한다", !sideFold.err && sideFold.before.indexOf("과학") >= 0,
   sideFold.err || sideFold.before.join(" · "));
-check("① ▸ 를 누르면 펴진다", !sideFold.err && sideFold.opened.indexOf("과학") >= 0,
+check("① ▾ 를 누르면 접힌다", !sideFold.err && sideFold.opened.indexOf("과학") < 0,
   (sideFold.opened || []).join(" · "));
-check("① 다시 누르면 접힌다", !sideFold.err && sideFold.closed.indexOf("과학") < 0,
+check("① 다시 누르면 펴진다", !sideFold.err && sideFold.closed.indexOf("과학") >= 0,
   (sideFold.closed || []).join(" · "));
 
 
@@ -478,7 +483,12 @@ check("⑥-2 앱이 만든 기록은 제목을 바꾸면 파일 이름도 따라
 await ev(`window.__drive.reset(); window.__drive.move('H1', 'OUTSIDE'); true`);
 await runImport();
 const seen7 = await crumbOf("물의 상태변화 학습지");
-check("⑦ 폴더 밖으로 나가면 안 보인다고 말한다", seen7.gone > 0, `알림 ${seen7.gone}곳 · 카드 ${seen7.cards}장`);
+/* ⚠️ 폴더 밖으로 나갔다고 «없다» 고 하면 안 된다. drive.file 권한은 파일 하나하나에
+   붙으므로 밖으로 옮겨도 그 파일은 계속 열린다 · 훑기가 못 찾았을 뿐이다.
+   그래서 파일 ID 로 직접 물어보고, 살아 있으면 조용히 «밖에 있다» 고만 적는다. */
+const away7 = await ev(`document.querySelectorAll('.banner.away').length`);
+check("⑦ 폴더 밖으로 나가면 «밖에 있다» 고 조용히 적는다", away7 > 0 && seen7.gone === 0,
+  `밖 ${away7}곳 · 없음 ${seen7.gone}곳 · 카드 ${seen7.cards}장`);
 
 /* =========================================================
    상황 ⑧ · 도로 넣으면 «안 보임» 이 걷혀야 한다
@@ -517,17 +527,42 @@ await wait(700);
 const asked = await ev(`(() => {
   const c = document.querySelector('.card.entry');
   if (!c) return 'NO_CARD';
-  const b = Array.from(c.querySelectorAll('button')).find(x => (x.textContent||'').includes('삭제') || (x.textContent||'').includes('지우'));
+  /* ⚠️ 카드 단추는 제목 옆 ⋯ 안으로 들어갔다 · 열고 나서 눌러야 한다 */
+  const __d = c.querySelector('.dots'); if (__d) __d.click();
+  const b = Array.from(document.querySelectorAll('.menupop button')).find(x => (x.textContent||'').includes('삭제') || (x.textContent||'').includes('지우'));
   if (!b) return 'NO_DEL[' + Array.from(c.querySelectorAll('button')).map(x => x.textContent).join('|') + ']';
   b.click(); return 'ASKED';
+})()`);
+await wait(700);
+/* ⚠️ 지우기는 «두 걸음» 이 됐다. 한 번 누르면 휴지통으로 가고(되돌릴 수 있으니 안 묻는다),
+   거기서 «완전히 삭제» 를 눌러야 진짜로 지운다. 원본 이야기는 그 두 번째 자리에서 한다. */
+await ev(`(() => {
+  const row = Array.from(document.querySelectorAll('#sideNav .smartrow')).find(b => b.textContent.indexOf('휴지통') >= 0);
+  if (row) row.click();
+  const d = document.querySelector('.card.entry .dots'); if (d) d.click();
+  const p2 = Array.from(document.querySelectorAll('.menupop button')).find(x => /완전히/.test(x.textContent||''));
+  if (p2) p2.click();
+  document.querySelectorAll('.menupop').forEach(p => p.remove());
+  return true;
 })()`);
 await wait(700);
 const warned = await ev(`(() => {
   const m = Array.from(document.querySelectorAll('.card.modal')).find(x => (x.textContent||'').includes('삭제할까요'));
   return m ? (m.textContent || '') : '';
 })()`);
-check("⑪ 지우기 전에 «원본은 남는다» 고 말해 준다", /원본 파일은 그대로/.test(String(warned)),
+check("⑪ 완전히 지우기 전에 «원본은 남는다» 고 말해 준다", /원본 파일은 그대로/.test(String(warned)),
   String(warned).replace(/\s+/g, ' ').slice(0, 60) || `${asked}`);
+/* 물음만 읽었으니 취소하고 되돌려 놓는다 · 뒤 점검이 이 기록을 또 쓴다 */
+await ev(`(() => {
+  const no = Array.from(document.querySelectorAll('.modal-bg button')).find(b => (b.textContent||'').trim() === '취소');
+  if (no) no.click();
+  const back = Array.from(document.querySelectorAll('#list .entry button')).find(b => /되돌리기/.test(b.textContent||''));
+  if (back) back.click();
+  const all = Array.from(document.querySelectorAll('#sideNav .smartrow')).find(b => b.textContent.indexOf('모든 기록') >= 0);
+  if (all) all.click();
+  return true;
+})()`);
+await wait(700);
 await ev(`(() => {
   const m = Array.from(document.querySelectorAll('.card.modal')).find(x => (x.textContent||'').includes('삭제할까요'));
   if (!m) return false;
@@ -644,7 +679,11 @@ const saveSettings = async () => {
 
 const nm0 = await openNaming();
 check("⑬ 이름 조각 다섯을 고르는 자리가 있다", nm0.n === 5, `줄 ${nm0.n}개`);
-check("⑬ 기본은 다섯 다 켜져 있다", nm0.on.length === 5, nm0.on.join(" · ") || "하나도 안 켜짐");
+/* ⚠️ 태어날 때의 이름은 «폴더명_제목» 이다 ({태그}_{제목}).
+   날짜를 앞에 두면 «무엇에 대한 것인지» 가 이름 한가운데 묻힌다 · 조각은 다섯이지만
+   처음부터 켜져 있는 것은 넷이고, 날짜는 사람이 켜서 쓴다. */
+check("⑬ 처음에는 날짜만 꺼진 채로 넷이 켜져 있다",
+  nm0.on.length === 4 && nm0.on.indexOf("날짜") < 0, nm0.on.join(" · ") || "하나도 안 켜짐");
 check("⑬ 글과 사진·파일 이름을 그 자리에서 보여 준다",
   /\.md/.test(nm0.preview) && /\.png/.test(nm0.preview), nm0.preview.replace(/\s+/g, " ").slice(0, 70));
 
@@ -663,14 +702,12 @@ const stored = await ev(`(() => {
 check("⑭ 고른 것이 설정에 적힌다", stored.md.indexOf("{태그}") < 0 && stored.file.indexOf("{태그}") < 0,
   `글 ${stored.md} · 자료 ${stored.file}`);
 const nm2 = await openNaming();
-check("⑭ 다시 열어도 고른 그대로다", nm2.on.length === 4 && nm2.on.indexOf("태그") < 0, nm2.on.join(" · "));
+check("⑭ 다시 열어도 고른 그대로다", nm2.on.length === 3 && nm2.on.indexOf("태그") < 0, nm2.on.join(" · "));
 
 /* =========================================================
    상황 ⑮ · 하나만 남으면 그것까지 끌 수는 없다
    다 끄면 모든 파일이 «무제» 가 된다. 말로 막지 않고 못 누르게 한다
    ========================================================= */
-await clickName("날짜");
-await wait(300);
 await clickName("자료 제목");
 await wait(300);
 await clickName("번호");
@@ -682,7 +719,6 @@ check("⑮ 하나만 남으면 그 하나는 못 끈다",
 check("⑮ 그래도 이름은 «무제» 가 아니다", /수업 회고/.test(nm3.preview), nm3.preview.replace(/\s+/g, " ").slice(0, 60));
 
 // 되돌려 놓는다 (뒤에 오는 점검이 기본 이름을 보게)
-await clickName("날짜"); await wait(250);
 await clickName("태그"); await wait(250);
 await clickName("자료 제목"); await wait(250);
 await clickName("번호"); await wait(250);
@@ -740,15 +776,15 @@ await send("Page.reload");
 await wait(3000);
 
 const p0 = await openNaming();
-check("⑰ 다섯이 다 켜진 자리에서 시작한다", p0.on.length === 5, p0.on.join(" · "));
+check("⑰ 넷이 켜진 자리에서 시작한다", p0.on.length === 4, p0.on.join(" · "));
+/* 태어날 때 켜져 있는 글 쪽 조각은 «태그·제목» 둘이다 (날짜는 꺼진 채로 시작).
+   하나를 끄면 남은 하나가 잠긴다 · 다 끄면 모든 글이 «무제» 가 되기 때문이다. */
 await clickName("태그");
-await wait(250);
-await clickName("제목");
 await wait(350);
 const p1 = await readNaming();
 check("⑰ 글 쪽 조각이 하나 남으면 그것이 잠긴다",
-  p1.locked.length === 1 && p1.locked[0] === "날짜", `잠긴 것 ${p1.locked.join(",") || "없음"}`);
-const tryOff = await clickName("날짜");
+  p1.locked.length === 1 && p1.locked[0] === "제목", `잠긴 것 ${p1.locked.join(",") || "없음"}`);
+const tryOff = await clickName("제목");
 check("⑰ 잠긴 것은 눌러도 안 꺼진다", tryOff === "LOCKED", String(tryOff));
 const off2 = await clickName("번호");
 await wait(350);
@@ -758,13 +794,13 @@ check("⑰ 사진·파일 쪽 조각은 언제든 끌 수 있다",
 await saveSettings();
 const p3 = await openNaming();
 check("⑰ 저장하고 다시 열어도 끈 것이 몰래 켜지지 않는다",
-  p3.on.indexOf("태그") < 0 && p3.on.indexOf("제목") < 0 && p3.on.indexOf("번호") < 0,
+  p3.on.indexOf("태그") < 0 && p3.on.indexOf("날짜") < 0 && p3.on.indexOf("번호") < 0,
   p3.on.join(" · ") || "하나도 안 남음");
 const named = await ev(`(() => {
   var s = JSON.parse(localStorage.getItem('trace.settings.v1') || '{}');
   return JSON.stringify({ md: s.mdPattern || '', file: s.filePattern || '' });
 })()`).then((x) => JSON.parse(x));
-check("⑰ 글 이름이 «무제» 로 무너지지 않는다", named.md === "{날짜}", `글 ${named.md} · 자료 ${named.file}`);
+check("⑰ 글 이름이 «무제» 로 무너지지 않는다", named.md === "{제목}", `글 ${named.md} · 자료 ${named.file}`);
 await closeModals();
 await wait(300);
 
@@ -908,16 +944,32 @@ const gone = await ev(`(() => {
   const cards = Array.from(document.querySelectorAll('.card.entry'));
   const c = cards.find(x => (x.textContent || '').indexOf(want) >= 0) || cards[0];
   if (!c) return 'NO_CARD';
-  const b = Array.from(c.querySelectorAll('button')).find(x => (x.textContent||'').includes('삭제'));
+  /* ⚠️ 카드 단추는 제목 옆 ⋯ 안으로 들어갔다 · 열고 나서 눌러야 한다 */
+  const __d = c.querySelector('.dots'); if (__d) __d.click();
+  const b = Array.from(document.querySelectorAll('.menupop button')).find(x => (x.textContent||'').includes('삭제'));
   if (!b) return 'NO_DEL[' + cards.length + ']';
   b.click(); return 'ASKED';
+})()`);
+await wait(700);
+/* ⚠️ 지우기는 «두 걸음» 이다 · 휴지통까지 갔다가 거기서 완전히 지워야 색인에서 빠진다 */
+await ev(`(() => {
+  const row = Array.from(document.querySelectorAll('#sideNav .smartrow')).find(b => b.textContent.indexOf('휴지통') >= 0);
+  if (row) row.click();
+  const d = document.querySelector('.card.entry .dots'); if (d) d.click();
+  const p2 = Array.from(document.querySelectorAll('.menupop button')).find(x => /완전히/.test(x.textContent||''));
+  if (p2) p2.click();
+  document.querySelectorAll('.menupop').forEach(p => p.remove());
+  return true;
 })()`);
 await wait(700);
 await ev(`(() => {
   const m = Array.from(document.querySelectorAll('.card.modal')).find(x => (x.textContent||'').includes('삭제할까요'));
   if (!m) return false;
   const b = Array.from(m.querySelectorAll('button')).find(x => /삭제|확인|예/.test(x.textContent||''));
-  if (b) b.click(); return true;
+  if (b) b.click();
+  const all = Array.from(document.querySelectorAll('#sideNav .smartrow')).find(x => x.textContent.indexOf('모든 기록') >= 0);
+  if (all) all.click();
+  return true;
 })()`);
 await wait(2000);
 await closeModals();

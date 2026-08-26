@@ -117,7 +117,7 @@ const FAKE_DRIVE = `(function () {
   /* 원본을 건드리는 요청은 «따로 적어 둔다».
      이 점검에서 가장 중요한 것은 «무엇이 들어왔나» 가 아니라
      «십삼 년치 원본에 손을 댔나» 이기 때문이다. */
-  window.__fake = { calls: 0, pages: 0, lists: 0, trashed: [], moved: [], renamed: [], shared: [] };
+  window.__fake = { calls: 0, pages: 0, lists: 0, trashed: [], moved: [], renamed: [], shared: [], deleted: [] };
   window.__fake.T = T;   // 점검이 «사람이 드라이브에서 옮기는 것» 을 흉내 낼 수 있게
   var realFetch = window.fetch.bind(window);
   function J(o) {
@@ -151,9 +151,15 @@ const FAKE_DRIVE = `(function () {
       for (var bi = 0; bi < bin.length; bi++) arr[bi] = bin.charCodeAt(bi);
       return Promise.resolve(new Response(arr, { status: 200, headers: { 'Content-Type': 'image/png' } }));
     }
-    if (u.indexOf('/files?') < 0) {                       // 파일 하나 확인 (verifyFolder)
+    if (u.indexOf('/files?') < 0) {                       // 파일 하나 확인 (verifyFolder · probeFile)
       var mv = /files\\/([\\w-]+)\\?/.exec(u);
       var fid = mv ? mv[1] : 'ROOT';
+      /* «정말 없는» 파일도 흉내 낼 수 있어야 한다. 늘 200 을 주면
+         「폴더 밖에 있다」 와 「정말 없다」 를 가르는 길을 시험할 수 없다. */
+      if ((window.__fake.deleted || []).indexOf(fid) >= 0) {
+        return Promise.resolve(new Response(JSON.stringify({ error: { message: 'File not found' } }),
+          { status: 404, headers: { 'Content-Type': 'application/json' } }));
+      }
       return J({ id: fid, name: fid === 'ROOT' ? '내 폴더' : fid, mimeType: FOLDER });
     }
     var q = decodeURIComponent((/[?&]q=([^&]*)/.exec(u) || ['', ''])[1]);
@@ -372,7 +378,9 @@ check("검색으로 가져온 자료를 찾을 수 있다", searched === "OK" &&
 
 /* ---- ① 전체 보기 → «📁 원본 폴더» 로 데려다 주는가 ---- */
 const viewer = await ev(`(() => {
-  const b = Array.from(document.querySelectorAll('.card.entry button')).find(b => (b.textContent||'').includes('전체 보기'));
+  /* ⚠️ 카드 단추는 제목 옆 ⋯ 안으로 들어갔다 · 열고 나서 눌러야 한다 */
+  const __d = document.querySelector('.card.entry .dots'); if (__d) __d.click();
+  const b = Array.from(document.querySelectorAll('.menupop button')).find(b => (b.textContent||'').includes('전체 보기'));
   if (!b) return 'NO_BUTTON';
   b.click();
   const tops = Array.from(document.querySelectorAll('.viewer .vtop a, .viewer .vtop button')).map(x => x.textContent.trim());
@@ -429,7 +437,9 @@ await ev(`(() => { window.__fake.trashed = []; document.querySelectorAll('.modal
 await findOne("3차시용");
 await wait(700);
 const removedBlock = await ev(`(() => {
-  const b = Array.from(document.querySelectorAll('.card.entry button')).find(b => (b.textContent||'').includes('전체 보기'));
+  /* ⚠️ 카드 단추는 제목 옆 ⋯ 안으로 들어갔다 · 열고 나서 눌러야 한다 */
+  const __d = document.querySelector('.card.entry .dots'); if (__d) __d.click();
+  const b = Array.from(document.querySelectorAll('.menupop button')).find(b => (b.textContent||'').includes('전체 보기'));
   if (!b) return 'NO_CARD';
   b.click();
   const e = Array.from(document.querySelectorAll('.viewer .vtop button')).find(x => x.textContent.includes('편집'));
@@ -461,33 +471,69 @@ check("첨부 줄을 빼고 저장해도 원본을 안 버린다",
 await ev(`(() => { window.__fake.trashed = []; document.querySelectorAll('.modal-bg').forEach(b => b.remove()); return true; })()`);
 await findOne("수업사진");
 await wait(700);
+/* ⚠️ 지우기는 «두 걸음» 이 됐다. 한 번 누르면 휴지통으로 가고(안 묻는다 · 되돌릴 수 있으니),
+   거기서 «완전히 삭제» 를 눌러야 진짜로 지운다. 원본 이야기는 그 두 번째 자리에서 한다.
+   ⚠️ 첫 걸음에서는 드라이브 파일을 «한 개도» 안 건드려야 한다.
+   ⚠️ 그리고 이 점검은 «묻는 말» 만 보는 자리다. 진짜로 지우면 뒤에 오는 점검들이
+      볼 기록을 잃는다 · 물음만 읽고 취소한 뒤 되돌려 놓는다. */
+await ev(`(() => { window.__fake.trashed = []; return true; })()`);
+/* 이 기록이 «자기 것» 이라고 여기는 파일들. 색인 조각 같은 살림살이는 여기 안 든다 ·
+   그것까지 세면 «색인이 조각을 정리한 것» 을 «기록을 지운 것» 으로 잘못 읽는다. */
+const ownIds = JSON.parse(await ev(`(() => {
+  const card = document.querySelector('.card.entry');
+  const id = card && card.getAttribute('data-eid');
+  const n = (JSON.parse(localStorage.getItem('trace.entries.v2')||'[]')).filter(x => x.id === id)[0] || {};
+  const ids = [n.mdId, n.docId, n.htmlId, n.folderId, n.srcId]
+    .concat((n.blocks||[]).map(b => b.fileId)).filter(Boolean);
+  return JSON.stringify(ids);
+})()`));
 await ev(`(() => {
-  const b = Array.from(document.querySelectorAll('.card.entry button')).find(b => /삭제|🗑/.test(b.textContent||''));
-  if (b) b.click(); return true;
+  const d = document.querySelector('.card.entry .dots'); if (d) d.click();
+  const b = Array.from(document.querySelectorAll('.menupop button')).find(x => /삭제/.test(x.textContent||''));
+  if (b) b.click();
+  document.querySelectorAll('.menupop').forEach(p => p.remove());
+  return true;
+})()`);
+await wait(600);
+const trashedNow = JSON.parse(await ev(`JSON.stringify((window.__fake && window.__fake.trashed) || [])`));
+const hitOwn = ownIds.filter(function (x) { return trashedNow.indexOf(x) >= 0; });
+check("휴지통으로 보낼 때는 그 기록의 파일을 안 건드린다", hitOwn.length === 0,
+  hitOwn.length ? ("건드림 " + hitOwn.join(",")) : ("그 기록 파일 " + ownIds.length + "개 · 모두 무사"));
+await ev(`(() => {
+  const row = Array.from(document.querySelectorAll('#sideNav .smartrow')).find(b => b.textContent.indexOf('휴지통') >= 0);
+  if (row) row.click();
+  const d = document.querySelector('.card.entry .dots'); if (d) d.click();
+  const p2 = Array.from(document.querySelectorAll('.menupop button')).find(x => /완전히/.test(x.textContent||''));
+  if (p2) p2.click();
+  document.querySelectorAll('.menupop').forEach(p => p.remove());
+  return true;
 })()`);
 await wait(500);
 const delAsk = await ev(`(() => {
   const m = Array.from(document.querySelectorAll('.card.modal')).find(x => (x.textContent||'').includes('삭제할까요'));
   return m ? m.textContent : 'NO_MODAL';
 })()`);
-check("지우기 전에 «원본은 그대로» 라고 알려 준다",
+check("완전히 지우기 전에 «원본은 그대로» 라고 알려 준다",
   /원본 파일은 그대로 남습니다/.test(delAsk) && !/휴지통으로 이동합니다/.test(delAsk),
   delAsk.replace(/\s+/g, " ").slice(0, 60));
-
+/* 물음을 읽었으니 이제 진짜로 지운다 · 아래에서 «원본은 살아 있는가» 를 본다 */
 await ev(`(() => {
   const m = Array.from(document.querySelectorAll('.card.modal')).find(x => (x.textContent||'').includes('삭제할까요'));
-  const yes = Array.from(m.querySelectorAll('button')).find(b => b.textContent === '삭제');
-  yes.click(); return true;
+  const yes = m && Array.from(m.querySelectorAll('button')).find(b => b.textContent === '삭제');
+  if (yes) yes.click();
+  const all = Array.from(document.querySelectorAll('#sideNav .smartrow')).find(b => b.textContent.indexOf('모든 기록') >= 0);
+  if (all) all.click();
+  return true;
 })()`);
 await wait(2500);
 const afterDel = JSON.parse(await ev(`(() => {
   const L = JSON.parse(localStorage.getItem('trace.entries.v2') || '[]');
   return JSON.stringify({ gone: !L.some(e => e.title === '수업사진'), f: window.__fake });
 })()`));
-check("지우면 목록에서는 빠진다", afterDel.gone);
-check("지워도 원본 사진을 안 버린다", !afterDel.f.trashed.includes("P1"),
+check("완전히 지우면 색인에서도 빠진다", afterDel.gone);
+check("완전히 지워도 원본 사진은 안 버린다", !afterDel.f.trashed.includes("P1"),
   `휴지통: ${afterDel.f.trashed.join(",") || "없음"}`);
-check("⚠️ 지워도 원본이 든 폴더를 통째로 안 버린다",
+check("⚠️ 완전히 지워도 원본이 든 폴더는 통째로 안 버린다",
   !afterDel.f.trashed.includes("DSCI") && !afterDel.f.trashed.includes("D2019"),
   `휴지통: ${afterDel.f.trashed.join(",") || "없음"}`);
 
@@ -599,7 +645,9 @@ await ev(`(() => {
 })()`);
 await wait(700);
 await ev(`(() => {
-  const v = Array.from(document.querySelectorAll('.card.entry button')).find(x => (x.textContent||'').includes('전체 보기'));
+  /* ⚠️ 카드 단추는 제목 옆 ⋯ 안으로 들어갔다 · 열고 나서 눌러야 한다 */
+  const __d = document.querySelector('.card.entry .dots'); if (__d) __d.click();
+  const v = Array.from(document.querySelectorAll('.menupop button')).find(x => (x.textContent||'').includes('전체 보기'));
   if (v) v.click(); return true;
 })()`);
 await wait(700);
@@ -689,7 +737,10 @@ const faked = await ev(`(() => {
   n.shareWebUrl = location.origin + '/view.html#d=FAKE';
   n.shareWebAt = Date.now();
   n.shareWebTheme = 'lego';
-  n.shareWebTone = 'craft';   // 만들 때의 색감 · 이걸 바꾸면 낡음이 된다
+  /* 만들 때의 색감 · 이걸 «지금 색감» 과 다르게 두면 낡음이 된다.
+     ⚠️ 여기에 색감 이름을 못 박으면 안 된다. 태어날 때의 색이 바뀌는 날 이 점검이 빨개진다.
+        지금 서 있는 색을 읽어 쓴다. */
+  n.shareWebTone = document.documentElement.getAttribute('data-tone') || '';
   localStorage.setItem('trace.entries.v2', JSON.stringify(L));
   sessionStorage.setItem('keep', '1');   // 아래 새로고침에서 씨앗이 안 날아가게
   // ⚠️ 앞 점검이 보기 방식을 «목록» 으로 바꿔 놓았다. 목록에는 .card.entry 가 없다.
@@ -708,7 +759,9 @@ async function openShare() {
   })()`);
   await wait(700);
   await ev(`(() => {
-    const v = Array.from(document.querySelectorAll('.card.entry button')).find(x => (x.textContent||'').includes('전체 보기'));
+    /* ⚠️ 카드 단추는 제목 옆 ⋯ 안으로 들어갔다 · 열고 나서 눌러야 한다 */
+  const __d = document.querySelector('.card.entry .dots'); if (__d) __d.click();
+  const v = Array.from(document.querySelectorAll('.menupop button')).find(x => (x.textContent||'').includes('전체 보기'));
     if (v) v.click(); return true;
   })()`);
   await wait(700);
@@ -792,13 +845,16 @@ await ev(`(() => {
   return true;
 })()`);
 await wait(900);
+/* ⚠️ 카드 단추는 제목 옆 ⋯ 안으로 들어갔다 · 여기서는 곧장 «편집» 을 고르면 된다 */
 const toEdit = await ev(`(() => {
-  const v = Array.from(document.querySelectorAll('.card.entry button')).find(b => (b.textContent||'').includes('전체 보기'));
-  if (!v) return 'NO_CARD';
-  v.click();
-  const e = Array.from(document.querySelectorAll('.viewer .vtop button')).find(b => b.textContent.includes('편집'));
+  const d = document.querySelector('.card.entry .dots');
+  if (!d) return 'NO_CARD';
+  d.click();
+  const e = Array.from(document.querySelectorAll('.menupop button')).find(b => /편집/.test(b.textContent||''));
   if (!e) return 'NO_EDIT';
-  e.click(); return 'OK';
+  e.click();
+  document.querySelectorAll('.menupop').forEach(p => p.remove());
+  return 'OK';
 })()`);
 await wait(1200);
 const maskBtn = await ev(`(() => {
@@ -840,7 +896,9 @@ await ev(`(() => {
 })()`);
 await wait(800);
 const gate = await ev(`(() => {
-  const v = Array.from(document.querySelectorAll('.card.entry button')).find(x => (x.textContent||'').includes('전체 보기'));
+  /* ⚠️ 카드 단추는 제목 옆 ⋯ 안으로 들어갔다 · 열고 나서 눌러야 한다 */
+  const __d = document.querySelector('.card.entry .dots'); if (__d) __d.click();
+  const v = Array.from(document.querySelectorAll('.menupop button')).find(x => (x.textContent||'').includes('전체 보기'));
   if (!v) return 'NO_CARD';
   v.click();
   const s = Array.from(document.querySelectorAll('.viewer .vtop button')).find(x => (x.textContent||'').includes('공유'));
@@ -903,7 +961,8 @@ const readPlace = () => ev(`(() => {
   return JSON.stringify({
     path: (e && e.srcPath) || [],
     crumbs: Array.from(document.querySelectorAll('.card.entry .crumb')).map(x => x.textContent).join('/'),
-    gone: document.querySelectorAll('.banner.gone').length
+    gone: document.querySelectorAll('.banner.gone').length,
+    away: document.querySelectorAll('.banner.away').length
   });
 })()`).then(JSON.parse);
 
@@ -952,10 +1011,30 @@ await wait(9000);
 await ev(`(() => { document.querySelectorAll('.modal-bg').forEach(b => b.remove()); return true; })()`);
 await only(pick.title);
 const place2 = await readPlace();
-check("안 보이게 되면 안 보인다고 말한다", place2.gone > 0, place2.gone + "곳에 알림");
+/* ⚠️ 폴더 «밖» 으로 나갔다고 «없다» 고 하면 안 된다.
+   이 앱의 권한(drive.file)은 파일 하나하나에 붙으므로, 밖으로 옮겨도 그 파일은 계속 열린다.
+   훑기가 못 찾았을 뿐이라 파일 ID 로 직접 물어보고, 살아 있으면 조용히 «밖에 있다» 고만 적는다. */
+check("폴더 밖으로 나가면 «밖에 있다» 고 조용히 적는다", place2.away > 0 && place2.gone === 0,
+  "밖 " + place2.away + "곳 · 없음 " + place2.gone + "곳");
+const awayText = await ev(`(() => {
+  const b = document.querySelector('.banner.away');
+  return b ? (b.textContent || '').slice(0, 70) : '';
+})()`);
+check("밖에 있어도 읽고 쓰는 데는 문제없다고 말한다",
+  /밖/.test(awayText) && /문제없습니다/.test(awayText), awayText || "없음");
+
+/* 이번에는 드라이브에서 «정말로» 없앤다. 그때만 «안 보입니다» 라야 한다 */
+await ev(`(() => { window.__fake.deleted.push('${pick.id}'); return true; })()`);
+const rescan3 = await pressImport();
+check("정말 지운 뒤에도 다시 훑을 수 있다", rescan3 === "CLICKED", String(rescan3));
+await wait(9000);
+await ev(`(() => { document.querySelectorAll('.modal-bg').forEach(b => b.remove()); return true; })()`);
+await only(pick.title);
+const place3 = await readPlace();
+check("정말 못 여는 것일 때만 «안 보입니다» 라고 한다", place3.gone > 0, place3.gone + "곳에 알림");
 const goneText = await ev(`(() => {
   const b = document.querySelector('.banner.gone');
-  return b ? (b.textContent || '').slice(0, 60) : '';
+  return b ? (b.textContent || '').slice(0, 70) : '';
 })()`);
 check("다시 찾을 길을 함께 준다", /안 보입니다/.test(goneText) && /고르기/.test(goneText), goneText || "없음");
 await ev(`(() => {
