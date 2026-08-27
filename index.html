@@ -185,8 +185,13 @@
     /* ⚠️ 오른쪽 칸은 이미 «남은 자리 전부» 인데, 그 안에서 다시 860px 로
        가둬 두었다. 넓은 화면에서 글 왼쪽·오른쪽에 흰 판이 넓게 남아
        «화면이 비어 있다» 가 됐다. 칸을 받았으면 칸을 쓴다.
-       대신 여백은 화면 너비를 따라 늘어난다 · 끝까지 붙어도 안 읽힌다. */
-    .layout > .wrap { max-width: none; margin: 0; padding: 0 clamp(24px, 3.2vw, 72px) 80px;
+       ⚠️ 그런데 칸을 다 주었더니 이번엔 글줄이 1920px 화면에서 한 줄 217자가
+          됐다. 눈이 줄 끝에서 다음 줄 머리를 못 찾는다 (읽기 좋은 줄은 45~90자).
+          그래서 «칸» 이 아니라 «줄» 에 자를 댄다 · 종이는 칸 끝까지 그대로 서고,
+          남는 폭은 여백으로 돌린다. 판이 끊겨 빈 자리로 보이는 일이 없다.
+          1000px 을 넘을 때만 걸린다 · 보통 너비에서는 예전 그대로 꽉 찬다. */
+    .layout > .wrap { max-width: none; margin: 0;
+                      padding: 0 max(clamp(24px, 3.2vw, 72px), calc((100% - 1000px) / 2)) 80px;
                       position: sticky; top: 66px; align-self: start;
                       height: calc(100vh - 66px); overflow-y: auto; }
     #sideNav { max-height: calc(100vh - 66px); }
@@ -202,8 +207,11 @@
     .listcol .entry .crumbs, .listcol .entry .rel, .listcol .entry .foot,
     .listcol .entry .morebtn, .listcol .entry .tags,
     .listcol .entry .head .badge, .listcol .entry .head .pinbtn { display: none; }
-    /* 제목이 먼저 읽혀야 한다 · 가운데 칸에서도 한 눈에 잡히는 크기로 */
-    .listcol .entry .head h3 { display: block; font-size: calc(16.5px * var(--fs)); line-height: 1.4;
+    /* 제목이 먼저 읽혀야 한다 · 가운데 칸에서도 한 눈에 잡히는 크기로.
+       ⚠️ 키우고 나니 긴 제목이 네 줄까지 흘러 카드가 251px 이 됐다.
+          미리보기가 두 줄이면 제목도 두 줄이다 · 줄 수가 들쭉날쭉하면 목록이 아니다. */
+    .listcol .entry .head h3 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+                               overflow: hidden; font-size: calc(16.5px * var(--fs)); line-height: 1.4;
                                font-weight: 700; }
     .listcol .entry .head .when { font-size: calc(11.5px * var(--fs)); margin-top: 4px; }
     /* 미리보기는 «딱 두 줄» · 높이로 자르면 셋째 줄이 반쯤 잘려 보인다 */
@@ -221,6 +229,12 @@
     .listcol .entry .content h4, .listcol .entry .content figure, .listcol .entry .content .gallery,
     .listcol .entry .content blockquote, .listcol .entry .content .codeblock,
     .listcol .entry .content .tscroll, .listcol .entry .content details { display: none; }
+    /* ⚠️ 소제목·사진·인용·코드·표는 감추면서 «삽입한 페이지» 만 빠뜨렸다.
+       보통 카드가 135~160px 인데 삽입이 붙은 카드는 311px · 두 배 넘게 먹었다.
+       가운데 칸의 규칙은 「제목 · 두 줄 · 날짜」다. 삽입도 한 줄로 접는다.
+       진짜 페이지는 오른쪽 칸(전체 보기)에서 그대로 뜬다. */
+    .listcol .entry .content .embedbox { display: none; }
+    .listcol .entry .content .embedline { display: block; }
     .listcol .entry .dots { opacity: 0; }
     .listcol .entry:hover .dots { opacity: 1; }
     /* 지금 오른쪽에서 보고 있는 줄 · 어디를 열어 두었는지 눈에 보여야 한다 */
@@ -378,10 +392,20 @@
     /* ⚠️ 목록에만 «둘째 칸» 을 못 박아 두었더니, 뒤따르는 쓰는 칸이 갈 데를 못 찾고
        첫째 칸(기둥 자리) 둘째 줄로 떨어졌다. 기둥 옆이 통째로 빈 판이 된 까닭이다.
        둘 다 둘째 칸에, 위아래로 이어 붙인다. */
-    .listcol { display: block; grid-column: 2; grid-row: 1; border-right: none; background: transparent;
+    /* ⚠️ 목록을 위, 쓰는 자리를 아래에 두었더니 글 한 줄 적으려고 목록을
+       통째로 1830px 지나쳐야 했다. ☰ 를 두 번 눌러 목록을 접으면 되지만
+       그건 «아는 사람만» 하는 일이다. 폰에서 하듯 쓰는 자리를 위로 올린다 ·
+       접혀 있을 때는 「＋ 새 기록」 한 줄이라 목록을 거의 안 밀어낸다. */
+    .listcol { display: block; grid-column: 2; grid-row: 2; border-right: none; background: transparent;
                max-width: none; margin: 0; padding: 0 clamp(16px, 2.6vw, 40px) 80px; }
-    .layout > .wrap { grid-column: 2; grid-row: 2; max-width: none; margin: 0;
+    .layout > .wrap { grid-column: 2; grid-row: 1; align-self: start; max-width: none; margin: 0;
                       padding-left: clamp(16px, 2.6vw, 40px); padding-right: clamp(16px, 2.6vw, 40px); }
+    /* ⚠️ 기둥이 첫 줄에만 서면 첫 줄 높이가 기둥 키(822px)로 못 박힌다.
+       작성칸은 접혀 있을 때 81px 이라, 그 아래 634px 이 통째로 빈 판이 됐다.
+       기둥은 두 줄에 걸친다 · 줄 높이는 «그 줄에 든 것» 이 정해야 한다. */
+    /* ⚠️ -1 은 «명시한 격자» 의 끝이다. 여기는 줄을 안 적어 둔 격자(암시적)라
+       1 / -1 이 «한 줄» 로 접혀 아무 소용이 없었다 · span 으로 적어야 한다. */
+    #sideNav { grid-column: 1; grid-row: 1 / span 2; }
     .layout > .wrap { padding-bottom: 0; }
     .layout > .wrap footer.site { display: none; }
   }
@@ -409,6 +433,15 @@
                transform: translateX(-105%); transition: transform .18s ease; }
     #sideNav.open { transform: none; }
     #sideNav .sidehead .x { display: block; }
+    /* ⚠️ 손가락은 화살표가 아니다. 길찾기 줄이 높이 19px, 태그가 26px,
+       고정 단추가 28px 이었다 · 옆줄을 누르거나 아무것도 안 눌린다.
+       글자 크기는 그대로 두고 «누를 수 있는 자리» 만 넓힌다 (최소 34px). */
+    .entry .crumbs { gap: 2px; }
+    .entry .crumb { min-height: 34px; padding: 0 6px; display: inline-flex; align-items: center; }
+    .entry .tag.pick { min-height: 34px; padding: 0 12px; display: inline-flex; align-items: center; }
+    .entry .pinbtn { min-height: 34px; padding: 0 12px; display: inline-flex; align-items: center; }
+    .entry .tags { gap: 6px; }
+    .entry .dots { min-width: 34px; min-height: 34px; }
   }
 
   /* ---------- 빈 화면 · 브릭 셋과 단추 하나 ---------- */
@@ -1335,6 +1368,9 @@
      크게 보고 만지는 것은 「전체 보기」에서 한다. */
   .embedbox.still { resize: none; overflow: hidden; padding-bottom: 0; }
   .embedbox.still > iframe.embedframe { border-radius: 10px; pointer-events: none; }
+  /* 좁은 칸에서 삽입한 페이지를 대신하는 한 줄 · 넓은 자리에서는 진짜가 뜨므로 숨는다 */
+  .embedline { display: none; font-size: calc(12.5px * var(--fs)); color: var(--ink-soft);
+               border: 1px dashed var(--line); border-radius: 8px; padding: 5px 9px; }
   .embedframe { width: 100%; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); display: block; }
   .block.embed textarea { font-size: calc(12.5px * var(--fs)); }
 
@@ -7756,6 +7792,11 @@
 
   function renderContent(n, host, opts) {
     opts = opts || {};
+    /* ⚠️ mediaFirst 는 «보드(카드)에서 그리는 중» 이라는 뜻이다. 카드에서는 삽입 페이지를 멈춰 둔다.
+       ⚠️ 이 줄은 반드시 그리기 «전» 에 있어야 한다. 아래 renderOne 옆에 두었더니
+          var 라 이름만 먼저 서고 값은 다 그린 «뒤» 에 들어가, 늘 undefined 로 그렸다.
+          오류도 안 났다 · 그래서 «고쳤는데 화면이 그대로» 로 한참 헤맸다. */
+    var stillEmbed = !!opts.mediaFirst;
     var shots = shotsOf(n);
     var seenImages = 0;
     var blocks = n.blocks || [];
@@ -7809,8 +7850,6 @@
     });
 
     // where · 이 블록을 붙일 자리. 사진은 접기 상자 안에, 나머지는 본문에 바로 붙는다
-    // ⚠️ mediaFirst 는 «보드(카드)에서 그리는 중» 이라는 뜻이다. 카드에서는 삽입 페이지를 멈춰 둔다
-    var stillEmbed = !!opts.mediaFirst;
     function renderOne(b, shotAt, where) {
       var host = where;
       if (b.kind === "text") {
@@ -7957,7 +7996,10 @@
       } else if (b.kind === "embed") {
         if (b.code && b.code.trim()) {
           host.appendChild(embedFrame(b, stillEmbed));
-          if (!stillEmbed) host.appendChild(el("div", "embedhint", "↕ 아래 모서리를 끌면 높이를 바꿀 수 있습니다"));
+          /* 좁은 칸(가운데 목록)에서는 이 한 줄이 삽입한 페이지를 대신한다.
+             넓은 자리에서는 무늬가 이 줄을 숨기고 진짜 페이지를 그대로 보여 준다. */
+          if (stillEmbed) host.appendChild(el("div", "embedline", "▶ 삽입한 페이지 · 눌러서 펼쳐 봅니다"));
+          else host.appendChild(el("div", "embedhint", "↕ 아래 모서리를 끌면 높이를 바꿀 수 있습니다"));
         }
       }
     }

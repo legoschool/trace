@@ -5,9 +5,21 @@ import { spawn } from "node:child_process";
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { createServer } from "node:net";
 
 const URL_ = process.argv[2] || "http://localhost:8000/";
-const PORT = 9333;
+/* ⚠️ 자리(포트)를 9333 으로 못 박아 두었다. 점검이 도중에 죽으면 브라우저가
+   그 자리를 문 채로 남고, 다음 점검은 «자기 브라우저를 못 띄운 채» 남의 빈 탭에
+   붙는다. 그러고는 「＋버튼 0개 · 색감 null」 이라고 말한다 · 앱은 멀쩡한데.
+   한나절을 여기서 잃었다. 자리는 «비어 있는 것을 그때그때» 받아 쓴다. */
+const PORT = await new Promise((res, rej) => {
+  const srv = createServer();
+  srv.on("error", rej);
+  srv.listen(0, "127.0.0.1", () => {
+    const got = srv.address().port;
+    srv.close(() => res(got));
+  });
+});
 
 // 엣지든 크롬이든 있는 것을 쓴다
 import { existsSync } from "node:fs";
@@ -30,6 +42,11 @@ const edge = spawn(EDGE, [
   "--use-fake-device-for-media-stream", "--use-fake-ui-for-media-stream",
   URL_,
 ], { stdio: "ignore" });
+/* ⚠️ 끝에서만 edge.kill() 을 부르면, 도중에 넘어졌을 때 브라우저가 살아 남는다.
+   나가는 «모든» 길에서 끄도록 여기서 한 번에 걸어 둔다. */
+process.on("exit", () => { try { edge.kill(); } catch {} });
+["SIGINT", "SIGTERM"].forEach((sig) =>
+  process.on(sig, () => { try { edge.kill(); } catch {} process.exit(130); }));
 
 let ws, msgId = 0;
 const pending = new Map();
@@ -2083,6 +2100,99 @@ check("가운데와 오른쪽이 각자 구른다", three.listScrolls === "auto"
   three.listScrolls + " / " + three.editScrolls);
 check("가운데 칸 제목이 지금 보는 곳을 말한다", /모든 기록/.test(three.title), three.title);
 
+/* ---------- 10-13. 좁은 칸에 «큰 것» 이 들어왔을 때 ----------
+   ⚠️ 이 다섯은 236가지를 다 통과한 채로 깨져 있었다. 특히 삽입 미리보기는
+      stillEmbed 를 그리는 반복문 «아래» 에 적어 두어 늘 undefined 로 그렸다.
+      var 라 오류도 안 났다 · 눈으로만 보면 «고쳤는데 그대로» 로 보인다.
+      그래서 여기서는 «클래스가 붙었나» 가 아니라 실제로 재서 말한다. */
+await evaluate(`(() => {
+  const mk = (i, t, blocks) => ({ id: 'e' + i, type: '', title: t, tags: ['수업'],
+    blocks: blocks, relations: [], pinned: false,
+    createdAt: 1755000000000 - i * 8.64e7, updatedAt: 1755000000000 - i * 8.64e7 });
+  localStorage.setItem('trace.entries.v2', JSON.stringify([
+    /* ⚠️ 여기 안쪽은 «틀 문자열(template literal)» 안이다. 따옴표를 겹쳐 쓰면
+       \' 가 그냥 ' 로 펴져서 넣는 순간 문법이 깨진다 · 겹따옴표를 아예 안 쓴다. */
+    mk(0, '삽입이 붙은 기록', [{ id: 'x1', kind: 'embed', height: 360,
+        code: '<h2>붙여 넣은 쪽</h2>' + '<p>아주 긴 내용입니다</p>'.repeat(40) }]),
+    mk(1, '아주 긴 제목을 가진 기록입니다 · 한 줄에 안 들어가면 어디서 끊기는지 보려고 일부러 이렇게 길게 적어 둔 제목입니다', [{ id: 'x2', kind: 'text', text: '짧은 본문' }]),
+    mk(2, '보통 기록', [{ id: 'x3', kind: 'text', text: '보통 본문입니다.' }])
+  ]));
+  ['trace.draft.v1','trace.desk.v1','trace.navStage.v1','trace.sideFolded.v1'].forEach(k => localStorage.removeItem(k));
+  return true;
+})()`);
+await send("Page.navigate", { url: URL_ });
+await wait(2500);
+const big = JSON.parse(await evaluate(`(() => {
+  const cards = [...document.querySelectorAll('.listcol .entry')];
+  const box = document.querySelector('.embedbox');
+  const frame = document.querySelector('.embedframe');
+  const line = document.querySelector('.embedline');
+  const h3 = cards[1] ? cards[1].querySelector('h3') : null;
+  const wrap = document.querySelector('.layout > .wrap');
+  return JSON.stringify({
+    상자클래스: box ? box.className : '',
+    상자보임: box ? getComputedStyle(box).display : '',
+    틀굴림: frame ? frame.getAttribute('scrolling') : '',
+    틀손: frame ? getComputedStyle(frame).pointerEvents : '',
+    대신줄: line ? getComputedStyle(line).display : '없음',
+    카드높이: cards.map(c => Math.round(c.getBoundingClientRect().height)),
+    긴제목높이: h3 ? Math.round(h3.getBoundingClientRect().height) : 0,
+    긴제목한줄: h3 ? Math.round(parseFloat(getComputedStyle(h3).lineHeight)) : 0,
+    쓰는칸: Math.round(wrap.getBoundingClientRect().width),
+    쓰는칸여백: Math.round(parseFloat(getComputedStyle(wrap).paddingLeft))
+  });
+})()`));
+/* 카드 안 삽입은 «멈춘 그림» 이다 · 굴림도 손길도 없다 */
+check("카드 안 삽입 페이지는 스스로 안 굴러간다",
+  (big.상자클래스 || '').split(' ').indexOf('still') >= 0 && big.틀굴림 === "no" && big.틀손 === "none",
+  big.상자클래스 + " · scrolling=" + big.틀굴림 + " · " + big.틀손);
+/* 가운데 칸에서는 삽입 대신 한 줄 · 카드가 옆 카드보다 두 배가 되면 목록이 아니다 */
+check("가운데 칸에서는 삽입이 한 줄로 접힌다",
+  big.상자보임 === "none" && big.대신줄 === "block", big.상자보임 + " / " + big.대신줄);
+check("카드 높이가 서로 고르다",
+  Math.max(...big.카드높이) <= Math.min(...big.카드높이) * 1.5, big.카드높이.join(" · "));
+/* 긴 제목은 두 줄에서 끊는다 · 미리보기가 두 줄이면 제목도 두 줄이다 */
+check("긴 제목이 두 줄에서 끊긴다",
+  big.긴제목한줄 > 0 && big.긴제목높이 <= big.긴제목한줄 * 2 + 2,
+  big.긴제목높이 + "px · 한 줄 " + big.긴제목한줄 + "px");
+/* ⚠️ 빈 자리를 없앤다고 칸을 다 줬더니 이번엔 글줄이 한 줄 217자가 됐다.
+   읽기 좋은 줄은 45~90자다 · 칸은 그대로 두고 «줄» 에만 자를 댄다. */
+check("넓은 화면에서도 글줄이 너무 안 길어진다",
+  big.쓰는칸 - big.쓰는칸여백 * 2 <= 1010,
+  "글 폭 " + (big.쓰는칸 - big.쓰는칸여백 * 2) + "px · 칸 " + big.쓰는칸 + "px");
+
+/* ---------- 10-14. 세 칸이 안 되는 노트북(1021~1179px) ----------
+   ⚠️ 목록을 위에 두었더니 글 한 줄 적으려고 목록을 1830px 지나쳐야 했다.
+      게다가 작성칸을 위로 올리자 이번엔 기둥이 첫 줄 높이를 자기 키로 못 박아
+      그 아래 634px 이 빈 판이 됐다 (grid-row: 1 / -1 은 여기서 한 줄로 접힌다).
+      «위에 있나» 만 보지 말고 «사이가 비었나» 까지 같이 잰다. */
+await send("Emulation.setDeviceMetricsOverride", { width: 1120, height: 900, deviceScaleFactor: 1, mobile: false });
+await send("Page.navigate", { url: URL_ });
+await wait(2500);
+const two = JSON.parse(await evaluate(`(() => {
+  const wrap = document.querySelector('.layout > .wrap');
+  const list = document.querySelector('.listcol');
+  const first = document.querySelector('.listcol .entry');
+  const comp = document.getElementById('composer');
+  const nav = document.getElementById('sideNav');
+  return JSON.stringify({
+    쓰는칸위: Math.round(wrap.getBoundingClientRect().top + scrollY),
+    쓰는칸아래: Math.round(wrap.getBoundingClientRect().bottom + scrollY),
+    목록위: Math.round(list.getBoundingClientRect().top + scrollY),
+    첫기록까지: first ? Math.round(first.getBoundingClientRect().top + scrollY) : -1,
+    작성칸높이: Math.round(comp.getBoundingClientRect().height),
+    기둥줄: getComputedStyle(nav).gridRow
+  });
+})()`));
+check("좁은 노트북에서 쓰는 자리가 목록 위에 온다", two.쓰는칸위 < two.목록위,
+  "쓰는 자리 y" + two.쓰는칸위 + " · 목록 y" + two.목록위);
+check("쓰는 자리와 목록 사이가 안 빈다", two.목록위 - two.쓰는칸아래 <= 8,
+  "사이 " + (two.목록위 - two.쓰는칸아래) + "px · 기둥 " + two.기둥줄);
+check("첫 기록까지 한 화면 안이다", two.첫기록까지 > 0 && two.첫기록까지 < 700,
+  two.첫기록까지 + "px");
+await send("Emulation.setDeviceMetricsOverride", { width: 1400, height: 950, deviceScaleFactor: 1, mobile: false });
+await wait(400);
+
 const picked = JSON.parse(await evaluate(`(() => {
   const t = document.querySelectorAll('#listcol .entry .titlebtn')[1];
   if (!t) return JSON.stringify({ err: 'NO_ITEM' });
@@ -2273,6 +2383,17 @@ check("폰에서는 기둥이 서랍으로 숨는다", drawer.hidden, drawer.hid
 check("줄 셋(☰)이 보이고 누르면 서랍이 열린다", drawer.shown !== "none" && drawer.opened && drawer.scrim === "block",
   `줄셋 ${drawer.shown} · 열림 ${drawer.opened}`);
 check("바깥을 누르면 닫힌다", drawer.closed);
+/* ⚠️ 손가락은 화살표가 아니다. 길찾기 줄이 19px, 태그가 26px 이었다 ·
+   옆줄이 눌리거나 아무것도 안 눌린다. 글자는 그대로 두고 누를 자리만 넓혔다. */
+const thumb = JSON.parse(await evaluate(`(() => {
+  const small = [...document.querySelectorAll('#list .crumb, #list .tag.pick, #list .pinbtn, #list .dots')]
+    .map(e => { const r = e.getBoundingClientRect();
+      return { 누가: (e.className || '').split(/\s+/)[0], 높이: Math.round(r.height) }; })
+    .filter(x => x.높이 > 0 && x.높이 < 32);
+  return JSON.stringify({ small });
+})()`));
+check("폰에서 누를 자리가 32px 아래로 안 내려간다", (thumb.small || []).length === 0,
+  (thumb.small || []).map(x => x.누가 + " " + x.높이 + "px").join(" · ") || "다 34px 이상");
 await send("Emulation.clearDeviceMetricsOverride");
 await wait(500);
 
