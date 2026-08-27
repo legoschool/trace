@@ -12,9 +12,21 @@ import { spawn } from "node:child_process";
 import { mkdtempSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { createServer } from "node:net";
 
 const URL_ = process.argv[2] || "http://localhost:8000/";
-const PORT = 9351;
+/* ⚠️ 자리(포트)를 못 박아 두면, 점검이 도중에 죽었을 때 브라우저가 그 자리를
+   문 채로 남는다. 다음 점검은 «자기 브라우저를 못 띄운 채» 남의 빈 탭에 붙어
+   앱이 멀쩡한데도 「아무것도 없다」 고 말한다. 두 사람이 같이 돌려도 같은 일이
+   난다. 자리는 «비어 있는 것을 그때그때» 받아 쓴다. */
+const PORT = await new Promise((res, rej) => {
+  const srv = createServer();
+  srv.on("error", rej);
+  srv.listen(0, "127.0.0.1", () => {
+    const got = srv.address().port;
+    srv.close(() => res(got));
+  });
+});
 const EDGE = [
   "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
   "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe",
@@ -27,6 +39,11 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 const profile = mkdtempSync(join(tmpdir(), "trace-import-"));
 const edge = spawn(EDGE, ["--headless=new", "--disable-gpu", "--no-first-run",
   `--remote-debugging-port=${PORT}`, `--user-data-dir=${profile}`, "about:blank"], { stdio: "ignore" });
+/* ⚠️ 끝에서만 edge.kill() 을 부르면 도중에 넘어졌을 때 브라우저가 살아 남는다.
+   나가는 «모든» 길에서 끄도록 여기서 한 번에 걸어 둔다. */
+process.on("exit", () => { try { edge.kill(); } catch {} });
+["SIGINT", "SIGTERM"].forEach((sig) =>
+  process.on(sig, () => { try { edge.kill(); } catch {} process.exit(130); }));
 
 let ws, msgId = 0; const pending = new Map(); const errors = [];
 function send(method, params = {}) {
