@@ -1260,6 +1260,7 @@ const folded = JSON.parse(await evaluate(`(() => {
     nav: L.getAttribute('data-nav'),
     cols: getComputedStyle(L).gridTemplateColumns.split(' ').length,
     폭합: Math.round(getComputedStyle(L).gridTemplateColumns.split(' ').reduce((a, v) => a + parseFloat(v), 0)),
+    칸너비: Math.round(L.getBoundingClientRect().width),
     기둥감춤: gone('#sideNav'), 목록감춤: gone('.listcol')
   });
   btn.click(); const one = now();
@@ -1276,10 +1277,12 @@ check("두 번째로 누르면 목록까지 접힌다",
 check("세 번째로 누르면 다시 다 펴진다",
   folded.back.nav === "0" && folded.back.기둥감춤 === false && folded.back.목록감춤 === false,
   "단 " + folded.back.nav + " · 칸 " + folded.back.cols);
-/* ⚠️ 접었는데 그 자리가 빈 판으로 남으면 접은 것이 아니다. 폭 합이 화면과 같아야 한다 */
+/* ⚠️ 접었는데 그 자리가 빈 판으로 남으면 접은 것이 아니다 · 칸들이 판을 다 채워야 한다.
+   ⚠️ 화면 너비(innerWidth)와 재면 안 된다. 쪽에 세로 굴림 막대가 서는 순간 15px 이
+      어긋나서, 멀쩡한 것을 «빈 자리가 있다» 고 말한다 · 판 자신의 너비와 잰다. */
 check("어느 단에서도 빈 자리가 안 남는다",
-  [folded.one, folded.two, folded.back].every(function (x) { return Math.abs(x.폭합 - folded.화면) <= 1; }),
-  [folded.one, folded.two, folded.back].map(function (x) { return x.폭합; }).join(" / ") + " · 화면 " + folded.화면);
+  [folded.one, folded.two, folded.back].every(function (x) { return Math.abs(x.폭합 - x.칸너비) <= 1; }),
+  [folded.one, folded.two, folded.back].map(function (x) { return x.폭합 + "/" + x.칸너비; }).join(" · "));
 
 await twoPane(); await wait(500);
 /* ---------- 10-2. 자리 · 왼쪽에서 고른 폴더가 곧 «다음 기록이 갈 자리» ----------
@@ -2192,6 +2195,82 @@ check("첫 기록까지 한 화면 안이다", two.첫기록까지 > 0 && two.�
   two.첫기록까지 + "px");
 await send("Emulation.setDeviceMetricsOverride", { width: 1400, height: 950, deviceScaleFactor: 1, mobile: false });
 await wait(400);
+
+/* ---------- 10-15. 경계를 끄는 손잡이 · 글자 크기 ----------
+   칸 너비는 사람마다 다르다. 끌 수 있게 해 두었으면 «끌린다·멈춘다·남는다·
+   되돌아온다» 넷이 다 되어야 한다. 하나라도 빠지면 잘못 끈 사람이 갇힌다. */
+await evaluate(`(() => { localStorage.removeItem('trace.colW.v1'); localStorage.removeItem('trace.navStage.v1'); return true; })()`);
+await send("Page.navigate", { url: URL_ });
+await wait(2500);
+const grip = JSON.parse(await evaluate(`(() => {
+  const L = document.querySelector('.layout');
+  const g = document.getElementById('gripNav');
+  const g2 = document.getElementById('gripList');
+  const cols = () => getComputedStyle(L).gridTemplateColumns.split(' ').map(v => Math.round(parseFloat(v)));
+  const seen = (e) => getComputedStyle(e).display !== 'none';
+  const drag = (el, dx, id) => {
+    const r = el.getBoundingClientRect();
+    el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: r.x + 5, clientY: 400, button: 0, pointerId: id }));
+    el.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: r.x + 5 + dx, clientY: 400, pointerId: id }));
+    el.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: r.x + 5 + dx, clientY: 400, pointerId: id }));
+  };
+  const 처음 = cols();
+  const 손잡이자리 = [Math.round(g.getBoundingClientRect().x), Math.round(g2.getBoundingClientRect().x)];
+  const 보임 = [seen(g), seen(g2)];
+  drag(g, 120, 11);
+  const 끈뒤 = cols();
+  const 남았나 = localStorage.getItem('trace.colW.v1');
+  drag(g, 2000, 12);
+  const 최대 = cols();
+  drag(g, -3000, 13);
+  const 최소 = cols();
+  g.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+  const 되돌림 = cols();
+  return JSON.stringify({ 처음, 손잡이자리, 보임, 끈뒤, 남았나, 최대, 최소, 되돌림 });
+})()`));
+check("경계에 손잡이가 둘 선다", grip.보임[0] === true && grip.보임[1] === true,
+  "기둥 x" + grip.손잡이자리[0] + " · 목록 x" + grip.손잡이자리[1]);
+check("손잡이가 칸 경계에 앉는다",
+  Math.abs(grip.손잡이자리[0] - (grip.처음[0] - 5)) <= 1 &&
+  Math.abs(grip.손잡이자리[1] - (grip.처음[0] + grip.처음[1] - 5)) <= 1,
+  grip.손잡이자리.join(" / ") + " · 칸 " + grip.처음.join(" "));
+check("끌면 칸 너비가 바뀐다", grip.끈뒤[0] === grip.처음[0] + 120,
+  grip.처음[0] + " → " + grip.끈뒤[0]);
+check("정한 너비가 기기에 남는다", !!grip.남았나 && grip.남았나.indexOf("nav") >= 0, String(grip.남았나));
+/* ⚠️ 한계가 없으면 기둥을 화면 끝까지 끌어 목록과 쓰는 자리를 통째로 없앨 수 있다 */
+check("한계에서 멈춘다 · 너무 넓지도 좁지도 않게",
+  grip.최대[0] <= 460 && grip.최소[0] >= 180,
+  "최대 " + grip.최대[0] + "px · 최소 " + grip.최소[0] + "px");
+/* 잘못 끈 사람이 갇히면 안 된다 · 되돌릴 길이 있어야 한다 */
+check("두 번 누르면 처음 너비로 돌아간다", grip.되돌림[0] === grip.처음[0],
+  grip.최소[0] + " → " + grip.되돌림[0]);
+
+/* ⚠️ 칸들이 «100vh - 66px» 로 못 박혀 있었다. 글자를 키우자 머리띠가 76px 이 되어
+   칸이 화면보다 길어졌고, 쪽 전체에 굴림 막대가 서고 붙박이 자리도 어긋났다.
+   머리띠 높이는 글자 크기·색감·너비를 따라 움직인다 · 재서 쓰는지 본다. */
+const 재기 = JSON.parse(await evaluate(`(() => {
+  const head = document.querySelector('header.top');
+  const lc = document.querySelector('.listcol');
+  const body = getComputedStyle(document.body);
+  const h3 = document.querySelector('.listcol .entry h3');
+  return JSON.stringify({
+    머리띠: Math.round(head.getBoundingClientRect().height),
+    알린값: Math.round(parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--top-h'))),
+    칸시작: Math.round(lc.getBoundingClientRect().y),
+    쪽넘침: document.documentElement.scrollHeight - innerHeight,
+    몸글: Math.round(parseFloat(body.fontSize)),
+    몸글굵기: Number(body.fontWeight),
+    제목굵기: h3 ? Number(getComputedStyle(h3).fontWeight) : 0
+  });
+})()`));
+check("머리띠 높이를 재서 칸에 알려 준다", 재기.알린값 === 재기.머리띠 && 재기.칸시작 === 재기.머리띠,
+  "머리띠 " + 재기.머리띠 + "px · 알린값 " + 재기.알린값 + "px · 칸 시작 " + 재기.칸시작);
+check("칸이 화면보다 길어지지 않는다", 재기.쪽넘침 <= 1, "쪽 넘침 " + 재기.쪽넘침 + "px");
+/* 가독성은 크기 하나로 오지 않는다 · 획도 같이 굵어야 한다 */
+check("몸글이 크고 획이 굵다", 재기.몸글 >= 22 && 재기.몸글굵기 >= 600,
+  재기.몸글 + "px / " + 재기.몸글굵기);
+check("제목 획이 몸글보다 한 겹 굵다", 재기.제목굵기 > 재기.몸글굵기,
+  재기.제목굵기 + " vs " + 재기.몸글굵기);
 
 const picked = JSON.parse(await evaluate(`(() => {
   const t = document.querySelectorAll('#listcol .entry .titlebtn')[1];
